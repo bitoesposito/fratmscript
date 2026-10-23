@@ -278,6 +278,11 @@ pub enum TokenKind {
         quasis: Vec<String>,
         expressions: Vec<Vec<Token>>,
     },
+    /// `/pattern/flags`, pattern kept raw
+    Regex {
+        pattern: String,
+        flags: String,
+    },
 
     // === Special ===
     Newline,
@@ -392,6 +397,7 @@ impl fmt::Display for TokenKind {
             TokenKind::String(s) => write!(f, "\"{}\"", s),
             TokenKind::Number(n) => write!(f, "{}", n),
             TokenKind::Template { .. } => write!(f, "`…`"),
+            TokenKind::Regex { pattern, flags } => write!(f, "/{}/{}", pattern, flags),
             TokenKind::Newline => write!(f, "\\n"),
             TokenKind::Eof => write!(f, "EOF"),
             TokenKind::Invalid(s) => write!(f, "INVALID({})", s),

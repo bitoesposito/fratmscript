@@ -1,0 +1,8 @@
+// Template literals (#14)
+chist è nome = "Gennaro"
+tien pizze = 2
+stamm a dì(`Uè ${nome}!`)
+stamm a dì(`${pizze > 1 ? `${pizze} pizze` : "una pizza"} pe ${nome.toUpperCase()}`)
+stamm a dì(`riga uno
+riga due: \` e \${nun è interpolato}`)
+stamm a dì(`${ { prezzo: 7 }.prezzo } euro`, ``)

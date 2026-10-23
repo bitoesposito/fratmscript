@@ -738,4 +738,39 @@ na famiglie Pizzaiolo figlio 'e Persona {
             "let x = (a ? b?.c : (d ?? 1));\n"
         );
     }
+
+    #[test]
+    fn test_regex_literals() {
+        assert_eq!(js("tien r = /ab+/g"), "let r = /ab+/g;\n");
+        assert_eq!(js("tien r = /[/]x\\//"), "let r = /[/]x\\//;\n");
+        assert_eq!(js("f(/a/, /b/i)"), "f(/a/, /b/i);\n");
+        assert_eq!(js("tien x = `${/q/.source}`"), "let x = `${/q/.source}`;\n");
+        // After an operand, `/` is still a division
+        assert_eq!(js("tien x = a / b / c"), "let x = ((a / b) / c);\n");
+        assert_eq!(
+            js("tien x = f(1) / 2 + xs[0] / 3"),
+            "let x = ((f(1) / 2) + (xs[0] / 3));\n"
+        );
+        assert_eq!(js("tien x = a // commento"), "let x = a;\n");
+        assert_eq!(js("x /= 2"), "x /= 2;\n");
+        for src in ["tien r = /ab", "tien r = /a/gg", "tien r = /a/x"] {
+            assert!(
+                compile(src, Default::default()).is_err(),
+                "{} should not compile",
+                src
+            );
+        }
+    }
+
+    #[test]
+    fn test_multiple_declarations() {
+        assert_eq!(js("tien x = 1, y = 2"), "let x = 1, y = 2;\n");
+        assert_eq!(js("tien c, d = 4"), "let c, d = 4;\n");
+        assert_eq!(js("chist è a = 1, { b } = o"), "const a = 1, { b } = o;\n");
+        assert_eq!(
+            js("pe (tien i = 0, j = 3; i < j; i++, j--) { }"),
+            "for (let i = 0, j = 3; (i < j); i++, j--) {\n}\n"
+        );
+        assert!(compile("chist è a = 1, b", Default::default()).is_err());
+    }
 }

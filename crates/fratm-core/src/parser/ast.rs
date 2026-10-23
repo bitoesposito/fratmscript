@@ -10,9 +10,9 @@ pub struct Program {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Statement {
+    /// `tien x = 1, y = 2` / `chist è { a } = o`
     VariableDecl {
-        target: Pattern,
-        value: Option<Expression>,
+        declarations: Vec<Declarator>,
         is_const: bool,
         span: Span,
     },
@@ -141,6 +141,17 @@ pub enum Expression {
         elements: Vec<Expression>,
         span: Span,
     },
+    /// `a, b` (only in `pe` loop headers)
+    Sequence {
+        expressions: Vec<Expression>,
+        span: Span,
+    },
+    /// `/pattern/flags`, kept as written
+    Regex {
+        pattern: String,
+        flags: String,
+        span: Span,
+    },
     /// Template literal; `quasis` are raw text, one more than `expressions`
     Template {
         quasis: Vec<String>,
@@ -254,6 +265,8 @@ impl Expression {
             Expression::This { span } => *span,
             Expression::Super { span } => *span,
             Expression::Array { span, .. } => *span,
+            Expression::Regex { span, .. } => *span,
+            Expression::Sequence { span, .. } => *span,
             Expression::Template { span, .. } => *span,
             Expression::Object { span, .. } => *span,
             Expression::Spread { span, .. } => *span,
@@ -274,6 +287,12 @@ impl Expression {
             Expression::Delete { span, .. } => *span,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Declarator {
+    pub target: Pattern,
+    pub value: Option<Expression>,
 }
 
 /// A binding target: declarations, function parameters and catch parameters.

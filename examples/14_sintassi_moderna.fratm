@@ -1,0 +1,59 @@
+// ============================================
+// Example 14: Modern syntax
+// Arrows, templates, destructuring, spread,
+// ?. / ??, compound assignment, regex
+// ============================================
+
+// Arrow functions and template literals
+chist è saluta = (nome = "Gennà") => `Uè ${nome}, comme staje?`
+stamm a dì(saluta())
+stamm a dì(saluta("Totò"))
+
+// Objects: shorthand, computed keys, methods
+chist è nome = "Margherita"
+chist è campo = "prezzo"
+chist è pizza = {
+    nome,
+    [campo]: 6.5,
+    ingredienti: ["pummarola", "muzzarella", "basilico"],
+    descrivi() {
+        piglie `${stu cos.nome}: ${stu cos.ingredienti.join(", ")}`
+    }
+}
+stamm a dì(pizza.descrivi())
+
+// Destructuring with defaults, renames and rest
+chist è { prezzo: costo, forno = "a legna", ...altro } = pizza
+chist è [primo, ...ato] = pizza.ingredienti
+stamm a dì(`${costo} euro, forno ${forno}, primo: ${primo}, ato: ${ato.length}`)
+
+// Spread and rest parameters
+facc somma(...numeri) {
+    piglie numeri.reduce((totale, n) => totale + n, 0)
+}
+chist è prezzi = [6.5, 8, 7]
+stamm a dì("Totale: " + somma(...prezzi, 1.5))
+
+// Optional chaining and nullish coalescing
+chist è ordine = { cliente: { nome: "Ciro" } }
+stamm a dì(ordine.cliente?.nome ?? "anonimo")
+stamm a dì(ordine.consegna?.indirizzo ?? "ritiro al banco")
+
+// Compound assignment and ++
+tien conto = 0, pizze = 0
+pe (tien i = 0; i < prezzi.length; i++) {
+    conto += prezzi[i]
+    pizze++
+}
+stamm a dì(`${pizze} pizze, ${conto} euro`)
+
+// Short keywords are names too: "e" as the catch parameter
+pruvamm {
+    iett nu bell Error("forno spento")
+} e si schiatta (e) {
+    stamm a dì("Errore: " + e.message)
+}
+
+// Regex literals
+chist è targa = /^[A-Z]{2}\d{3}[A-Z]{2}$/
+stamm a dì(targa.test("NA123BC"), targa.test("pizza"))
