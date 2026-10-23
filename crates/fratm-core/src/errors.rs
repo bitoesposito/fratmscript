@@ -22,6 +22,13 @@ pub enum CompileError {
         column: usize,
     },
 
+    #[error("Riga {line}, colonna {column}: {msg}", msg = napoletanize_error(message))]
+    SemanticError {
+        message: String,
+        line: usize,
+        column: usize,
+    },
+
     #[error("Errore interno: {message}")]
     CodeGenError { message: String },
 }
@@ -31,6 +38,7 @@ impl CompileError {
         match self {
             CompileError::LexerError { line, .. } => Some(*line),
             CompileError::ParseError { line, .. } => Some(*line),
+            CompileError::SemanticError { line, .. } => Some(*line),
             CompileError::CodeGenError { .. } => None,
         }
     }
@@ -39,6 +47,7 @@ impl CompileError {
         match self {
             CompileError::LexerError { column, .. } => Some(*column),
             CompileError::ParseError { column, .. } => Some(*column),
+            CompileError::SemanticError { column, .. } => Some(*column),
             CompileError::CodeGenError { .. } => None,
         }
     }
@@ -156,6 +165,15 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("'pe aspett' works only with 'dint'") {
         return "'pe aspett' funziona sulo cu 'dint', no cu ''ncopp'!".to_string();
     }
+    if let Some(rest) = message.strip_prefix('\'') {
+        if let Some((name, line)) = rest.split_once("' is already declared (line ") {
+            return format!(
+                "'{}' già esiste: l'hai dichiarato a riga {}! Dalle n'atu nomme.",
+                name,
+                line.trim_end_matches(')')
+            );
+        }
+    }
     if message.contains("'caccia' works only inside") {
         return "'caccia' se po' usà sulo dint'a nu generatore: facc* nomme() { caccia … }"
             .to_string();
@@ -223,6 +241,10 @@ pub fn get_suggestion(error: &CompileError) -> Option<String> {
                 None
             }
         }
+        CompileError::SemanticError { message, .. } if message.contains("already declared") => Some(
+            "💡 Pe cagnà 'o valore nun ce vo' n'ata dichiarazione: scrive sulo 'x = …' (cu 'tien')"
+                .to_string(),
+        ),
         CompileError::LexerError { message, .. } => {
             if message.contains("string") {
                 Some("💡 'E stringhe s'aprono e se chiudono cu \" o '".to_string())
