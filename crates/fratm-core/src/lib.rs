@@ -397,6 +397,19 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_keywords_without_accents() {
+        assert_eq!(
+            js("chist e x = sfols\nsi (x) { stamm a di(1) } sinno { avvis a di(2) }"),
+            "const x = false;\nif (x) {\n  console.log(1);\n} else {\n  console.warn(2);\n}\n"
+        );
+        assert_eq!(js("scrive a di(chè e x)"), "console.error(typeof x);\n");
+        assert!(js("pe (chist e v dint xs) { }").contains("for (const v of xs) {"));
+        // `di` and `e` keep working as names
+        assert_eq!(js("tien di = 1"), "let di = 1;\n");
+        assert_eq!(js("chist e e = 2"), "const e = 2;\n");
+    }
+
+    #[test]
     fn test_generators() {
         assert_eq!(
             js("facc* conta() {\ncaccia 1\ncaccia* altri()\nchist è x = caccia\n}"),

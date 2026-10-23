@@ -28,9 +28,9 @@ const fratmScriptLanguage = StreamLanguage.define({
     if (stream.match(/\d+\.?\d*/)) return 'number'
 
     // Keywords - FratmScript specific
-    if (stream.match(/\b(chist|è|tien|facc|piglie|si|sinnò|pe|ogni|mentre|che)\b/)) return 'keyword'
-    if (stream.match(/\b(overo|sfòls|nisciun|boh)\b/)) return 'atom'
-    if (stream.match(/\b(stamm|dì|avvis|scrive)\b/)) return 'builtin'
+    if (stream.match(/\b(chist|è|tien|facc|piglie|si|sinnò|sinno|pe|ogni|mentre|che)\b/)) return 'keyword'
+    if (stream.match(/\b(overo|sfòls|sfols|nisciun|boh)\b/)) return 'atom'
+    if (stream.match(/\b(stamm|dì|di|avvis|scrive)\b/)) return 'builtin'
     if (stream.match(/\b(mo|vir|aspett)\b/)) return 'keyword'
     if (stream.match(/\b(pruvamm|schiatta|aropp|iett)\b/)) return 'keyword'
     if (stream.match(/\b(vedimm|caso|primm|fa|dint)\b/)) return 'keyword'
