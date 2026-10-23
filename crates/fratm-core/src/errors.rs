@@ -99,6 +99,13 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("Aspettavo 'dì'") {
         return "Doppo 'stamm a' ce vo' 'dì'! Scrivi 'stamm a dì' pe stampà.".to_string();
     }
+    if message.contains("after the end of the statement") {
+        let found = message.split('\'').nth(1).unwrap_or("");
+        return format!("Ccà ce sta '{}' ma l'istruzione era già fernuta! Va' a capo o miette ';'.", found);
+    }
+    if message.starts_with("Invalid number") {
+        return format!("Stu nummero nun se capisce: {}", message.trim_start_matches("Invalid number: "));
+    }
     if message.contains("expression") || message.contains("espressione") {
         return "Ma che staje scrivenn?! Ccà ce vo' 'na espressione!".to_string();
     }
@@ -113,7 +120,10 @@ pub fn napoletanize_error(message: &str) -> String {
 pub fn get_suggestion(error: &CompileError) -> Option<String> {
     match error {
         CompileError::ParseError { message, .. } => {
-            if message.contains("'}'") {
+            // Checked first: the message quotes the offending token, which may be `stamm`, `}`...
+            if message.contains("after the end of the statement") {
+                Some("💡 Scrive n'istruzione pe riga, o separale cu ';'".to_string())
+            } else if message.contains("'}'") {
                 Some("💡 Conta 'e parentesi graffe: ogni '{' adda avè 'o suo '}'".to_string())
             } else if message.contains("')'") {
                 Some("💡 Conta 'e parentesi tonne: ogni '(' adda avè 'o suo ')'".to_string())

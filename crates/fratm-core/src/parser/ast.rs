@@ -229,6 +229,7 @@ pub enum BinaryOp {
     Equal, StrictEqual, NotEqual, StrictNotEqual,
     LessThan, GreaterThan, LessEqual, GreaterEqual,
     And, Or,
+    InstanceOf,
 }
 
 impl BinaryOp {
@@ -250,6 +251,7 @@ impl BinaryOp {
             BinaryOp::GreaterEqual => ">=",
             BinaryOp::And => "&&",
             BinaryOp::Or => "||",
+            BinaryOp::InstanceOf => "instanceof",
         }
     }
 }

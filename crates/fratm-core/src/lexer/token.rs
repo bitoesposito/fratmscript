@@ -426,6 +426,10 @@ pub fn lookup_keyword(ident: &str) -> Option<TokenKind> {
         "fermete" => Some(TokenKind::Fermete),
         "scrive" => Some(TokenKind::Scrive),
         "avvis" => Some(TokenKind::Avvis),
+        // typeof: "chè è" (the parser requires the "è"); plain `typeof` is accepted too
+        "chè" | "typeof" => Some(TokenKind::CheE),
+        // instanceof: "è uno" is parsed from `è` + `uno`; plain `instanceof` is accepted too
+        "instanceof" => Some(TokenKind::EUno),
         // Logical operators
         "e" => Some(TokenKind::And),
         "o" => Some(TokenKind::Or),
