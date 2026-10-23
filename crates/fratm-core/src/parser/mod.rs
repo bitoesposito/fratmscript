@@ -160,7 +160,7 @@ impl Parser {
     fn parse_const_declaration(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Chist)?;
-        self.expect(&TokenKind::E)?;
+        self.expect_e()?;
         let mut declarations = Vec::new();
         loop {
             let target = self.parse_binding_target()?;
@@ -578,7 +578,7 @@ impl Parser {
         let saved = self.current;
         let binding = if self.match_token(&TokenKind::Tien) {
             self.parse_binding_target().ok().map(ForBinding::Let)
-        } else if self.check(&TokenKind::Chist) && self.check_next(&TokenKind::E) {
+        } else if self.check(&TokenKind::Chist) && self.at_e(1) {
             self.current += 2;
             self.parse_binding_target().ok().map(ForBinding::Const)
         } else {
@@ -1293,7 +1293,7 @@ impl Parser {
         if self.match_token(&TokenKind::CheE) {
             let start = self.previous().span;
             if self.previous().literal == "chè" {
-                self.expect(&TokenKind::E)?;
+                self.expect_e()?;
             }
             let operand = self.parse_unary()?;
             return Ok(Expression::TypeOf {
@@ -1621,7 +1621,7 @@ impl Parser {
             }
             TokenKind::Stamm => {
                 self.expect_identifier_a()?;
-                self.expect(&TokenKind::Di)?;
+                self.expect_di()?;
                 self.expect(&TokenKind::LeftParen)?;
                 let arguments = self.parse_arguments()?;
                 Ok(Expression::ConsoleLog {
@@ -1632,7 +1632,7 @@ impl Parser {
             // console.warn() - "avvis a dì(...)"
             TokenKind::Avvis => {
                 self.expect_identifier_a()?;
-                self.expect(&TokenKind::Di)?;
+                self.expect_di()?;
                 self.expect(&TokenKind::LeftParen)?;
                 let arguments = self.parse_arguments()?;
                 Ok(Expression::ConsoleWarn {
@@ -1643,7 +1643,7 @@ impl Parser {
             // console.error() - "scrive a dì(...)"
             TokenKind::Scrive => {
                 self.expect_identifier_a()?;
-                self.expect(&TokenKind::Di)?;
+                self.expect_di()?;
                 self.expect(&TokenKind::LeftParen)?;
                 let arguments = self.parse_arguments()?;
                 Ok(Expression::ConsoleError {
@@ -1843,6 +1843,27 @@ impl Parser {
         }
     }
     // Expect the identifier "a" specifically (used in "stamm a dì", "avvis a dì", etc.)
+    /// `è`, or `e` written without the accent (`chist e x = 1`).
+    fn at_e(&self, offset: usize) -> bool {
+        self.tokens.get(self.current + offset).is_some_and(|t| {
+            t.kind == TokenKind::E || (t.kind == TokenKind::And && t.literal == "e")
+        })
+    }
+    fn expect_e(&mut self) -> Result<(), ParseError> {
+        if self.at_e(0) {
+            self.advance();
+            return Ok(());
+        }
+        self.expect(&TokenKind::E).map(|_| ())
+    }
+    /// `dì`, or `di` without the accent; `di` stays an ordinary name elsewhere.
+    fn expect_di(&mut self) -> Result<(), ParseError> {
+        if self.check_identifier_at(0, "di") {
+            self.advance();
+            return Ok(());
+        }
+        self.expect(&TokenKind::Di).map(|_| ())
+    }
     fn expect_identifier_a(&mut self) -> Result<(), ParseError> {
         let token = self.advance();
         if let TokenKind::Identifier(name) = &token.kind {
