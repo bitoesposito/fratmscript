@@ -269,6 +269,7 @@ Check the `examples/` folder for complete programs:
 10. `10_nuove_feature.fratm` - New features
 11. `11_oop_avanzato.fratm` - Inheritance, super and static methods
 12. `12_trycatch_validazione.fratm` - Try/catch and validation
+13. `13_pomodor_e_muzzarel.fratm` - Interactive tic-tac-toe in the terminal
 
 ---
 
