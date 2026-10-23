@@ -23,11 +23,17 @@ impl ParseError {
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    /// Whether the innermost function is a generator, so `caccia` is allowed
+    in_generator: bool,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+        Self {
+            tokens,
+            current: 0,
+            in_generator: false,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Program, Vec<ParseError>> {
@@ -209,14 +215,16 @@ impl Parser {
     fn parse_function(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Facc)?;
+        let is_generator = self.match_token(&TokenKind::Star);
         let name = self.expect_identifier()?;
         let params = self.parse_parameters()?;
-        let body = self.parse_block_body()?;
+        let body = self.parse_function_body(is_generator)?;
         Ok(Statement::FunctionDecl {
             name,
             params,
             body,
             is_async: false,
+            is_generator,
             span: self.span_from(start.start),
         })
     }
@@ -226,16 +234,26 @@ impl Parser {
         self.expect(&TokenKind::Mo)?;
         self.expect(&TokenKind::Vir)?;
         self.expect(&TokenKind::Facc)?;
+        let is_generator = self.match_token(&TokenKind::Star);
         let name = self.expect_identifier()?;
         let params = self.parse_parameters()?;
-        let body = self.parse_block_body()?;
+        let body = self.parse_function_body(is_generator)?;
         Ok(Statement::FunctionDecl {
             name,
             params,
             body,
             is_async: true,
+            is_generator,
             span: self.span_from(start.start),
         })
+    }
+
+    /// A function body; `caccia` is allowed in it only for a generator.
+    fn parse_function_body(&mut self, is_generator: bool) -> Result<Vec<Statement>, ParseError> {
+        let outer = std::mem::replace(&mut self.in_generator, is_generator);
+        let body = self.parse_block_body();
+        self.in_generator = outer;
+        body
     }
 
     /// `(a, b = 1, ...resto)`
@@ -783,10 +801,12 @@ impl Parser {
 
         // "facc" inside classes is optional.
         let has_facc = self.match_token(&TokenKind::Facc);
+        // `facc* nomme()` / `*nomme()`
+        let is_generator = self.match_token(&TokenKind::Star);
 
         // `damme x()` / `miette x(v)`; `damme()` alone is a method called damme
         let mut kind = MethodKind::Method;
-        if !is_async && !has_facc && self.check_at(2, &TokenKind::LeftParen) {
+        if !is_async && !has_facc && !is_generator && self.check_at(2, &TokenKind::LeftParen) {
             if self.check_identifier_at(0, "damme") {
                 kind = MethodKind::Getter;
             } else if self.check_identifier_at(0, "miette") {
@@ -802,6 +822,7 @@ impl Parser {
         if kind == MethodKind::Method
             && !is_async
             && !has_facc
+            && !is_generator
             && !self.check(&TokenKind::LeftParen)
         {
             let value = if self.match_token(&TokenKind::Equal) {
@@ -834,7 +855,7 @@ impl Parser {
                 self.span_from(start.start),
             ));
         }
-        let body = self.parse_block_body()?;
+        let body = self.parse_function_body(is_generator)?;
 
         Ok(ClassMember::Method(ClassMethod {
             name,
@@ -842,6 +863,7 @@ impl Parser {
             params,
             body,
             is_async,
+            is_generator,
             is_static,
             span: self.span_from(start.start),
         }))
@@ -962,6 +984,9 @@ impl Parser {
     }
 
     fn parse_assignment(&mut self) -> Result<Expression, ParseError> {
+        if self.check(&TokenKind::Caccia) {
+            return self.parse_yield();
+        }
         let expr = self.parse_ternary()?;
         let operator = match self.peek().kind {
             TokenKind::Equal => AssignOp::Assign,
@@ -985,6 +1010,40 @@ impl Parser {
             operator,
             value: Box::new(value),
             span,
+        })
+    }
+
+    /// `caccia x` / `caccia* altri` / `caccia`, at assignment level as in JS.
+    fn parse_yield(&mut self) -> Result<Expression, ParseError> {
+        let start = self.current_span();
+        if !self.in_generator {
+            return Err(ParseError::new(
+                "'caccia' works only inside a 'facc*' generator",
+                start,
+            ));
+        }
+        self.advance();
+        let delegate = self.match_token(&TokenKind::Star);
+        let ends = matches!(
+            self.peek().kind,
+            TokenKind::Newline
+                | TokenKind::Semicolon
+                | TokenKind::RightParen
+                | TokenKind::RightBracket
+                | TokenKind::RightBrace
+                | TokenKind::Comma
+                | TokenKind::Colon
+                | TokenKind::Eof
+        );
+        let argument = if ends && !delegate {
+            None
+        } else {
+            Some(Box::new(self.parse_assignment()?))
+        };
+        Ok(Expression::Yield {
+            argument,
+            delegate,
+            span: self.span_from(start.start),
         })
     }
 
@@ -1342,11 +1401,16 @@ impl Parser {
             vec![self.parse_binding_target()?]
         };
         self.expect(&TokenKind::Arrow)?;
+        // Arrows are never generators, even inside one
+        let outer = std::mem::replace(&mut self.in_generator, false);
         let body = if self.check(&TokenKind::LeftBrace) {
-            ArrowBody::Block(self.parse_block_body()?)
+            self.parse_block_body().map(ArrowBody::Block)
         } else {
-            ArrowBody::Expression(Box::new(self.parse_assignment()?))
+            self.parse_assignment()
+                .map(|e| ArrowBody::Expression(Box::new(e)))
         };
+        self.in_generator = outer;
+        let body = body?;
         Ok(Expression::ArrowFunction {
             params,
             body,
@@ -1391,19 +1455,21 @@ impl Parser {
         {
             self.advance();
         }
+        let is_generator = self.match_token(&TokenKind::Star);
         let key_token = self.peek().clone();
         let key = self.parse_property_key()?;
         if self.check(&TokenKind::LeftParen) {
             let params = self.parse_parameters()?;
-            let body = self.parse_block_body()?;
+            let body = self.parse_function_body(is_generator)?;
             return Ok(Property::Method {
                 key,
                 params,
                 body,
                 is_async,
+                is_generator,
             });
         }
-        if is_async {
+        if is_async || is_generator {
             return Err(ParseError::new(
                 format!("Expected '(', but found '{}'", self.peek().kind),
                 self.peek().span,

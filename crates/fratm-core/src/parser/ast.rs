@@ -21,6 +21,8 @@ pub enum Statement {
         params: Vec<Pattern>,
         body: Vec<Statement>,
         is_async: bool,
+        /// `facc* nomme()`
+        is_generator: bool,
         span: Span,
     },
     Return {
@@ -153,6 +155,7 @@ pub struct ClassMethod {
     pub params: Vec<Pattern>,
     pub body: Vec<Statement>,
     pub is_async: bool,
+    pub is_generator: bool,
     pub is_static: bool,
     pub span: Span,
 }
@@ -271,6 +274,12 @@ pub enum Expression {
         argument: Box<Expression>,
         span: Span,
     },
+    /// `caccia x`, `caccia* altri` (delegation), or a bare `caccia`
+    Yield {
+        argument: Option<Box<Expression>>,
+        delegate: bool,
+        span: Span,
+    },
     Ternary {
         condition: Box<Expression>,
         consequent: Box<Expression>,
@@ -329,6 +338,7 @@ impl Expression {
             Expression::New { span, .. } => *span,
             Expression::ArrowFunction { span, .. } => *span,
             Expression::Await { span, .. } => *span,
+            Expression::Yield { span, .. } => *span,
             Expression::Ternary { span, .. } => *span,
             Expression::ConsoleLog { span, .. } => *span,
             Expression::ConsoleWarn { span, .. } => *span,
@@ -417,6 +427,7 @@ pub enum Property {
         params: Vec<Pattern>,
         body: Vec<Statement>,
         is_async: bool,
+        is_generator: bool,
     },
     /// `...object`
     Spread(Expression),

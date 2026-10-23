@@ -97,6 +97,15 @@ chist è carica = mo vir (url) => aspett fetch(url)
 
 facc saluta(nome = "Gennà", ...altri) { }  // default and rest parameters
 somma(...numeri)                          // spread in calls, [...a] and { ...o }
+
+facc* conta(n) {                 // generator (function*)
+    pe (tien i = 1; i <= n; i++) {
+        caccia i                 // yield
+    }
+    caccia* altri()              // yield* (delegation)
+}
+mo vir facc* stream() { }        // async generator
+// in classes and objects: facc* nomme() { } or *nomme() { }
 ```
 
 ### Destructuring
@@ -253,6 +262,7 @@ fermete                      // debugger
 | `scrive a dì` | `console.error` | "write" |
 | `mo vir` | `async` | "now see" |
 | `aspett` | `await` | "wait" |
+| `facc*` / `caccia` | `function*` / `yield` | "throw out" |
 | `pruvamm` | `try` | "let's try" |
 | `e si schiatta` | `catch` | "if it breaks" |
 | `aropp` | `finally` | "afterwards" |
