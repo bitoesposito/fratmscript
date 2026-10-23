@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Header } from '@/components/Header'
-import { Editor } from '@/components/Editor'
+import { Editor, type EditorHandle, type EditorDiagnostic } from '@/components/Editor'
 import { OutputPanel } from '@/components/OutputPanel'
 import { StatusBar } from '@/components/StatusBar'
 import { LoadingOverlay } from '@/components/LoadingOverlay'
@@ -15,6 +15,9 @@ function App() {
   const [code, setCode] = useState(defaultCode)
   const [selectedExample, setSelectedExample] = useState('')
   const compiler = useCompiler()
+  const editorRef = useRef<EditorHandle>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+  const isRunning = compiler.status === 'running'
 
   // Load code from URL on mount
   useEffect(() => {
@@ -29,9 +32,24 @@ function App() {
     }
   }, [])
 
+  const { runCode, stop } = compiler
   const handleRun = useCallback(() => {
-    compiler.runCode(code)
-  }, [code, compiler])
+    runCode(code)
+    // On narrow screens the output sits below the editor: bring it into view
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [code, runCode])
+
+  const handleErrorClick = useCallback((line: number, column?: number) => {
+    editorRef.current?.revealLine(line, column)
+  }, [])
+
+  const diagnostics = useMemo<EditorDiagnostic[]>(() => compiler.errors.flatMap(error => {
+    if (error.kind === 'timeout' || error.line === undefined) return []
+    const message = error.kind === 'runtime' ? `${error.name}: ${error.message}` : error.message
+    return [{ line: error.line, column: error.column, message }]
+  }), [compiler.errors])
 
   const handleShare = useCallback(() => {
     const encoded = btoa(encodeURIComponent(code))
@@ -62,20 +80,23 @@ function App() {
 
   return (
     <ToastProvider position="bottom-right">
-      <div className="flex flex-col bg-background h-screen overflow-hidden">
+      <div className="flex flex-col bg-background h-dvh overflow-hidden">
         <LoadingOverlay isVisible={compiler.isLoading} />
 
         {/* Sticky Header */}
         <Header
           onRun={handleRun}
+          onStop={stop}
           onShare={handleShare}
-          isCompiling={compiler.status === 'compiling'}
+          isRunning={isRunning}
+          disabled={compiler.isLoading}
         />
 
-        {/* Main content area - fills remaining space */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden">
+        {/* Main content area - fills remaining space. On mobile the panels
+            stack and the page scrolls; on desktop they sit side by side. */}
+        <div className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-y-auto md:overflow-hidden">
           {/* Editor Panel */}
-          <div className="flex flex-col border-border border-r min-h-0 overflow-hidden">
+          <div className="flex flex-col border-border border-b md:border-b-0 md:border-r h-[65dvh] md:h-auto min-h-[320px] md:min-h-0 overflow-hidden shrink-0">
             {/* Sticky panel header */}
             <div className="flex justify-between items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
               <span className="font-medium text-muted-foreground text-sm">JavaScript ma comme si deve</span>
@@ -84,19 +105,21 @@ function App() {
             {/* Scrollable editor */}
             <div className="flex-1 bg-background min-h-0 overflow-auto">
               <Editor
+                ref={editorRef}
                 value={code}
                 onChange={setCode}
                 onRun={handleRun}
+                diagnostics={diagnostics}
               />
             </div>
             {/* Sticky examples bar */}
-            <div className="flex items-center justify-between bg-card px-4 py-2.5 border-border border-t shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-2 bg-card px-4 py-2.5 border-border border-t shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <label className="text-muted-foreground text-xs">Examples:</label>
                 <NativeSelect
                   value={selectedExample}
                   onChange={handleExampleChange}
-                  className="w-52"
+                  className="w-44 sm:w-52"
                 >
                   <option value="">-- Choose an example --</option>
                   <option value="hello">Hello World</option>
@@ -114,17 +137,20 @@ function App() {
           </div>
 
           {/* Output Panel */}
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div ref={outputRef} className="flex flex-col md:min-h-0 md:overflow-hidden">
             {/* Sticky output header */}
             <div className="flex items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
               <span className="font-medium text-foreground text-sm">Output</span>
             </div>
             {/* Scrollable output content */}
-            <div className="flex-1 bg-background min-h-0 overflow-auto">
+            <div className="flex-1 bg-background md:min-h-0 md:overflow-auto">
               <OutputPanel
                 jsOutput={compiler.jsOutput}
                 consoleLogs={compiler.consoleLogs}
-                error={compiler.error}
+                errors={compiler.errors}
+                notice={compiler.notice}
+                isRunning={isRunning}
+                onErrorClick={handleErrorClick}
               />
             </div>
           </div>
