@@ -1,0 +1,18 @@
+// Spread, rest and default parameters (#15)
+facc somma(primo, ...resto) {
+    piglie resto.reduce((totale, n) => totale + n, primo)
+}
+facc saluta(nome = "Gennà", punto = nome.length > 4 ? "!" : ".") {
+    piglie "Uè " + nome + punto
+}
+chist è conta = (base = 10, ...altri) => base + altri.length
+
+chist è a = [1, 2]
+chist è b = [...a, 3, ...a]
+chist è o = { x: 1 }
+stamm a dì(b.join(","), somma(...b), JSON.stringify({ ...o, y: 2 }))
+stamm a dì(saluta(), saluta("Totò"), conta(), conta(1, 2, 3))
+stamm a dì(Math.max(
+    ...b,
+    0
+))

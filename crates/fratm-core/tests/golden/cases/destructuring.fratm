@@ -1,0 +1,22 @@
+// Destructuring (#18)
+chist è ordine = { cliente: "Ciro", pizze: ["Margherita", "Marinara", "Diavola"], dettagli: { forno: "a legna" }, mancia: 2 }
+chist è { cliente, dettagli: { forno }, consegna = "al banco", ...resto } = ordine
+tien [prima, , terza = "nisciuna", ...ato] = ordine.pizze
+stamm a dì(cliente, forno, consegna, JSON.stringify(resto))
+stamm a dì(prima, terza, ato.length)
+
+facc descrivi({ cliente, pizze: [prima] }, [x, y] = [1, 2]) {
+    piglie cliente + " vo' " + prima + " " + (x + y)
+}
+chist è conta = ({ pizze }) => pizze.length
+stamm a dì(descrivi(ordine), conta(ordine))
+
+pruvamm {
+    iett nu bell Error("forno spento")
+} e si schiatta ({ message }) {
+    stamm a dì("Errore: " + message)
+}
+
+pe (tien [i, j] = [0, 3]; i < j; i++) {
+    stamm a dì(i)
+}
