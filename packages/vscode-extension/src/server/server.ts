@@ -483,7 +483,7 @@ connection.languages.semanticTokens.on((params: SemanticTokensParams): SemanticT
   }> = [
     // Keywords napoletane
     {
-      regex: /\b(chist|è|tien|facc|piglie|si|sinnò|mentre|che|pe|ogni|rompe|salta|vir|caso|na|famiglie|costruttore|nu|bell|figlio|fisso|stu|cos|chiamm|da|mann|for|predefinit|mo|aspett|caccia|pruvamm|schiatta|aropp|iett|stamm|dì|scrive|avvis|fermete|leva|overo|sfòls|nisciun|boh|e|o|no|manco|pure)\b/g,
+      regex: /\b(chist|è|tien|facc|piglie|si|sinnò|sinno|mentre|che|pe|ogni|rompe|salta|vir|caso|na|famiglie|costruttore|nu|bell|figlio|fisso|stu|cos|chiamm|da|mann|for|predefinit|mo|aspett|caccia|pruvamm|schiatta|aropp|iett|stamm|dì|di|scrive|avvis|fermete|leva|overo|sfòls|sfols|nisciun|boh|e|o|no|manco|pure)\b/g,
       tokenType: 0 // keyword
     },
     // Funzioni (identificatore seguito da parentesi)

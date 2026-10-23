@@ -284,6 +284,8 @@ fermete                      // debugger
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 
+No accents on your keyboard? `sinno`, `sfols`, `di` (in `stamm a di`), `chist e` and `chè e` work like `sinnò`, `sfòls`, `dì`, `chist è` and `chè è`; `typeof` and `instanceof` are accepted for `chè è` and `è uno`.
+
 Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp`, `dint`, `vedimm`, `primm`, `fa`, `damme` and `miette` are not reserved at all (`damme`/`miette` mean get/set only before a class member name): they mean `finally` only right after a `pruvamm` block, `of` only in a `pe` header, `switch` only in `vedimm (…) {` and `do` only in `primm fa {`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
 
 ---

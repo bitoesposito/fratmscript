@@ -1,0 +1,14 @@
+// Keyword senza accenti: sinno, sfols, di, chist e, chè e
+chist e tastiera = "americana"
+tien accenti = sfols
+si (accenti) {
+    stamm a di("tengo 'e accenti")
+} sinno {
+    stamm a di("tastiera", tastiera, "senza accenti:", chè e accenti)
+}
+avvis a di("funziona pure avvis a di")
+
+// di e e restano nomi qualsiasi
+tien di = "lunedì"
+chist e e = "e"
+stamm a dì(di, e)

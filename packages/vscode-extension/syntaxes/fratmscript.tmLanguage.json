@@ -112,7 +112,7 @@
         {
           "comment": "Control flow: si (if), sinnò (else), mentre che (while), pe ogni (for), rompe (break), salta (continue)",
           "name": "keyword.control.fratm",
-          "match": "\\b(si|sinnò|mentre|che|pe|ogni|dint|vedimm|predefinit|primm fa|rompe|salta|piglie|pruvamm|schiatta|aropp|iett|vir|caso)\\b"
+          "match": "\\b(si|sinnò|sinno|mentre|che|pe|ogni|dint|vedimm|predefinit|primm fa|rompe|salta|piglie|pruvamm|schiatta|aropp|iett|vir|caso)\\b"
         },
         {
           "comment": "Variable declarations: chist è (const), tien (let), facc (function)",
@@ -157,7 +157,7 @@
         {
           "comment": "Console functions: stamm a dì (log), scrive (error), avvis (warn)",
           "name": "support.function.console.fratm",
-          "match": "\\b(stamm|dì|scrive|avvis)\\b"
+          "match": "\\b(stamm|dì|di|scrive|avvis)\\b"
         }
       ]
     },
@@ -171,7 +171,7 @@
         {
           "comment": "Boolean false: sfòls",
           "name": "constant.language.boolean.false.fratm",
-          "match": "\\b(sfòls)\\b"
+          "match": "\\b(sfòls|sfols)\\b"
         },
         {
           "comment": "Null: nisciun",
