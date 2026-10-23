@@ -74,7 +74,3 @@ playground-dev:
 # Build VSCode extension sources.
 vscode-build:
   cd packages/vscode-extension; pnpm compile
-
-# Open personal scripts launcher menu.
-personal-lancia:
-  cargo run -p fratm-cli -- lancia PersonalScripts/run_personal_scripts.fratm
