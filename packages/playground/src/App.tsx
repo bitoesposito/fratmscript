@@ -199,6 +199,7 @@ function App() {
                   <option value="operatori">Logical Operators</option>
                   <option value="array">Arrays and Objects</option>
                   <option value="trycatch">Try/Catch</option>
+                  <option value="moderna">Modern Syntax</option>
                 </NativeSelect>
               </div>
               <div className="flex items-center gap-3 shrink-0">

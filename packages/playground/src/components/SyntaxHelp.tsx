@@ -23,6 +23,7 @@ const syntaxReference = [
   { category: 'Variables', items: [
     { fratm: 'chist è', js: 'const', desc: 'Constant declaration' },
     { fratm: 'tien', js: 'let', desc: 'Variable declaration' },
+    { fratm: 'tien x = 1, y = 2', js: 'let x = 1, y = 2', desc: 'Several declarations' },
   ]},
   { category: 'Functions', items: [
     { fratm: 'facc', js: 'function', desc: 'Function declaration' },
@@ -57,6 +58,7 @@ const syntaxReference = [
     { fratm: 'nisciun', js: 'null', desc: 'Null value' },
     { fratm: 'boh', js: 'undefined', desc: 'Undefined value' },
     { fratm: '`Uè ${nome}!`', js: '`Uè ${nome}!`', desc: 'Template literal' },
+    { fratm: '/ab+/gi', js: '/ab+/gi', desc: 'Regex literal' },
   ]},
   { category: 'Operators', items: [
     { fratm: 'e / pure', js: '&&', desc: 'Logical AND' },

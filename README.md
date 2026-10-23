@@ -77,6 +77,7 @@ fratm ast <file>                    # Debug: show AST
 ```fratm
 chist è costante = 42        // const
 tien variabile = "ciao"      // let
+tien x = 1, y = 2            // several at once
 ```
 
 ### Functions
@@ -130,6 +131,7 @@ salta                         // continue
 ### Values
 ```fratm
 `Uè ${nome}!`                // template literal (multi-line, nested ${ })
+/ab+/gi                      // regex literal
 overo / sfòls                // true/false
 nisciun                      // null
 boh                          // undefined
@@ -305,6 +307,7 @@ Check the `examples/` folder for complete programs:
 11. `11_oop_avanzato.fratm` - Inheritance, super and static methods
 12. `12_trycatch_validazione.fratm` - Try/catch and validation
 13. `13_pomodor_e_muzzarel.fratm` - Interactive tic-tac-toe in the terminal
+14. `14_sintassi_moderna.fratm` - Arrows, templates, destructuring, spread, `?.`/`??`, regex
 
 ---
 

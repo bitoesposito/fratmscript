@@ -65,20 +65,13 @@ impl CodeGen {
     fn gen_statement(&mut self, stmt: &Statement) {
         match stmt {
             Statement::VariableDecl {
-                target,
-                value,
+                declarations,
                 is_const,
                 span,
-                ..
             } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
-                self.emit(if *is_const { "const " } else { "let " });
-                self.gen_pattern(target);
-                if let Some(val) = value {
-                    self.emit(" = ");
-                    self.gen_expression(val);
-                }
+                self.gen_declarations(declarations, *is_const);
                 self.emit(";");
             }
 
@@ -195,18 +188,10 @@ impl CodeGen {
                 if let Some(i) = init {
                     match i.as_ref() {
                         Statement::VariableDecl {
-                            target,
-                            value,
+                            declarations,
                             is_const,
                             ..
-                        } => {
-                            self.emit(if *is_const { "const " } else { "let " });
-                            self.gen_pattern(target);
-                            if let Some(val) = value {
-                                self.emit(" = ");
-                                self.gen_expression(val);
-                            }
-                        }
+                        } => self.gen_declarations(declarations, *is_const),
                         Statement::Expression { expression, .. } => self.gen_expression(expression),
                         _ => {}
                     }
@@ -413,6 +398,20 @@ impl CodeGen {
                     }
                 }
                 self.emit("\"");
+            }
+            Expression::Sequence { expressions, .. } => {
+                for (i, expr) in expressions.iter().enumerate() {
+                    if i > 0 {
+                        self.emit(", ");
+                    }
+                    self.gen_expression(expr);
+                }
+            }
+            Expression::Regex { pattern, flags, .. } => {
+                self.emit("/");
+                self.emit(pattern);
+                self.emit("/");
+                self.emit(flags);
             }
             Expression::Template {
                 quasis,
@@ -712,6 +711,20 @@ impl CodeGen {
             Expression::Delete { operand, .. } => {
                 self.emit("delete ");
                 self.gen_operand(operand);
+            }
+        }
+    }
+
+    fn gen_declarations(&mut self, declarations: &[Declarator], is_const: bool) {
+        self.emit(if is_const { "const " } else { "let " });
+        for (i, declarator) in declarations.iter().enumerate() {
+            if i > 0 {
+                self.emit(", ");
+            }
+            self.gen_pattern(&declarator.target);
+            if let Some(value) = &declarator.value {
+                self.emit(" = ");
+                self.gen_expression(value);
             }
         }
     }
