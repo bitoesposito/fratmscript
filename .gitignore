@@ -43,5 +43,3 @@ PersonalScripts/**/*.js.map
 .fratm_tmp_*.js
 **/.fratm_tmp_*.js
 
-# Other Tools
-AGENTS.md
