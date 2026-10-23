@@ -106,6 +106,7 @@ salta                         // continue
 
 ### Values
 ```fratm
+`Uè ${nome}!`                // template literal (multi-line, nested ${ })
 overo / sfòls                // true/false
 nisciun                      // null
 boh                          // undefined

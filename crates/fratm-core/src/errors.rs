@@ -2,8 +2,8 @@
 //!
 //! All errors are in Neapolitan dialect! 🤌
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use serde::{Serialize, Deserialize};
 
 /// Main compilation error type
 #[derive(Debug, Error, Clone, Serialize, Deserialize)]
@@ -14,18 +14,16 @@ pub enum CompileError {
         line: usize,
         column: usize,
     },
-    
+
     #[error("Riga {line}, colonna {column}: {msg}", msg = napoletanize_error(message))]
     ParseError {
         message: String,
         line: usize,
         column: usize,
     },
-    
+
     #[error("Errore interno: {message}")]
-    CodeGenError {
-        message: String,
-    },
+    CodeGenError { message: String },
 }
 
 impl CompileError {
@@ -36,7 +34,7 @@ impl CompileError {
             CompileError::CodeGenError { .. } => None,
         }
     }
-    
+
     pub fn column(&self) -> Option<usize> {
         match self {
             CompileError::LexerError { column, .. } => Some(*column),
@@ -51,70 +49,86 @@ impl CompileError {
 /// Get Napoletano message for error
 pub fn napoletanize_error(message: &str) -> String {
     // Pattern matching for common errors
-    if message.contains("Aspettavo '}'") {
+    if expects(message, "'}'") {
         return "Uè, hai aperto 'na parentesi graffa ma nun l'hai chiusa! Mettece '}'!".to_string();
     }
-    if message.contains("Aspettavo ')'") {
+    if expects(message, "')'") {
         return "Manca 'a parentesi chiusa! Ce vo' ')'!".to_string();
     }
-    if message.contains("Aspettavo ']'") {
+    if expects(message, "']'") {
         return "E 'a parentesi quadra? Chiudela cu ']'!".to_string();
     }
-    if message.contains("Aspettavo '='") {
+    if expects(message, "'='") {
         return "E addò sta l'uguale? Ce vo' '=' pe assegnà 'o valore!".to_string();
     }
-    if message.contains("Aspettavo ';'") {
+    if expects(message, "';'") {
         return "Manca 'o punto e virgola! Ma va bene, nun te preoccupà.".to_string();
     }
-    if message.contains("Aspettavo un nome") {
+    if expects(message, "un nome") || message.contains("Expected an identifier") {
         return "Ccà ce vo' nu nome! Che cosa vuò chiamà sta variabile?".to_string();
     }
-    if message.contains("Aspettavo una stringa") {
+    if expects(message, "una stringa") || message.contains("Expected a string") {
         return "Ccà ce vo' 'na stringa! Mettece 'e virgolette!".to_string();
     }
-    if message.contains("Aspettavo 'è'") {
+    if expects(message, "'è'") {
         return "Doppo 'chist' ce vo' 'è'! Scrivi 'chist è' pe fà 'na costante.".to_string();
     }
-    if message.contains("Aspettavo 'che'") {
+    if expects(message, "'che'") {
         return "Doppo 'mentre' ce vo' 'che'! Scrivi 'mentre che'.".to_string();
     }
-    if message.contains("Aspettavo 'ogni'") {
+    if expects(message, "'ogni'") {
         return "Doppo 'pe' ce vo' 'ogni'! Scrivi 'pe ogni'.".to_string();
     }
-    if message.contains("Aspettavo 'vir'") {
-        return "Doppo 'mo' ce vo' 'vir'! Scrivi 'mo vir facc' pe 'na funzione asincrona.".to_string();
+    if expects(message, "'vir'") {
+        return "Doppo 'mo' ce vo' 'vir'! Scrivi 'mo vir facc' pe 'na funzione asincrona."
+            .to_string();
     }
-    if message.contains("Aspettavo 'bell'") {
+    if expects(message, "'bell'") {
         return "Doppo 'nu' ce vo' 'bell'! Scrivi 'nu bell' pe creà n'oggetto nuovo.".to_string();
     }
-    if message.contains("Aspettavo 'famiglie'") {
+    if expects(message, "'famiglie'") {
         return "Doppo 'na' ce vo' 'famiglie'! Scrivi 'na famiglie' pe fà 'na classe.".to_string();
     }
-    if message.contains("Aspettavo 'cos'") {
+    if expects(message, "'cos'") {
         return "Doppo 'stu' ce vo' 'cos'! Scrivi 'stu cos' pe riferisce a this.".to_string();
     }
-    if message.contains("Aspettavo 'for'") {
+    if expects(message, "'for'") {
         return "Doppo 'mann' ce vo' 'for'! Scrivi 'mann for' pe esportà.".to_string();
     }
-    if message.contains("Aspettavo 'dì'") {
+    if expects(message, "'dì'") {
         return "Doppo 'stamm a' ce vo' 'dì'! Scrivi 'stamm a dì' pe stampà.".to_string();
     }
     if message.contains("after the end of the statement") {
         let found = message.split('\'').nth(1).unwrap_or("");
-        return format!("Ccà ce sta '{}' ma l'istruzione era già fernuta! Va' a capo o miette ';'.", found);
+        return format!(
+            "Ccà ce sta '{}' ma l'istruzione era già fernuta! Va' a capo o miette ';'.",
+            found
+        );
+    }
+    if message.contains("Unterminated template") {
+        return "'O template nun è chiuso! Ce vo' 'nu backtick '`' 'a fine.".to_string();
     }
     if message.contains("Invalid assignment target") {
         return "Ccà nun se pò assegnà niente! Ce vo' 'na variabile o 'na proprietà, tipo 'x' o 'stu cos.nome'.".to_string();
     }
     if message.starts_with("Invalid number") {
-        return format!("Stu nummero nun se capisce: {}", message.trim_start_matches("Invalid number: "));
+        return format!(
+            "Stu nummero nun se capisce: {}",
+            message.trim_start_matches("Invalid number: ")
+        );
     }
     if message.contains("expression") || message.contains("espressione") {
         return "Ma che staje scrivenn?! Ccà ce vo' 'na espressione!".to_string();
     }
-    
+
     // Default: return with some Napoletano flair
     format!("Uè, c'è nu problema: {}", message)
+}
+
+/// The parser reports `Expected 'x', but found …`; older messages used `Aspettavo`.
+fn expects(message: &str, what: &str) -> bool {
+    message.contains(&format!("Expected {}", what))
+        || message.contains(&format!("Aspettavo {}", what))
 }
 
 // ============== Error Suggestions ==============

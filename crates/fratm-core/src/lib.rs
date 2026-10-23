@@ -77,16 +77,16 @@
 //! // Error: "Doppo 'chist' ce vo' 'è'! Scrivi 'chist è' pe fà 'na costante."
 //! ```
 
-pub mod lexer;
-pub mod parser;
 pub mod codegen;
 pub mod errors;
+pub mod lexer;
+pub mod parser;
 pub mod sourcemap;
 
+use codegen::CodeGen;
 use errors::CompileError;
 use lexer::Lexer;
 use parser::Parser;
-use codegen::CodeGen;
 use sourcemap::SourceMap;
 
 /// Compilation options to customize the transpiler behavior.
@@ -199,23 +199,15 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
     let mut lexer = Lexer::new(source);
     let tokens = lexer.tokenize();
 
-    // Check for lexer errors
-    let lex_errors: Vec<_> = tokens.iter()
-        .filter_map(|t| {
-            if let lexer::TokenKind::Invalid(msg) = &t.kind {
-                Some(CompileError::LexerError {
-                    message: msg.clone(),
-                    line: t.span.line,
-                    column: t.span.column,
-                })
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    if !lex_errors.is_empty() {
-        return Err(lex_errors.into_iter().next().unwrap());
+    // Check for lexer errors, including inside template interpolations
+    if let Some(t) = first_invalid(&tokens) {
+        if let lexer::TokenKind::Invalid(msg) = &t.kind {
+            return Err(CompileError::LexerError {
+                message: msg.clone(),
+                line: t.span.line,
+                column: t.span.column,
+            });
+        }
     }
 
     // Parsing
@@ -243,6 +235,16 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
         code,
         source_map,
         warnings: vec![],
+    })
+}
+
+fn first_invalid(tokens: &[lexer::Token]) -> Option<&lexer::Token> {
+    tokens.iter().find_map(|t| match &t.kind {
+        lexer::TokenKind::Invalid(_) => Some(t),
+        lexer::TokenKind::Template { expressions, .. } => {
+            expressions.iter().find_map(|e| first_invalid(e))
+        }
+        _ => None,
     })
 }
 
@@ -329,7 +331,10 @@ na famiglie Pizzaiolo figlio 'e Persona {
     fn test_typeof_compiles_to_one_expression() {
         assert_eq!(js("tien x = chè è a"), "let x = typeof a;\n");
         assert_eq!(js("tien x = typeof a"), "let x = typeof a;\n");
-        assert_eq!(js("tien x = chè è a == \"number\""), "let x = (typeof a == \"number\");\n");
+        assert_eq!(
+            js("tien x = chè è a == \"number\""),
+            "let x = (typeof a == \"number\");\n"
+        );
     }
 
     #[test]
@@ -349,8 +354,20 @@ na famiglie Pizzaiolo figlio 'e Persona {
 
     #[test]
     fn test_malformed_numbers_are_errors() {
-        for src in ["tien x = 1_", "tien x = 1__0", "tien x = 0x", "tien x = 1e", "tien x = 3abc", "tien x = 0x1G", "tien x = 0123"] {
-            assert!(compile(src, Default::default()).is_err(), "{} should not compile", src);
+        for src in [
+            "tien x = 1_",
+            "tien x = 1__0",
+            "tien x = 0x",
+            "tien x = 1e",
+            "tien x = 3abc",
+            "tien x = 0x1G",
+            "tien x = 0123",
+        ] {
+            assert!(
+                compile(src, Default::default()).is_err(),
+                "{} should not compile",
+                src
+            );
         }
     }
 
@@ -365,7 +382,11 @@ na famiglie Pizzaiolo figlio 'e Persona {
         for src in ["tien x = a b", "stamm a dì(1) stamm a dì(2)", "piglie a b"] {
             let err = compile(src, Default::default()).unwrap_err();
             assert!(err.to_string().contains("già fernuta"), "{}: {}", src, err);
-            assert!(errors::get_suggestion(&err).unwrap().contains("';'"), "{}", src);
+            assert!(
+                errors::get_suggestion(&err).unwrap().contains("';'"),
+                "{}",
+                src
+            );
         }
     }
 
@@ -377,11 +398,21 @@ na famiglie Pizzaiolo figlio 'e Persona {
 
     #[test]
     fn test_short_keywords_are_names_where_no_construct_starts() {
-        assert!(js("pruvamm { } e si schiatta (e) { stamm a dì(e) }").contains("} catch (e) {\n  console.log(e);"));
+        assert!(js("pruvamm { } e si schiatta (e) { stamm a dì(e) }")
+            .contains("} catch (e) {\n  console.log(e);"));
         assert_eq!(js("tien o = 1"), "let o = 1;\n");
-        assert_eq!(js("facc f(da, a) { piglie da }"), "function f(da, a) {\n  return da;\n}\n");
-        for name in ["e", "o", "no", "da", "de", "na", "nu", "mo", "che", "cos", "caso", "pure", "leva", "scrive"] {
-            assert_eq!(js(&format!("tien {n} = 1\nstamm a dì({n})", n = name)), format!("let {n} = 1;\nconsole.log({n});\n", n = name));
+        assert_eq!(
+            js("facc f(da, a) { piglie da }"),
+            "function f(da, a) {\n  return da;\n}\n"
+        );
+        for name in [
+            "e", "o", "no", "da", "de", "na", "nu", "mo", "che", "cos", "caso", "pure", "leva",
+            "scrive",
+        ] {
+            assert_eq!(
+                js(&format!("tien {n} = 1\nstamm a dì({n})", n = name)),
+                format!("let {n} = 1;\nconsole.log({n});\n", n = name)
+            );
         }
     }
 
@@ -398,21 +429,45 @@ na famiglie Pizzaiolo figlio 'e Persona {
 
     #[test]
     fn test_js_reserved_names_are_escaped_but_properties_are_not() {
-        assert_eq!(js("tien for = 1\nstamm a dì(for)"), "let $for = 1;\nconsole.log($for);\n");
-        assert_eq!(js("facc f(class) { piglie class }"), "function f($class) {\n  return $class;\n}\n");
-        assert_eq!(js("tien x = o.for + { si: 1, for: 2 }.si"), "let x = (o.for + { si: 1, for: 2 }.si);\n");
+        assert_eq!(
+            js("tien for = 1\nstamm a dì(for)"),
+            "let $for = 1;\nconsole.log($for);\n"
+        );
+        assert_eq!(
+            js("facc f(class) { piglie class }"),
+            "function f($class) {\n  return $class;\n}\n"
+        );
+        assert_eq!(
+            js("tien x = o.for + { si: 1, for: 2 }.si"),
+            "let x = (o.for + { si: 1, for: 2 }.si);\n"
+        );
     }
 
     #[test]
     fn test_arrow_functions() {
         assert_eq!(js("tien f = () => 1"), "let f = () => 1;\n");
-        assert_eq!(js("tien f = (a, b) => a + b"), "let f = (a, b) => (a + b);\n");
+        assert_eq!(
+            js("tien f = (a, b) => a + b"),
+            "let f = (a, b) => (a + b);\n"
+        );
         assert_eq!(js("tien f = x => x"), "let f = (x) => x;\n");
-        assert_eq!(js("tien f = (a) => { piglie a }"), "let f = (a) => {\n  return a;\n};\n");
-        assert_eq!(js("tien f = mo vir (x) => aspett g(x)"), "let f = async (x) => await g(x);\n");
+        assert_eq!(
+            js("tien f = (a) => { piglie a }"),
+            "let f = (a) => {\n  return a;\n};\n"
+        );
+        assert_eq!(
+            js("tien f = mo vir (x) => aspett g(x)"),
+            "let f = async (x) => await g(x);\n"
+        );
         assert_eq!(js("tien f = mo vir x => x"), "let f = async (x) => x;\n");
-        assert_eq!(js("xs.map((v, i) => v * i)"), "xs.map((v, i) => (v * i));\n");
-        assert_eq!(js("tien f = () => ({ a: 1 })"), "let f = () => ({ a: 1 });\n");
+        assert_eq!(
+            js("xs.map((v, i) => v * i)"),
+            "xs.map((v, i) => (v * i));\n"
+        );
+        assert_eq!(
+            js("tien f = () => ({ a: 1 })"),
+            "let f = () => ({ a: 1 });\n"
+        );
         assert_eq!(js("tien f = (e) => e"), "let f = (e) => e;\n");
         // A parenthesized expression is still an expression
         assert_eq!(js("tien x = (a) + 1"), "let x = (a + 1);\n");
@@ -421,7 +476,10 @@ na famiglie Pizzaiolo figlio 'e Persona {
     #[test]
     fn test_low_precedence_operands_are_parenthesized() {
         assert_eq!(js("tien x = (() => 7)()"), "let x = (() => 7)();\n");
-        assert_eq!(js("tien x = (aspett p).valore"), "let x = (await p).valore;\n");
+        assert_eq!(
+            js("tien x = (aspett p).valore"),
+            "let x = (await p).valore;\n"
+        );
         assert_eq!(js("tien x = (no a).b"), "let x = (!a).b;\n");
     }
 
@@ -429,7 +487,10 @@ na famiglie Pizzaiolo figlio 'e Persona {
     fn test_compound_assignment() {
         for op in ["+=", "-=", "*=", "/=", "%=", "**=", "??=", "||=", "&&="] {
             assert_eq!(js(&format!("x {} 2", op)), format!("x {} 2;\n", op));
-            assert_eq!(js(&format!("a.b[0] {} 2", op)), format!("a.b[0] {} 2;\n", op));
+            assert_eq!(
+                js(&format!("a.b[0] {} 2", op)),
+                format!("a.b[0] {} 2;\n", op)
+            );
         }
         assert_eq!(js("a = b += 1"), "a = b += 1;\n");
     }
@@ -440,7 +501,10 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert_eq!(js("--i"), "--i;\n");
         assert_eq!(js("stu cos.n++"), "this.n++;\n");
         assert_eq!(js("tien x = ++a[0]"), "let x = ++a[0];\n");
-        assert_eq!(js("pe (tien i = 0; i < 3; i++) { }"), "for (let i = 0; (i < 3); i++) {\n}\n");
+        assert_eq!(
+            js("pe (tien i = 0; i < 3; i++) { }"),
+            "for (let i = 0; (i < 3); i++) {\n}\n"
+        );
         assert_eq!(js("tien x = - --i"), "let x = -(--i);\n");
         assert_eq!(js("tien x = a - -b"), "let x = (a - -b);\n");
     }
@@ -454,7 +518,62 @@ na famiglie Pizzaiolo figlio 'e Persona {
     fn test_invalid_assignment_targets_are_errors() {
         for src in ["1 = 2", "f() += 1", "++1", "(a + b)++", "tien x = 1 = 2"] {
             let err = compile(src, Default::default()).unwrap_err();
-            assert!(err.to_string().contains("nun se pò assegnà"), "{}: {}", src, err);
+            assert!(
+                err.to_string().contains("nun se pò assegnà"),
+                "{}: {}",
+                src,
+                err
+            );
         }
+    }
+
+    #[test]
+    fn test_template_literals() {
+        assert_eq!(js("tien x = `Uè ${nome}!`"), "let x = `Uè ${nome}!`;\n");
+        assert_eq!(js("tien x = ``"), "let x = ``;\n");
+        assert_eq!(
+            js("tien x = `${a ? `x` : \"y\"}`"),
+            "let x = `${(a ? `x` : \"y\")}`;\n"
+        );
+        assert_eq!(
+            js("tien x = `${`${`deep`}`}`"),
+            "let x = `${`${`deep`}`}`;\n"
+        );
+        assert_eq!(
+            js("tien x = `${ { k: 1 }.k }`"),
+            "let x = `${{ k: 1 }.k}`;\n"
+        );
+        // Escapes stay as written, and text spans lines
+        assert_eq!(
+            js("tien x = `a \\` \\${b} \\n\nc`"),
+            "let x = `a \\` \\${b} \\n\nc`;\n"
+        );
+        // Short keywords are names inside interpolations too
+        assert_eq!(js("tien x = `${e}`"), "let x = `${e}`;\n");
+    }
+
+    #[test]
+    fn test_template_errors() {
+        for src in [
+            "tien x = `abc",
+            "tien x = `${a`",
+            "tien x = `${}`",
+            "tien x = `${a b}`",
+            "tien x = `${ @ }`",
+        ] {
+            assert!(
+                compile(src, Default::default()).is_err(),
+                "{} should not compile",
+                src
+            );
+        }
+        let err = compile("tien x = `abc", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("template nun è chiuso"), "{}", err);
+    }
+
+    #[test]
+    fn test_statements_after_multiline_template_keep_their_line() {
+        let err = compile("tien x = `a\nb\nc`\ntien y = = 1", Default::default()).unwrap_err();
+        assert_eq!(err.line(), Some(4));
     }
 }

@@ -27,10 +27,13 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
+          components: clippy, rustfmt
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
@@ -87,3 +90,6 @@ jobs:
         run: |
           cd packages/playground
           pnpm build
+
+      - name: Check the WASM compiler is bundled
+        run: test -f packages/playground/dist/pkg/fratm_wasm_bg.wasm

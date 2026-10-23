@@ -20,8 +20,8 @@
 //! - **Assignment**: `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `??=`, `||=`, `&&=`
 //! - **Update**: `++`, `--`
 
+use serde::{Deserialize, Serialize};
 use std::fmt;
-use serde::{Serialize, Deserialize};
 
 /// Position of a token in the source code.
 ///
@@ -59,7 +59,12 @@ pub struct Span {
 impl Span {
     /// Creates a new span with the specified positions.
     pub fn new(start: usize, end: usize, line: usize, column: usize) -> Self {
-        Self { start, end, line, column }
+        Self {
+            start,
+            end,
+            line,
+            column,
+        }
     }
 
     /// Merges two spans creating one that covers both.
@@ -70,14 +75,23 @@ impl Span {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
             line: self.line.min(other.line),
-            column: if self.line <= other.line { self.column } else { other.column },
+            column: if self.line <= other.line {
+                self.column
+            } else {
+                other.column
+            },
         }
     }
 }
 
 impl Default for Span {
     fn default() -> Self {
-        Self { start: 0, end: 0, line: 1, column: 1 }
+        Self {
+            start: 0,
+            end: 0,
+            line: 1,
+            column: 1,
+        }
     }
 }
 
@@ -111,7 +125,11 @@ pub struct Token {
 impl Token {
     /// Creates a new token with type, position, and literal text.
     pub fn new(kind: TokenKind, span: Span, literal: String) -> Self {
-        Self { kind, span, literal }
+        Self {
+            kind,
+            span,
+            literal,
+        }
     }
 }
 
@@ -139,67 +157,67 @@ impl Token {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TokenKind {
     // === Keywords ===
-    Chist,          // const (part 1)
-    E,              // const (part 2: "è")
-    Tien,           // let
-    Facc,           // function
-    Piglie,         // return
-    Si,             // if
-    Sinno,          // else
-    Pe,             // for (part 1)
-    Ogni,           // for (part 2)
-    Mentre,         // while (part 1)
-    Che,            // while (part 2)
-    Overo,          // true
-    Sfols,          // false
-    Nisciun,        // null
-    Boh,            // undefined
-    Stamm,          // console.log (part 1)
-    A,              // console.log (part 2)
-    Di,             // console.log (part 3: "dì")
-    Mo,             // async (part 1)
-    Vir,            // async (part 2)
-    Aspett,         // await
-    Pruvamm,        // try
-    Schiatta,       // catch (in "e si schiatta")
-    Iett,           // throw
-    Nu,             // new (part 1)
-    Bell,           // new (part 2)
-    Na,             // class (part 1)
-    Famiglie,       // class (part 2)
-    Stu,            // this (part 1)
-    Cos,            // this (part 2)
-    Chiamm,         // import
-    Da,             // from
-    Mann,           // export (part 1)
-    For,            // export (part 2)
-    Predefinit,     // default
-    Rompe,          // break
-    Salta,          // continue
+    Chist,      // const (part 1)
+    E,          // const (part 2: "è")
+    Tien,       // let
+    Facc,       // function
+    Piglie,     // return
+    Si,         // if
+    Sinno,      // else
+    Pe,         // for (part 1)
+    Ogni,       // for (part 2)
+    Mentre,     // while (part 1)
+    Che,        // while (part 2)
+    Overo,      // true
+    Sfols,      // false
+    Nisciun,    // null
+    Boh,        // undefined
+    Stamm,      // console.log (part 1)
+    A,          // console.log (part 2)
+    Di,         // console.log (part 3: "dì")
+    Mo,         // async (part 1)
+    Vir,        // async (part 2)
+    Aspett,     // await
+    Pruvamm,    // try
+    Schiatta,   // catch (in "e si schiatta")
+    Iett,       // throw
+    Nu,         // new (part 1)
+    Bell,       // new (part 2)
+    Na,         // class (part 1)
+    Famiglie,   // class (part 2)
+    Stu,        // this (part 1)
+    Cos,        // this (part 2)
+    Chiamm,     // import
+    Da,         // from
+    Mann,       // export (part 1)
+    For,        // export (part 2)
+    Predefinit, // default
+    Rompe,      // break
+    Salta,      // continue
 
     // === New Keywords (Goliardic) ===
-    Vir2,           // switch (part 1) - "vir" (see)
-    Caso,           // case - "e che"
-    SinnoFa,        // default in switch - "sinnò fa"
-    Fisso,          // static
-    Figlio,         // extends (part 1) - "figlio"
-    De,             // extends (part 2) - "'e" (of)
-    OPate,          // super - "'o pate" (the father)
-    CheE,           // typeof - "chè è" (what is)
-    EUno,           // instanceof (part 1) - "è uno"
-    Leva,           // delete
-    DintA,          // in - "dint'a" (inside)
-    Caccia,         // yield
-    Fermete,        // debugger
-    Scrive,         // console.error (part 1)
-    Avvis,          // console.warn (part 1)
+    Vir2,    // switch (part 1) - "vir" (see)
+    Caso,    // case - "e che"
+    SinnoFa, // default in switch - "sinnò fa"
+    Fisso,   // static
+    Figlio,  // extends (part 1) - "figlio"
+    De,      // extends (part 2) - "'e" (of)
+    OPate,   // super - "'o pate" (the father)
+    CheE,    // typeof - "chè è" (what is)
+    EUno,    // instanceof (part 1) - "è uno"
+    Leva,    // delete
+    DintA,   // in - "dint'a" (inside)
+    Caccia,  // yield
+    Fermete, // debugger
+    Scrive,  // console.error (part 1)
+    Avvis,   // console.warn (part 1)
 
     // === Logical Operators ===
-    And,            // && - "e"
-    Or,             // || - "o"
-    Not,            // ! - "no"
-    Manco,          // ! (alias) - "manco" (not even)
-    Pure,           // && (alias) - "pure" (also)
+    And,   // && - "e"
+    Or,    // || - "o"
+    Not,   // ! - "no"
+    Manco, // ! (alias) - "manco" (not even)
+    Pure,  // && (alias) - "pure" (also)
 
     // === Operators ===
     Plus,
@@ -252,6 +270,12 @@ pub enum TokenKind {
     Identifier(String),
     String(String),
     Number(f64),
+    /// Template literal: raw text chunks around the tokens of each `${ … }`
+    /// (`quasis.len() == expressions.len() + 1`).
+    Template {
+        quasis: Vec<String>,
+        expressions: Vec<Vec<Token>>,
+    },
 
     // === Special ===
     Newline,
@@ -363,6 +387,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Identifier(s) => write!(f, "{}", s),
             TokenKind::String(s) => write!(f, "\"{}\"", s),
             TokenKind::Number(n) => write!(f, "{}", n),
+            TokenKind::Template { .. } => write!(f, "`…`"),
             TokenKind::Newline => write!(f, "\\n"),
             TokenKind::Eof => write!(f, "EOF"),
             TokenKind::Invalid(s) => write!(f, "INVALID({})", s),

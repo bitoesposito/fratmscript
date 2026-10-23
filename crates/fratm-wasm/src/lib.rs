@@ -2,8 +2,8 @@
 //!
 //! Enables running the compiler in the browser for the playground.
 
-use wasm_bindgen::prelude::*;
 use fratm_core::{compile as core_compile, CompileOptions};
+use wasm_bindgen::prelude::*;
 
 /// Initialize panic hook for better error messages in browser console
 #[wasm_bindgen(start)]
