@@ -64,6 +64,8 @@ const syntaxReference = [
     { fratm: 'no / manco', js: '!', desc: 'Logical NOT' },
     { fratm: 'x += 1', js: 'x += 1', desc: 'Compound assignment (also -= *= /= %= **= ??= ||= &&=)' },
     { fratm: 'i++ / i--', js: 'i++ / i--', desc: 'Increment / decrement' },
+    { fratm: 'a ?? b', js: 'a ?? b', desc: 'Nullish coalescing' },
+    { fratm: 'a?.b  a?.[k]  f?.()', js: 'a?.b  a?.[k]  f?.()', desc: 'Optional chaining' },
   ]},
   { category: 'Console', items: [
     { fratm: 'stamm a dì', js: 'console.log', desc: 'Log output' },

@@ -183,12 +183,16 @@ pub enum Expression {
     Call {
         callee: Box<Expression>,
         arguments: Vec<Expression>,
+        /// `f?.()`
+        optional: bool,
         span: Span,
     },
     Member {
         object: Box<Expression>,
         property: Box<Expression>,
         computed: bool,
+        /// `a?.b`, `a?.[k]`
+        optional: bool,
         span: Span,
     },
     New {
@@ -367,6 +371,7 @@ pub enum BinaryOp {
     And,
     Or,
     InstanceOf,
+    Nullish,
 }
 
 impl BinaryOp {
@@ -389,6 +394,7 @@ impl BinaryOp {
             BinaryOp::And => "&&",
             BinaryOp::Or => "||",
             BinaryOp::InstanceOf => "instanceof",
+            BinaryOp::Nullish => "??",
         }
     }
 }
