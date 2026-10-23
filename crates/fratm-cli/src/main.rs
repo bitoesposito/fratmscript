@@ -67,7 +67,7 @@ fn run_file(path: &PathBuf, sourcemap: bool) {
             let script_dir = path.parent().unwrap_or_else(|| std::path::Path::new("."));
             let temp_path = script_dir.join(format!(".fratm_temp_{}.js", std::process::id()));
             let mut output = result.code;
-            if sourcemap { if let Some(sm) = &result.source_map { output.push_str("\n"); output.push_str(&sm.to_data_url()); } }
+            if sourcemap { if let Some(sm) = &result.source_map { output.push('\n'); output.push_str(&sm.to_data_url()); } }
             if let Err(e) = fs::write(&temp_path, &output) { eprintln!("{} {}", "Error: cannot write file:".red().bold(), e); std::process::exit(1); }
             let cmd_status = Command::new("node").arg(&temp_path).status();
             let _ = fs::remove_file(&temp_path);
