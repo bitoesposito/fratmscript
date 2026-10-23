@@ -246,6 +246,7 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::Star)
                     }
                 }
+                '/' if self.regex_allowed() => self.scan_regex(),
                 '/' => {
                     if self.match_char('=') {
                         self.make_token(TokenKind::SlashEqual)
@@ -555,6 +556,8 @@ impl<'a> Lexer<'a> {
 
     /// Lexes the tokens of a `${ … }` up to its closing brace.
     fn scan_interpolation(&mut self) -> Result<Vec<Token>, ()> {
+        // An interpolation starts like an expression: `${/re/.source}`
+        self.prev_kind = Some(TokenKind::LeftBrace);
         let mut tokens = Vec::new();
         let mut depth = 0usize;
         loop {
@@ -569,6 +572,86 @@ impl<'a> Lexer<'a> {
             self.prev_kind = Some(token.kind.clone());
             tokens.push(token);
         }
+    }
+
+    /// A `/` starts a regex unless it follows something that ends an operand
+    /// (then it is a division): `a / b`, `f() / 2`, but `x = /ab+/g`.
+    fn regex_allowed(&self) -> bool {
+        !matches!(
+            self.prev_kind,
+            Some(
+                TokenKind::Identifier(_)
+                    | TokenKind::Number(_)
+                    | TokenKind::String(_)
+                    | TokenKind::Template { .. }
+                    | TokenKind::Regex { .. }
+                    | TokenKind::RightParen
+                    | TokenKind::RightBracket
+                    | TokenKind::RightBrace
+                    | TokenKind::Overo
+                    | TokenKind::Sfols
+                    | TokenKind::Nisciun
+                    | TokenKind::Boh
+                    | TokenKind::Cos
+                    | TokenKind::PlusPlus
+                    | TokenKind::MinusMinus
+            )
+        )
+    }
+
+    /// Scans a regex literal after the opening `/`. The pattern is kept raw;
+    /// a `/` inside a `[...]` class or escaped does not end it.
+    fn scan_regex(&mut self) -> Token {
+        let mut pattern = String::new();
+        let mut in_class = false;
+        loop {
+            match self.peek() {
+                None | Some('\n') => {
+                    return self.make_token(TokenKind::Invalid("Unterminated regex".to_string()))
+                }
+                Some('/') if !in_class => {
+                    self.advance();
+                    break;
+                }
+                Some('\\') => {
+                    self.advance();
+                    pattern.push('\\');
+                    match self.peek() {
+                        None | Some('\n') => continue,
+                        Some(c) => {
+                            self.advance();
+                            pattern.push(c);
+                        }
+                    }
+                }
+                Some(c) => {
+                    if c == '[' {
+                        in_class = true;
+                    } else if c == ']' {
+                        in_class = false;
+                    }
+                    self.advance();
+                    pattern.push(c);
+                }
+            }
+        }
+        let mut flags = String::new();
+        while let Some(c) = self.peek().filter(|c| is_ident_continue(*c)) {
+            self.advance();
+            flags.push(c);
+        }
+        let valid_flags = flags.chars().all(|c| "dgimsuvy".contains(c))
+            && flags
+                .chars()
+                .enumerate()
+                .all(|(i, c)| !flags[..i].contains(c));
+        if !valid_flags {
+            return self.make_token(TokenKind::Invalid(format!(
+                "Invalid regex flags: {}",
+                flags
+            )));
+        }
+        self.make_token(TokenKind::Regex { pattern, flags })
     }
 
     fn advance_tracking_lines(&mut self) {

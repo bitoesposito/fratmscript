@@ -44,6 +44,7 @@ examples-build:
   cargo run -p fratm-cli -- build examples/11_oop_avanzato.fratm
   cargo run -p fratm-cli -- build examples/12_trycatch_validazione.fratm
   cargo run -p fratm-cli -- build examples/13_pomodor_e_muzzarel.fratm
+  cargo run -p fratm-cli -- build examples/14_sintassi_moderna.fratm
 
 # Launch all examples (`examples/*.fratm`).
 examples-lancia:
@@ -59,6 +60,7 @@ examples-lancia:
   cargo run -p fratm-cli -- lancia examples/10_nuove_feature.fratm
   cargo run -p fratm-cli -- lancia examples/11_oop_avanzato.fratm
   cargo run -p fratm-cli -- lancia examples/12_trycatch_validazione.fratm
+  cargo run -p fratm-cli -- lancia examples/14_sintassi_moderna.fratm
 
 # Launch a FratmScript file with the compiled release binary.
 lancia-release file:

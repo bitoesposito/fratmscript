@@ -114,6 +114,15 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("rest parameter must be the last") {
         return "'O parametro cu '...' adda essere l'urdemo!".to_string();
     }
+    if message.contains("Unterminated regex") {
+        return "'A regex nun è chiusa! Ce vo' 'nu '/' 'a fine, ncopp' 'a stessa riga.".to_string();
+    }
+    if message.starts_with("Invalid regex flags") {
+        return format!(
+            "Sti flag d''a regex nun esistono: {} (se ponno usà d, g, i, m, s, u, v, y, una vota sola)",
+            message.trim_start_matches("Invalid regex flags: ")
+        );
+    }
     if message.contains("Unterminated template") {
         return "'O template nun è chiuso! Ce vo' 'nu backtick '`' 'a fine.".to_string();
     }

@@ -1,0 +1,22 @@
+// Object literals: shorthand, computed keys, methods (#17)
+chist è nome = "Margherita"
+chist è campo = "prezzo"
+tien for = "riservato"
+chist è pizza = {
+    nome,
+    for,
+    [campo]: 6.5,
+    ["tagl" + "ie"]: 8,
+    "con spazi": overo,
+    si: "chiave keyword",
+    descrivi() {
+        piglie stu cos.nome + " a " + stu cos.prezzo
+    },
+    facc doppia() { piglie stu cos.prezzo * 2 },
+    mo vir sforna() {
+        piglie aspett Promise.resolve(stu cos.nome + " sfornata")
+    }
+}
+stamm a dì(pizza.nome, pizza.for, pizza.prezzo, pizza.taglie, pizza["con spazi"], pizza.si)
+stamm a dì(pizza.descrivi(), pizza.doppia(), JSON.stringify({}))
+pizza.sforna().then(m => stamm a dì(m))

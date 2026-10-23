@@ -143,12 +143,22 @@ impl Parser {
         let start = self.current_span();
         self.expect(&TokenKind::Chist)?;
         self.expect(&TokenKind::E)?;
-        let target = self.parse_binding_target()?;
-        self.expect(&TokenKind::Equal)?;
-        let value = self.parse_expression()?;
+        let mut declarations = Vec::new();
+        loop {
+            let target = self.parse_binding_target()?;
+            self.expect(&TokenKind::Equal)?;
+            let value = self.parse_expression()?;
+            declarations.push(Declarator {
+                target,
+                value: Some(value),
+            });
+            if !self.match_token(&TokenKind::Comma) {
+                break;
+            }
+            self.skip_newlines();
+        }
         Ok(Statement::VariableDecl {
-            target,
-            value: Some(value),
+            declarations,
             is_const: true,
             span: self.span_from(start.start),
         })
@@ -157,21 +167,28 @@ impl Parser {
     fn parse_let_declaration(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Tien)?;
-        let target = self.parse_binding_target()?;
-        let value = if self.match_token(&TokenKind::Equal) {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
-        if value.is_none() && !matches!(target, Pattern::Identifier { .. }) {
-            return Err(ParseError::new(
-                "Destructuring needs a value: add '= …'",
-                self.current_span(),
-            ));
+        let mut declarations = Vec::new();
+        loop {
+            let target = self.parse_binding_target()?;
+            let value = if self.match_token(&TokenKind::Equal) {
+                Some(self.parse_expression()?)
+            } else {
+                None
+            };
+            if value.is_none() && !matches!(target, Pattern::Identifier { .. }) {
+                return Err(ParseError::new(
+                    "Destructuring needs a value: add '= …'",
+                    self.current_span(),
+                ));
+            }
+            declarations.push(Declarator { target, value });
+            if !self.match_token(&TokenKind::Comma) {
+                break;
+            }
+            self.skip_newlines();
         }
         Ok(Statement::VariableDecl {
-            target,
-            value,
+            declarations,
             is_const: false,
             span: self.span_from(start.start),
         })
@@ -433,7 +450,7 @@ impl Parser {
         let init = if self.check(&TokenKind::Tien) {
             Some(Box::new(self.parse_let_declaration()?))
         } else if !self.check(&TokenKind::Semicolon) {
-            let expr = self.parse_expression()?;
+            let expr = self.parse_sequence()?;
             Some(Box::new(Statement::Expression {
                 span: self.current_span(),
                 expression: expr,
@@ -449,7 +466,7 @@ impl Parser {
         };
         self.expect(&TokenKind::Semicolon)?;
         let update = if !self.check(&TokenKind::RightParen) {
-            Some(self.parse_expression()?)
+            Some(self.parse_sequence()?)
         } else {
             None
         };
@@ -666,6 +683,23 @@ impl Parser {
         Ok(Statement::Expression {
             expression: expr,
             span: self.span_from(start.start),
+        })
+    }
+
+    /// `i++, j--`: comma-separated expressions, only in `pe ( … )` headers.
+    fn parse_sequence(&mut self) -> Result<Expression, ParseError> {
+        let first = self.parse_expression()?;
+        if !self.check(&TokenKind::Comma) {
+            return Ok(first);
+        }
+        let start = first.span().start;
+        let mut expressions = vec![first];
+        while self.match_token(&TokenKind::Comma) {
+            expressions.push(self.parse_expression()?);
+        }
+        Ok(Expression::Sequence {
+            expressions,
+            span: self.span_from(start),
         })
     }
 
@@ -1204,6 +1238,11 @@ impl Parser {
 
         match &token.kind {
             TokenKind::Number(n) => Ok(Expression::Number { value: *n, span }),
+            TokenKind::Regex { pattern, flags } => Ok(Expression::Regex {
+                pattern: pattern.clone(),
+                flags: flags.clone(),
+                span,
+            }),
             TokenKind::String(s) => Ok(Expression::String {
                 value: s.clone(),
                 span,
@@ -1572,6 +1611,7 @@ fn starts_operand(token: &Token) -> bool {
                 | TokenKind::Number(_)
                 | TokenKind::String(_)
                 | TokenKind::Template { .. }
+                | TokenKind::Regex { .. }
                 | TokenKind::LeftParen
                 | TokenKind::LeftBracket
                 | TokenKind::LeftBrace
