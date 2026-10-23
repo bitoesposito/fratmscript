@@ -88,6 +88,15 @@
     ],
     "description": "Ciclo for-of"
   },
+  "Do-while (primm fa)": {
+    "prefix": ["primm", "do"],
+    "body": [
+      "primm fa {",
+      "\t$0",
+      "} mentre che (${1:condizione})"
+    ],
+    "description": "Ciclo do-while"
+  },
   "Switch (vedimm)": {
     "prefix": ["vedimm", "switch"],
     "body": [
