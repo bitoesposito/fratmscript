@@ -56,13 +56,16 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         while self.check(&TokenKind::Newline) { self.advance(); }
 
-        if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) { return self.parse_async_function(); }
+        if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) && self.check_at(2, &TokenKind::Facc) {
+            return self.parse_async_function();
+        }
         if self.check(&TokenKind::Facc) { return self.parse_function(); }
         if self.check(&TokenKind::Si) { return self.parse_if(); }
         if self.check(&TokenKind::Mentre) { return self.parse_while(); }
         if self.check(&TokenKind::Pe) { return self.parse_for(); }
         if self.check(&TokenKind::Pruvamm) { return self.parse_try_catch(); }
-        if self.check(&TokenKind::Na) { return self.parse_class(); }
+        // `na` and `mann` are keywords only in `na famiglie` / `mann for`; otherwise they are names
+        if self.check(&TokenKind::Na) && self.check_next(&TokenKind::Famiglie) { return self.parse_class(); }
         if self.check(&TokenKind::Mann) { return self.parse_export(); }
         if self.check(&TokenKind::LeftBrace) { return self.parse_block(); }
 
@@ -485,8 +488,11 @@ impl Parser {
             let operand = self.parse_unary()?;
             return Ok(Expression::Unary { operator: UnaryOp::Negate, operand: Box::new(operand), span: self.span_from(start.start) });
         }
-        // Logical negation: no, !, manco
-        if self.match_token(&TokenKind::Not) || self.match_token(&TokenKind::Manco) {
+        // Logical negation: no, !, manco (`no` alone is a name, as in `tien no = 1`)
+        if (self.check(&TokenKind::Not) && (self.peek().literal == "!" || self.next_starts_operand()))
+            || self.check(&TokenKind::Manco)
+        {
+            self.advance();
             let start = self.previous().span;
             let operand = self.parse_unary()?;
             return Ok(Expression::Unary { operator: UnaryOp::Not, operand: Box::new(operand), span: self.span_from(start.start) });
@@ -497,8 +503,9 @@ impl Parser {
             let argument = self.parse_unary()?;
             return Ok(Expression::Await { argument: Box::new(argument), span: self.span_from(start.start) });
         }
-        // Delete keyword: leva
-        if self.match_token(&TokenKind::Leva) {
+        // Delete keyword: leva (a name when no operand follows)
+        if self.check(&TokenKind::Leva) && self.next_starts_operand() {
+            self.advance();
             let start = self.previous().span;
             let operand = self.parse_unary()?;
             return Ok(Expression::Delete { operand: Box::new(operand), span: self.span_from(start.start) });
@@ -523,7 +530,7 @@ impl Parser {
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Call { callee: Box::new(expr), arguments, span };
             } else if self.match_token(&TokenKind::Dot) {
-                let name = self.expect_identifier()?;
+                let name = self.expect_property_name()?;
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Member { object: Box::new(expr), property: Box::new(Expression::Identifier { name, span: self.previous().span }), computed: false, span };
             } else if self.match_token(&TokenKind::LeftBracket) {
@@ -547,6 +554,19 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        // Short keywords are names unless they start their own construct here
+        let starts_construct = match self.peek().kind {
+            TokenKind::Nu => self.check_next(&TokenKind::Bell),
+            TokenKind::Scrive => self.check_next_identifier("a"),
+            TokenKind::Mo => self.check_next(&TokenKind::Vir),
+            _ => false,
+        };
+        if let Some(name) = contextual_name(self.peek()).filter(|_| !starts_construct) {
+            let name = name.to_string();
+            let span = self.advance().span;
+            return Ok(Expression::Identifier { name, span });
+        }
+
         let token = self.advance();
         let span = token.span;
 
@@ -634,7 +654,7 @@ impl Parser {
                         // Skip newlines before the key
                         while self.check(&TokenKind::Newline) { self.advance(); }
                         if self.check(&TokenKind::RightBrace) { break; }
-                        let key = self.expect_identifier()?;
+                        let key = self.expect_property_name()?;
                         self.expect(&TokenKind::Colon)?;
                         let value = self.parse_expression()?;
                         properties.push((key, value));
@@ -666,6 +686,14 @@ impl Parser {
         if self.current + 1 >= self.tokens.len() { return false; }
         std::mem::discriminant(&self.tokens[self.current + 1].kind) == std::mem::discriminant(kind)
     }
+    fn check_at(&self, offset: usize, kind: &TokenKind) -> bool {
+        self.tokens.get(self.current + offset).map(|t| std::mem::discriminant(&t.kind) == std::mem::discriminant(kind)).unwrap_or(false)
+    }
+    /// Whether the token after the current one can begin an operand, so that
+    /// `no x` is a negation while `no` alone (`f(no)`, `no = 1`) is a name.
+    fn next_starts_operand(&self) -> bool {
+        self.tokens.get(self.current + 1).map(starts_operand).unwrap_or(false)
+    }
     fn check_next_identifier(&self, name: &str) -> bool {
         matches!(self.tokens.get(self.current + 1).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)
     }
@@ -677,7 +705,15 @@ impl Parser {
     fn expect_identifier(&mut self) -> Result<String, ParseError> {
         let token = self.advance();
         if let TokenKind::Identifier(name) = &token.kind { Ok(name.clone()) }
+        else if let Some(name) = contextual_name(token) { Ok(name.to_string()) }
         else { Err(ParseError::new(format!("Expected an identifier, not '{}'", token.kind), token.span)) }
+    }
+    /// Property names (`x.si`, `{ for: 1 }`) can be any word, keywords included, as in JS.
+    fn expect_property_name(&mut self) -> Result<String, ParseError> {
+        let token = self.advance();
+        if let TokenKind::Identifier(name) = &token.kind { return Ok(name.clone()); }
+        if is_word(&token.literal) { return Ok(token.literal.clone()); }
+        Err(ParseError::new(format!("Expected an identifier, not '{}'", token.kind), token.span))
     }
     fn expect_string(&mut self) -> Result<String, ParseError> {
         let token = self.advance();
@@ -701,4 +737,37 @@ impl Parser {
             self.advance();
         }
     }
+}
+
+/// Short keywords that are also valid names. The lexer always emits them as
+/// keywords; the parser reads them as names wherever their construct cannot start.
+fn contextual_name(token: &Token) -> Option<&str> {
+    let contextual = matches!(
+        token.kind,
+        TokenKind::And | TokenKind::Or | TokenKind::Not | TokenKind::Da | TokenKind::De | TokenKind::Na
+            | TokenKind::Nu | TokenKind::Mo | TokenKind::Che | TokenKind::Cos | TokenKind::Caso
+            | TokenKind::Pure | TokenKind::For | TokenKind::Leva | TokenKind::Scrive
+    );
+    // `!` and `&&` share token kinds with `no` and `e` but are never names
+    (contextual && is_word(&token.literal)).then_some(token.literal.as_str())
+}
+
+fn is_word(s: &str) -> bool {
+    let mut chars = s.chars();
+    chars.next().map(|c| c.is_alphabetic() || c == '_').unwrap_or(false) && chars.all(|c| c.is_alphanumeric() || c == '_')
+}
+
+/// Tokens that can begin an operand of a prefix operator. The infix words
+/// `e`, `o` and `pure` do not: `no e x` reads as `no && x`.
+fn starts_operand(token: &Token) -> bool {
+    let infix = matches!(token.kind, TokenKind::And | TokenKind::Or | TokenKind::Pure);
+    (contextual_name(token).is_some() && !infix)
+        || matches!(
+            token.kind,
+            TokenKind::Identifier(_) | TokenKind::Number(_) | TokenKind::String(_)
+                | TokenKind::LeftParen | TokenKind::LeftBracket | TokenKind::LeftBrace
+                | TokenKind::Overo | TokenKind::Sfols | TokenKind::Nisciun | TokenKind::Boh
+                | TokenKind::Stu | TokenKind::OPate | TokenKind::Stamm | TokenKind::Avvis
+                | TokenKind::Not | TokenKind::Manco | TokenKind::Minus | TokenKind::Aspett | TokenKind::CheE
+        )
 }

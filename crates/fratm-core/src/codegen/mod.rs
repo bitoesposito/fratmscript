@@ -68,7 +68,7 @@ impl CodeGen {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
                 self.emit(if *is_const { "const " } else { "let " });
-                self.emit(name);
+                self.emit(&js_name(name));
                 if let Some(val) = value {
                     self.emit(" = ");
                     self.gen_expression(val);
@@ -81,9 +81,9 @@ impl CodeGen {
                 self.add_mapping(span.line, span.column);
                 if *is_async { self.emit("async "); }
                 self.emit("function ");
-                self.emit(name);
+                self.emit(&js_name(name));
                 self.emit("(");
-                self.emit(&params.join(", "));
+                self.emit(&js_names(params));
                 self.emit(") {\n");
                 self.indent += 1;
                 for s in body { self.gen_statement(s); self.emit("\n"); }
@@ -149,7 +149,7 @@ impl CodeGen {
                     match i.as_ref() {
                         Statement::VariableDecl { name, value, is_const, .. } => {
                             self.emit(if *is_const { "const " } else { "let " });
-                            self.emit(name);
+                            self.emit(&js_name(name));
                             if let Some(val) = value { self.emit(" = "); self.gen_expression(val); }
                         }
                         Statement::Expression { expression, .. } => self.gen_expression(expression),
@@ -181,7 +181,7 @@ impl CodeGen {
                 self.indent -= 1;
                 self.write_indent();
                 self.emit("} catch");
-                if let Some(param) = catch_param { self.emit(" ("); self.emit(param); self.emit(")"); }
+                if let Some(param) = catch_param { self.emit(" ("); self.emit(&js_name(param)); self.emit(")"); }
                 self.emit(" {\n");
                 self.indent += 1;
                 for s in catch_body { self.gen_statement(s); self.emit("\n"); }
@@ -201,10 +201,10 @@ impl CodeGen {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
                 self.emit("class ");
-                self.emit(name);
+                self.emit(&js_name(name));
                 if let Some(parent) = super_class {
                     self.emit(" extends ");
-                    self.emit(parent);
+                    self.emit(&js_name(parent));
                 }
                 self.emit(" {\n");
                 self.indent += 1;
@@ -216,7 +216,7 @@ impl CodeGen {
                     let js_method_name = if method.name == "costruttore" { "constructor" } else { method.name.as_str() };
                     self.emit(js_method_name);
                     self.emit("(");
-                    self.emit(&method.params.join(", "));
+                    self.emit(&js_names(&method.params));
                     self.emit(") {\n");
                     self.indent += 1;
                     for s in &method.body { self.gen_statement(s); self.emit("\n"); }
@@ -232,8 +232,8 @@ impl CodeGen {
             Statement::Import { specifiers, source, .. } => {
                 self.write_indent();
                 self.emit("import { ");
-                let names: Vec<&str> = specifiers.iter().map(|s| s.local.as_str()).collect();
-                self.emit(&names.join(", "));
+                let names: Vec<String> = specifiers.iter().map(|s| s.local.clone()).collect();
+                self.emit(&js_names(&names));
                 self.emit(" } from \"");
                 self.emit(source);
                 self.emit("\";");
@@ -276,7 +276,7 @@ impl CodeGen {
         match expr {
             Expression::Identifier { name, span, .. } => {
                 self.add_mapping(span.line, span.column);
-                self.emit(name);
+                self.emit(&js_name(name));
             }
             Expression::Number { value, .. } => {
                 if *value == value.floor() && value.abs() < 1e15 {
@@ -365,6 +365,11 @@ impl CodeGen {
                     self.emit("[");
                     self.gen_expression(property);
                     self.emit("]");
+                } else if let Expression::Identifier { name, span } = property.as_ref() {
+                    // Property names are never escaped: `x.for` is valid JS
+                    self.emit(".");
+                    self.add_mapping(span.line, span.column);
+                    self.emit(name);
                 } else {
                     self.emit(".");
                     self.gen_expression(property);
@@ -382,7 +387,7 @@ impl CodeGen {
             }
             Expression::ArrowFunction { params, body, .. } => {
                 self.emit("(");
-                self.emit(&params.join(", "));
+                self.emit(&js_names(params));
                 self.emit(") => ");
                 match body {
                     ArrowBody::Expression(e) => self.gen_expression(e),
@@ -447,6 +452,25 @@ impl CodeGen {
     fn write_indent(&mut self) {
         for _ in 0..self.indent { self.emit("  "); }
     }
+}
+
+/// JavaScript reserved words that FratmScript allows as names (`tien for = 1`).
+const JS_RESERVED: &[&str] = &[
+    "await", "break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete",
+    "do", "else", "enum", "export", "extends", "false", "finally", "for", "function", "if",
+    "implements", "import", "in", "instanceof", "interface", "let", "new", "null", "package",
+    "private", "protected", "public", "return", "static", "super", "switch", "this", "throw", "true",
+    "try", "typeof", "var", "void", "while", "with", "yield",
+];
+
+/// Escapes a FratmScript name that is reserved in JS. `$` cannot appear in
+/// FratmScript identifiers, so `$for` never clashes with a user name.
+pub fn js_name(name: &str) -> std::borrow::Cow<'_, str> {
+    if JS_RESERVED.contains(&name) { format!("${}", name).into() } else { name.into() }
+}
+
+fn js_names(names: &[String]) -> String {
+    names.iter().map(|n| js_name(n)).collect::<Vec<_>>().join(", ")
 }
 
 impl Default for CodeGen {

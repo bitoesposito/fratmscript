@@ -374,4 +374,32 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert_eq!(js("tien a = 1; tien b = 2;"), "let a = 1;\nlet b = 2;\n");
         assert!(js("facc f() { piglie; }").contains("return;"));
     }
+
+    #[test]
+    fn test_short_keywords_are_names_where_no_construct_starts() {
+        assert!(js("pruvamm { } e si schiatta (e) { stamm a dì(e) }").contains("} catch (e) {\n  console.log(e);"));
+        assert_eq!(js("tien o = 1"), "let o = 1;\n");
+        assert_eq!(js("facc f(da, a) { piglie da }"), "function f(da, a) {\n  return da;\n}\n");
+        for name in ["e", "o", "no", "da", "de", "na", "nu", "mo", "che", "cos", "caso", "pure", "leva", "scrive"] {
+            assert_eq!(js(&format!("tien {n} = 1\nstamm a dì({n})", n = name)), format!("let {n} = 1;\nconsole.log({n});\n", n = name));
+        }
+    }
+
+    #[test]
+    fn test_short_keywords_keep_their_meaning_in_context() {
+        assert_eq!(js("tien x = a e b o c"), "let x = ((a && b) || c);\n");
+        assert_eq!(js("tien x = no a"), "let x = !a;\n");
+        assert_eq!(js("tien x = no e no"), "let x = (no && no);\n");
+        assert_eq!(js("tien x = leva a.b"), "let x = delete a.b;\n");
+        assert_eq!(js("tien x = nu bell A()"), "let x = new A();\n");
+        assert_eq!(js("scrive a dì(1)"), "console.error(1);\n");
+        assert!(js("na famiglie A { }").starts_with("class A {"));
+    }
+
+    #[test]
+    fn test_js_reserved_names_are_escaped_but_properties_are_not() {
+        assert_eq!(js("tien for = 1\nstamm a dì(for)"), "let $for = 1;\nconsole.log($for);\n");
+        assert_eq!(js("facc f(class) { piglie class }"), "function f($class) {\n  return $class;\n}\n");
+        assert_eq!(js("tien x = o.for + { si: 1, for: 2 }.si"), "let x = (o.for + { si: 1, for: 2 }.si);\n");
+    }
 }
