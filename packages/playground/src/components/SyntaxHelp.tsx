@@ -56,6 +56,9 @@ const syntaxReference = [
     { fratm: 'nu bell', js: 'new', desc: 'New instance' },
     { fratm: 'stu cos', js: 'this', desc: 'This reference' },
     { fratm: 'costruttore', js: 'constructor', desc: 'Constructor method' },
+    { fratm: 'damme x() { }', js: 'get x() { }', desc: 'Getter' },
+    { fratm: 'miette x(v) { }', js: 'set x(v) { }', desc: 'Setter' },
+    { fratm: 'conteggio = 0  #segreto', js: 'conteggio = 0  #segreto', desc: 'Fields and private members' },
   ]},
   { category: 'Values', items: [
     { fratm: 'overo', js: 'true', desc: 'Boolean true' },

@@ -46,3 +46,26 @@ stamm a dì(gennaro.faiPizza("Diavola"))
 stamm a dì("Pizze fatte: " + gennaro.pizzeFatte)
 stamm a dì("Categoria: " + Persona.categoria())
 stamm a dì("Static subclass: " + Pizzaiolo.salutoDiClasse())
+
+// Fields, getters, setters and private members
+na famiglie Forno {
+    #temperatura = 20
+    fisso forniAccesi = 0
+    pizzeInForno = []
+
+    damme temperatura() {
+        piglie stu cos.#temperatura + "°C"
+    }
+
+    miette temperatura(gradi) {
+        stu cos.#temperatura = stu cos.#limita(gradi)
+    }
+
+    #limita(gradi) {
+        piglie Math.min(gradi, 485)
+    }
+}
+
+chist è forno = nu bell Forno()
+forno.temperatura = 900
+stamm a dì("Forno: " + forno.temperatura)

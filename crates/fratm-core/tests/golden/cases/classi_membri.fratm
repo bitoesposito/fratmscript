@@ -1,0 +1,49 @@
+// Campi, getter (damme), setter (miette), membri fissi e privati (#)
+na famiglie Pizzeria {
+    #incasso = 0
+    fisso aperte = 0
+    nomme
+    menu = ["Margherita", "Marinara"]
+
+    costruttore(nomme) {
+        stu cos.nomme = nomme
+        Pizzeria.aperte++
+    }
+
+    damme incasso() {
+        piglie stu cos.#incasso + "€"
+    }
+
+    miette incasso(euro) {
+        si (euro < 0) {
+            iett nu bell Error("l'incasso nun po' scennere sotto zero")
+        }
+        stu cos.#incasso = euro
+    }
+
+    vende(pizza) {
+        stu cos.#incasso += stu cos.#prezzo(pizza)
+    }
+
+    #prezzo(pizza) {
+        piglie pizza == "Margherita" ? 6 : 5
+    }
+
+    fisso damme quante() {
+        piglie Pizzeria.aperte
+    }
+}
+
+chist è daMichele = nu bell Pizzeria("Da Michele")
+daMichele.vende("Margherita")
+daMichele.vende("Marinara")
+stamm a dì(daMichele.nomme, daMichele.incasso, daMichele.menu.length)
+daMichele.incasso = 100
+stamm a dì(daMichele.incasso)
+pruvamm {
+    daMichele.incasso = -5
+} e si schiatta (e) {
+    stamm a dì(e.message)
+}
+nu bell Pizzeria("Sorbillo")
+stamm a dì("pizzerie aperte:", Pizzeria.quante)

@@ -189,6 +189,20 @@ export const KEYWORDS: KeywordInfo[] = [
     categoria: 'classe'
   },
   {
+    napoletano: 'damme',
+    javascript: 'get',
+    descrizione: 'Getter di una classe: damme nome() { }',
+    categoria: 'classe',
+    snippet: 'damme ${1:nome}() {\n\tpiglie stu cos.${2:campo}\n}'
+  },
+  {
+    napoletano: 'miette',
+    javascript: 'set',
+    descrizione: 'Setter di una classe: miette nome(valore) { }',
+    categoria: 'classe',
+    snippet: 'miette ${1:nome}(${2:valore}) {\n\t$0\n}'
+  },
+  {
     napoletano: 'fisso',
     javascript: 'static',
     descrizione: 'Metodo o proprietà statica',
