@@ -177,6 +177,20 @@ na famiglie Pizzaiolo figlio 'e Persona {
         piglie "Essere umano"
     }
 }
+
+na famiglie Conto {
+    #saldo = 0                   // private field
+    fisso aperti = 0             // static field
+    titolare = "nisciuno"        // field
+
+    damme saldo() {              // get saldo()
+        piglie stu cos.#saldo
+    }
+    miette saldo(valore) {       // set saldo(valore)
+        stu cos.#saldo = valore
+    }
+    #controlla() { }             // private method
+}
 ```
 
 ### Try/Catch
@@ -248,6 +262,8 @@ fermete                      // debugger
 | `figlio 'e` | `extends` | "child of" |
 | `'o pate` | `super` | "the father" |
 | `fisso` | `static` | "fixed/static" |
+| `damme` | `get` (in classes) | "give me" |
+| `miette` | `set` (in classes) | "put" |
 | `stu cos` | `this` | "this thing" |
 | `chiamm` | `import` | "call" |
 | `da` | `from` | "from" |
@@ -258,7 +274,7 @@ fermete                      // debugger
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 
-Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp`, `dint`, `vedimm`, `primm` and `fa` are not reserved at all: they mean `finally` only right after a `pruvamm` block, `of` only in a `pe` header, `switch` only in `vedimm (…) {` and `do` only in `primm fa {`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
+Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp`, `dint`, `vedimm`, `primm`, `fa`, `damme` and `miette` are not reserved at all (`damme`/`miette` mean get/set only before a class member name): they mean `finally` only right after a `pruvamm` block, `of` only in a `pe` header, `switch` only in `vedimm (…) {` and `do` only in `primm fa {`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
 
 ---
 

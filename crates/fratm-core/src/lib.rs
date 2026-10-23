@@ -397,6 +397,31 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_class_fields_getters_setters() {
+        let out = js("na famiglie C {\n#x = 1\nfisso n = 0\ny\ndamme x() { piglie stu cos.#x }\nmiette x(v) { stu cos.#x = v }\nfisso damme tutti() { piglie C.n }\n#aiuto() { }\n}");
+        assert_eq!(
+            out,
+            "class C {\n  #x = 1;\n  static n = 0;\n  y;\n  get x() {\n    return this.#x;\n  }\n  set x(v) {\n    this.#x = v;\n  }\n  static get tutti() {\n    return C.n;\n  }\n  #aiuto() {\n  }\n}\n"
+        );
+        // `damme`, `miette` and `fisso` alone are ordinary method or field names
+        assert!(js("na famiglie C { damme() { } }").contains("  damme() {"));
+        assert!(js("na famiglie C { miette = 1 }").contains("  miette = 1;"));
+        assert!(js("na famiglie C { fisso() { } }").contains("  fisso() {"));
+        assert_eq!(js("tien damme = 1"), "let damme = 1;\n");
+        // Private names are members only
+        assert!(js("tien a = b.#c").contains("b.#c"));
+        assert!(compile("tien a = #c", Default::default()).is_err());
+        assert!(compile("tien o = { #c: 1 }", Default::default()).is_err());
+        // Getters take no parameter, setters exactly one
+        let err = compile("na famiglie C { damme x(a) { } }", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("nun piglia parametri"), "{}", err);
+        let err = compile("na famiglie C { miette x() { } }", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("nu parametro sulo"), "{}", err);
+        // A field must end its line
+        assert!(compile("na famiglie C { x = 1 y = 2 }", Default::default()).is_err());
+    }
+
+    #[test]
     fn test_do_while() {
         assert_eq!(
             js("primm fa {\n  i++\n} mentre che (i < 3)"),

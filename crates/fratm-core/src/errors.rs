@@ -156,6 +156,13 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("'pe aspett' works only with 'dint'") {
         return "'pe aspett' funziona sulo cu 'dint', no cu ''ncopp'!".to_string();
     }
+    if message.contains("'damme' getter takes no parameters") {
+        return "Nu 'damme' (getter) nun piglia parametri: damme nome() { … }".to_string();
+    }
+    if message.contains("'miette' setter takes exactly one parameter") {
+        return "Nu 'miette' (setter) piglia nu parametro sulo: miette nome(valore) { … }"
+            .to_string();
+    }
     if message.starts_with("Invalid number") {
         return format!(
             "Stu nummero nun se capisce: {}",

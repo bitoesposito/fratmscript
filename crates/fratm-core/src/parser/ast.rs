@@ -94,7 +94,7 @@ pub enum Statement {
     ClassDecl {
         name: String,
         super_class: Option<String>,
-        methods: Vec<ClassMethod>,
+        members: Vec<ClassMember>,
         span: Span,
     },
     Import {
@@ -124,8 +124,32 @@ pub struct ImportSpecifier {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ClassMember {
+    Method(ClassMethod),
+    /// `conteggio = 0`, `fisso totale = 0`, `#segreto`
+    Field {
+        /// Private names keep their `#`
+        name: String,
+        value: Option<Expression>,
+        is_static: bool,
+        span: Span,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum MethodKind {
+    Method,
+    /// `damme nome() { }`
+    Getter,
+    /// `miette nome(v) { }`
+    Setter,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClassMethod {
+    /// Private names keep their `#`
     pub name: String,
+    pub kind: MethodKind,
     pub params: Vec<Pattern>,
     pub body: Vec<Statement>,
     pub is_async: bool,

@@ -307,6 +307,13 @@ impl<'a> Lexer<'a> {
                 '\'' => self.scan_apostrophe_or_string(),
                 c if c.is_ascii_digit() => self.scan_number(),
                 c if is_ident_start(c) => self.scan_identifier(),
+                '#' if self.peek().map(is_ident_start).unwrap_or(false) => {
+                    while self.peek().map(is_ident_continue).unwrap_or(false) {
+                        self.advance();
+                    }
+                    let name = self.source[self.token_start..self.position].to_string();
+                    self.make_token(TokenKind::PrivateName(name))
+                }
 
                 '\n' => {
                     self.line += 1;
@@ -599,6 +606,7 @@ impl<'a> Lexer<'a> {
             self.prev_kind,
             Some(
                 TokenKind::Identifier(_)
+                    | TokenKind::PrivateName(_)
                     | TokenKind::Number(_)
                     | TokenKind::String(_)
                     | TokenKind::Template { .. }
