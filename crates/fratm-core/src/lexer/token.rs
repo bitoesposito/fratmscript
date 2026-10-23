@@ -203,6 +203,7 @@ pub enum TokenKind {
     Figlio,  // extends (part 1) - "figlio"
     De,      // extends (part 2) - "'e" (of)
     OPate,   // super - "'o pate" (the father)
+    Ncopp,   // for...in - "'ncopp" (on top of)
     CheE,    // typeof - "chè è" (what is)
     EUno,    // instanceof (part 1) - "è uno"
     Leva,    // delete
@@ -338,6 +339,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Figlio => write!(f, "figlio"),
             TokenKind::De => write!(f, "'e"),
             TokenKind::OPate => write!(f, "'o pate"),
+            TokenKind::Ncopp => write!(f, "'ncopp"),
             TokenKind::CheE => write!(f, "chè è"),
             TokenKind::EUno => write!(f, "è uno"),
             TokenKind::Leva => write!(f, "leva"),

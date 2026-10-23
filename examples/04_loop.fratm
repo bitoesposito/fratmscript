@@ -1,6 +1,6 @@
 // ============================================
 // Example 4: Loops
-// mentre che (while), pe (for), ++ and +=
+// mentre che (while), pe (for), pe ogni … dint / 'ncopp (for...of / for...in), ++ and +=
 // ============================================
 
 // While loop - mentre che
@@ -16,6 +16,20 @@ stamm a dì("🎆 Happy New Year!")
 stamm a dì("\n=== Multiplication Table of 7 ===")
 pe (tien i = 1; i <= 10; i++) {
     stamm a dì("7 x " + i + " = " + (7 * i))
+}
+
+// For...of - pe ogni (… dint …)
+stamm a dì("\n=== Pizza menu (for...of) ===")
+chist è pizze = ["Margherita", "Marinara", "Diavola"]
+pe ogni (chist è pizza dint pizze) {
+    stamm a dì("🍕 " + pizza)
+}
+
+// For...in - pe ogni (… 'ncopp …)
+stamm a dì("\n=== Prices (for...in) ===")
+chist è prezzi = { margherita: 5, marinara: 4 }
+pe ogni (tien nome 'ncopp prezzi) {
+    stamm a dì(nome + ": " + prezzi[nome] + "€")
 }
 
 // Break - rompe

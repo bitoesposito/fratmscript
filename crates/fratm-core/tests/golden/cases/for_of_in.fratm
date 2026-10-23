@@ -1,0 +1,28 @@
+// pe ogni … dint (for...of), pe ogni … 'ncopp (for...in), pe aspett (for await)
+chist è squadra = ["Maradona", "Careca", "Alemão"]
+pe ogni (chist è nomme dint squadra) {
+    stamm a dì(nomme)
+}
+
+pe (chist è [i, nomme] dint squadra.entries()) {
+    stamm a dì(i + 1, nomme)
+}
+
+chist è maglie = { Maradona: 10, Careca: 9 }
+pe ogni (tien chi 'ncopp maglie) {
+    stamm a dì(chi, "porta 'o", maglie[chi])
+}
+
+tien lettera
+pe (lettera dint "Napule") {
+    salta
+}
+stamm a dì("ultima lettera:", lettera)
+
+mo vir facc aspetta() {
+    chist è risultati = [Promise.resolve("uno"), Promise.resolve("doje")]
+    pe aspett (chist è r dint risultati) {
+        stamm a dì("arrivato", r)
+    }
+}
+aspetta()

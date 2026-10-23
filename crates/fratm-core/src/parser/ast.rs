@@ -45,6 +45,17 @@ pub enum Statement {
         body: Vec<Statement>,
         span: Span,
     },
+    /// `pe ogni (tien x dint xs)` / `pe ogni (tien k 'ncopp o)` /
+    /// `pe aspett (… dint …)`
+    ForEach {
+        binding: ForBinding,
+        /// `dint` (for...of) when true, `'ncopp` (for...in) when false
+        of: bool,
+        is_await: bool,
+        iterable: Expression,
+        body: Vec<Statement>,
+        span: Span,
+    },
     Break {
         span: Span,
     },
@@ -290,6 +301,17 @@ impl Expression {
             Expression::Delete { span, .. } => *span,
         }
     }
+}
+
+/// The loop variable of a for...of / for...in.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ForBinding {
+    /// `tien x`
+    Let(Pattern),
+    /// `chist è x`
+    Const(Pattern),
+    /// `x`, an existing variable
+    Existing(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

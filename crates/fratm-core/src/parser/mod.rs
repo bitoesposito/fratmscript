@@ -444,9 +444,40 @@ impl Parser {
     fn parse_for(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Pe)?;
+        let is_await = self.match_token(&TokenKind::Aspett);
         // "ogni" is now optional for backwards compatibility
         self.match_token(&TokenKind::Ogni);
         self.expect(&TokenKind::LeftParen)?;
+        if let Some(binding) = self.try_parse_for_each_binding() {
+            let of = !self.match_token(&TokenKind::Ncopp);
+            if of {
+                self.advance(); // `dint`
+            }
+            let iterable = self.parse_expression()?;
+            self.expect(&TokenKind::RightParen)?;
+            let body = self.parse_block_body()?;
+            if is_await && !of {
+                return Err(ParseError::new(
+                    "'pe aspett' works only with 'dint', not with ''ncopp'",
+                    self.span_from(start.start),
+                ));
+            }
+            return Ok(Statement::ForEach {
+                binding,
+                of,
+                is_await,
+                iterable,
+                body,
+                span: self.span_from(start.start),
+            });
+        }
+        if is_await {
+            let token = self.peek();
+            return Err(ParseError::new(
+                format!("Expected 'dint' in 'pe aspett', but found '{}'", token.kind),
+                token.span,
+            ));
+        }
         let init = if self.check(&TokenKind::Tien) {
             Some(Box::new(self.parse_let_declaration()?))
         } else if !self.check(&TokenKind::Semicolon) {
@@ -479,6 +510,28 @@ impl Parser {
             body,
             span: self.span_from(start.start),
         })
+    }
+
+    /// The loop variable of a for...of / for...in, if the header is one: the
+    /// binding must be followed by `dint` or `'ncopp`. Otherwise nothing is
+    /// consumed and the header is parsed as a classic `pe`.
+    fn try_parse_for_each_binding(&mut self) -> Option<ForBinding> {
+        let saved = self.current;
+        let binding = if self.match_token(&TokenKind::Tien) {
+            self.parse_binding_target().ok().map(ForBinding::Let)
+        } else if self.check(&TokenKind::Chist) && self.check_next(&TokenKind::E) {
+            self.current += 2;
+            self.parse_binding_target().ok().map(ForBinding::Const)
+        } else {
+            self.expect_identifier().ok().map(ForBinding::Existing)
+        };
+        if binding.is_some()
+            && (self.check(&TokenKind::Ncopp) || self.check_identifier_at(0, "dint"))
+        {
+            return binding;
+        }
+        self.current = saved;
+        None
     }
 
     fn parse_break(&mut self) -> Result<Statement, ParseError> {
