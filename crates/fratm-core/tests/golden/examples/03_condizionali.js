@@ -35,3 +35,17 @@ function isWeekend(giorno) {
 }
 console.log(("Monday is weekend? " + isWeekend("monday")));
 console.log(("Saturday is weekend? " + isWeekend("saturday")));
+function pizzaDelGiorno(giorno) {
+  switch (giorno) {
+    case "friday":
+      return "Marinara";
+    case "saturday":
+    case "sunday":
+      return "Margherita con bufala";
+    default:
+      return "Margherita";
+  }
+}
+console.log(("Friday pizza: " + pizzaDelGiorno("friday")));
+console.log(("Sunday pizza: " + pizzaDelGiorno("sunday")));
+console.log(("Monday pizza: " + pizzaDelGiorno("monday")));

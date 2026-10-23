@@ -397,6 +397,24 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_switch() {
+        assert_eq!(
+            js("vedimm (x) {\n caso 1:\n f()\n rompe\n caso 2:\n caso 3: g()\n predefinit:\n h()\n}"),
+            "switch (x) {\n  case 1:\n    f();\n    break;\n  case 2:\n  case 3:\n    g();\n  default:\n    h();\n}\n"
+        );
+        assert_eq!(js("vedimm (x) { }"), "switch (x) {\n}\n");
+        // `vedimm` is not reserved: without a block it is a call
+        assert_eq!(js("vedimm(x)"), "vedimm(x);\n");
+        assert_eq!(js("tien vedimm = 1"), "let vedimm = 1;\n");
+        assert!(compile("vedimm (x) { f() }", Default::default()).is_err());
+        assert!(compile(
+            "vedimm (x) { predefinit: f()\n predefinit: g() }",
+            Default::default()
+        )
+        .is_err());
+    }
+
+    #[test]
     fn test_for_of_and_in() {
         assert_eq!(
             js("pe ogni (tien x dint xs) { f(x) }"),

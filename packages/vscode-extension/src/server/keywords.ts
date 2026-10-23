@@ -85,6 +85,13 @@ export const KEYWORDS: KeywordInfo[] = [
     categoria: 'controllo'
   },
   {
+    napoletano: 'vedimm',
+    javascript: 'switch',
+    descrizione: 'Switch: vedimm (x) { caso 1: … predefinit: … }',
+    categoria: 'controllo',
+    snippet: 'vedimm (${1:valore}) {\n\tcaso ${2:1}:\n\t\t$3\n\t\trompe\n\tpredefinit:\n\t\t$0\n}'
+  },
+  {
     napoletano: 'pe',
     javascript: 'for',
     descrizione: 'Ciclo for (prima parte, seguito da "ogni")',

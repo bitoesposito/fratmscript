@@ -244,6 +244,33 @@ impl CodeGen {
                 self.write_indent();
                 self.emit("}");
             }
+            Statement::Switch {
+                discriminant,
+                cases,
+                span,
+            } => {
+                self.write_indent();
+                self.add_mapping(span.line, span.column);
+                self.emit("switch (");
+                self.gen_expression(discriminant);
+                self.emit(") {\n");
+                self.indent += 1;
+                for case in cases {
+                    self.write_indent();
+                    match &case.test {
+                        Some(test) => {
+                            self.emit("case ");
+                            self.gen_expression(test);
+                            self.emit(":\n");
+                        }
+                        None => self.emit("default:\n"),
+                    }
+                    self.gen_block_statements(&case.body);
+                }
+                self.indent -= 1;
+                self.write_indent();
+                self.emit("}");
+            }
             Statement::Break { .. } => {
                 self.write_indent();
                 self.emit("break;");
