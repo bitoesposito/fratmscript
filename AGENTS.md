@@ -106,5 +106,5 @@ Agent platforms that assign their own branch names (e.g. `claude/...`) are fine;
 
 ## Merging
 
-- Agents may push branches and open PRs. Agents never merge, approve their own PRs, force-push `main`, or push directly to `main`. The maintainer merges.
+- Agents may push branches, open PRs and merge their own PRs once CI is green and the PR closes its issue(s). Agents never push directly to `main`, force-push `main`, or bypass a failing check. The maintainer is told about releases, not about every merge.
 - Never rewrite history on someone else's branch.
