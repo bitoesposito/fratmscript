@@ -711,4 +711,31 @@ na famiglie Pizzaiolo figlio 'e Persona {
     fn test_empty_object_literal() {
         assert_eq!(js("tien o = {}"), "let o = {};\n");
     }
+
+    #[test]
+    fn test_optional_chaining() {
+        assert_eq!(js("tien x = a?.b?.c"), "let x = a?.b?.c;\n");
+        assert_eq!(js("tien x = a?.[0].b"), "let x = a?.[0].b;\n");
+        assert_eq!(js("tien x = f?.(1)"), "let x = f?.(1);\n");
+        assert_eq!(js("tien x = a?.for"), "let x = a?.for;\n");
+        for src in ["a?.b = 1", "a?.b.c += 1", "a?.b++"] {
+            assert!(
+                compile(src, Default::default()).is_err(),
+                "{} should not compile",
+                src
+            );
+        }
+    }
+
+    #[test]
+    fn test_nullish_coalescing() {
+        assert_eq!(js("tien x = a ?? b ?? c"), "let x = ((a ?? b) ?? c);\n");
+        assert_eq!(js("tien x = a ?? b || c"), "let x = (a ?? (b || c));\n");
+        assert_eq!(js("tien x = a e b ?? c"), "let x = ((a && b) ?? c);\n");
+        // The ternary still works next to `?.` and `??`
+        assert_eq!(
+            js("tien x = a ? b?.c : d ?? 1"),
+            "let x = (a ? b?.c : (d ?? 1));\n"
+        );
+    }
 }

@@ -145,6 +145,8 @@ manco                        // ! (alias for "no")
 && / ||                      // also accepted
 x += 1  x -= 1  x *= 2       // also /=, %=, **=, ??=, ||=, &&=
 i++  i--  ++i  --i           // increment / decrement
+a ?? b                       // nullish coalescing
+a?.b  a?.[k]  f?.()          // optional chaining
 ```
 
 ### Classes

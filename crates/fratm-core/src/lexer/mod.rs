@@ -181,7 +181,16 @@ impl<'a> Lexer<'a> {
                 ':' => self.make_token(TokenKind::Colon),
                 ';' => self.make_token(TokenKind::Semicolon),
                 '?' => {
-                    if self.match_char('?') {
+                    // `?.` unless it is `? .5` in a ternary
+                    if self.peek() == Some('.')
+                        && !self
+                            .peek_next()
+                            .map(|c| c.is_ascii_digit())
+                            .unwrap_or(false)
+                    {
+                        self.advance();
+                        self.make_token(TokenKind::QuestionDot)
+                    } else if self.match_char('?') {
                         if self.match_char('=') {
                             self.make_token(TokenKind::QuestionQuestionEqual)
                         } else {

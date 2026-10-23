@@ -701,7 +701,7 @@ impl Parser {
     }
 
     fn parse_ternary(&mut self) -> Result<Expression, ParseError> {
-        let mut expr = self.parse_or()?;
+        let mut expr = self.parse_nullish()?;
         if self.match_token(&TokenKind::Question) {
             let consequent = self.parse_expression()?;
             self.expect(&TokenKind::Colon)?;
@@ -711,6 +711,23 @@ impl Parser {
                 condition: Box::new(expr),
                 consequent: Box::new(consequent),
                 alternate: Box::new(alternate),
+                span,
+            };
+        }
+        Ok(expr)
+    }
+
+    /// `a ?? b`: binds looser than `o` / `e`. JS forbids mixing them without
+    /// parentheses, and codegen always parenthesizes, so mixing is allowed here.
+    fn parse_nullish(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_or()?;
+        while self.match_token(&TokenKind::QuestionQuestion) {
+            let right = self.parse_or()?;
+            let span = self.span_from(expr.span().start);
+            expr = Expression::Binary {
+                left: Box::new(expr),
+                operator: BinaryOp::Nullish,
+                right: Box::new(right),
                 span,
             };
         }
@@ -961,24 +978,15 @@ impl Parser {
     fn parse_call(&mut self) -> Result<Expression, ParseError> {
         let mut expr = self.parse_primary()?;
         loop {
+            // `?.` is followed by a name, `[` or `(`
+            let optional = self.match_token(&TokenKind::QuestionDot);
             if self.match_token(&TokenKind::LeftParen) {
                 let arguments = self.parse_arguments()?;
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Call {
                     callee: Box::new(expr),
                     arguments,
-                    span,
-                };
-            } else if self.match_token(&TokenKind::Dot) {
-                let name = self.expect_property_name()?;
-                let span = self.span_from(expr.span().start);
-                expr = Expression::Member {
-                    object: Box::new(expr),
-                    property: Box::new(Expression::Identifier {
-                        name,
-                        span: self.previous().span,
-                    }),
-                    computed: false,
+                    optional,
                     span,
                 };
             } else if self.match_token(&TokenKind::LeftBracket) {
@@ -989,6 +997,20 @@ impl Parser {
                     object: Box::new(expr),
                     property: Box::new(property),
                     computed: true,
+                    optional,
+                    span,
+                };
+            } else if optional || self.match_token(&TokenKind::Dot) {
+                let name = self.expect_property_name()?;
+                let span = self.span_from(expr.span().start);
+                expr = Expression::Member {
+                    object: Box::new(expr),
+                    property: Box::new(Expression::Identifier {
+                        name,
+                        span: self.previous().span,
+                    }),
+                    computed: false,
+                    optional,
                     span,
                 };
             } else {
@@ -1572,6 +1594,9 @@ fn starts_operand(token: &Token) -> bool {
 /// Only names and properties can be assigned or updated (`x = 1`, `a.b += 1`, `i++`).
 fn check_assignment_target(target: &Expression, op_span: Span) -> Result<(), ParseError> {
     match target {
+        Expression::Member { .. } if in_optional_chain(target) => {
+            Err(ParseError::new("Invalid assignment target", op_span))
+        }
         Expression::Identifier { .. } | Expression::Member { .. } => Ok(()),
         _ => Err(ParseError::new("Invalid assignment target", op_span)),
     }
@@ -1606,4 +1631,17 @@ fn parse_interpolation(
         ));
     }
     Ok(expr)
+}
+
+/// `a?.b.c = 1` is not valid JS: no link of an assigned chain may be optional.
+fn in_optional_chain(expr: &Expression) -> bool {
+    match expr {
+        Expression::Member {
+            object, optional, ..
+        } => *optional || in_optional_chain(object),
+        Expression::Call {
+            callee, optional, ..
+        } => *optional || in_optional_chain(callee),
+        _ => false,
+    }
 }

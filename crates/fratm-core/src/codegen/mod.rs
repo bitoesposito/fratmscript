@@ -566,9 +566,15 @@ impl CodeGen {
                 }
             }
             Expression::Call {
-                callee, arguments, ..
+                callee,
+                arguments,
+                optional,
+                ..
             } => {
                 self.gen_callee(callee);
+                if *optional {
+                    self.emit("?.");
+                }
                 self.emit("(");
                 for (i, arg) in arguments.iter().enumerate() {
                     if i > 0 {
@@ -582,16 +588,22 @@ impl CodeGen {
                 object,
                 property,
                 computed,
+                optional,
                 ..
             } => {
                 self.gen_callee(object);
+                if *optional {
+                    self.emit("?.");
+                }
                 if *computed {
                     self.emit("[");
                     self.gen_expression(property);
                     self.emit("]");
                 } else if let Expression::Identifier { name, span } = property.as_ref() {
                     // Property names are never escaped: `x.for` is valid JS
-                    self.emit(".");
+                    if !*optional {
+                        self.emit(".");
+                    }
                     self.add_mapping(span.line, span.column);
                     self.emit(name);
                 } else {
