@@ -419,8 +419,6 @@ pub fn lookup_keyword(ident: &str) -> Option<TokenKind> {
         "caso" => Some(TokenKind::Caso),
         "fisso" => Some(TokenKind::Fisso),
         "figlio" => Some(TokenKind::Figlio),
-        "de" => Some(TokenKind::De),
-        "opate" => Some(TokenKind::OPate),
         "leva" => Some(TokenKind::Leva),
         "caccia" => Some(TokenKind::Caccia),
         "fermete" => Some(TokenKind::Fermete),

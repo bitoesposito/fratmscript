@@ -309,6 +309,13 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_de_and_opate_are_plain_identifiers() {
+        let result = compile("tien de = 1\ntien opate = de", Default::default()).unwrap();
+        assert!(result.code.contains("let de = 1;"));
+        assert!(result.code.contains("let opate = de;"));
+    }
+
+    #[test]
     fn test_single_quote_string_still_works() {
         let result = compile("chist è a = 'e'\nstamm a dì(a)", Default::default()).unwrap();
         assert!(result.code.contains("const a = \"e\";"));

@@ -231,7 +231,6 @@ impl Parser {
 
         // Optional inheritance:
         // - "figlio 'e Base"
-        // - "figlio de Base"
         // - "figlio Base" (shortcut)
         let super_class = if self.match_token(&TokenKind::Figlio) {
             // Connector is optional to preserve backwards compatibility.
