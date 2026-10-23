@@ -92,7 +92,8 @@ export function compile(source: string): CompilationOutput {
       } else {
         return {
           success: false,
-          error: result.error,
+          // The position is shown separately, so drop the "Riga X, colonna Y: " prefix
+          error: result.line ? result.error?.replace(/^Riga \d+, colonna \d+: /, '') : result.error,
           line: result.line,
           column: result.column,
           suggestion: result.suggestion,
