@@ -1,0 +1,44 @@
+// facc* / caccia / caccia* (generators) e mo vir facc* (async generators)
+facc* contaFino(n) {
+    pe (tien i = 1; i <= n; i++) {
+        caccia i
+    }
+}
+stamm a dì([...contaFino(4)])
+
+facc* squadra() {
+    caccia "portiere"
+    caccia* ["difensore", "centrocampista"]
+    caccia* contaFino(2)
+}
+pe ogni (chist è ruolo dint squadra()) {
+    stamm a dì(ruolo)
+}
+
+// caccia senza valore riceve chello che passa next()
+facc* chiacchiera() {
+    chist è nomme = caccia "comme te chiamme?"
+    caccia `piacere, ${nomme}!`
+}
+chist è c = chiacchiera()
+stamm a dì(c.next().value)
+stamm a dì(c.next("Totò").value)
+
+na famiglie Pizzeria {
+    menu = ["Margherita", "Marinara"]
+    *pizze() {
+        caccia* stu cos.menu
+    }
+}
+stamm a dì([...nu bell Pizzeria().pizze()].join(" e "))
+
+mo vir facc* ordini() {
+    caccia aspett Promise.resolve("ordine 1")
+    caccia "ordine 2"
+}
+mo vir facc servi() {
+    pe aspett (chist è o dint ordini()) {
+        stamm a dì("servito:", o)
+    }
+}
+servi()

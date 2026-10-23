@@ -145,7 +145,7 @@
           "match": "\\b(stu|cos)\\b"
         },
         {
-          "comment": "Operators as keywords: leva (delete), dint'a (in), caccia (yield), chè è (typeof), è uno (instanceof)",
+          "comment": "Operators as keywords: leva (delete), caccia (yield), chè è (typeof), è uno (instanceof)",
           "name": "keyword.operator.expression.fratm",
           "match": "\\b(leva|caccia|fermete)\\b"
         },

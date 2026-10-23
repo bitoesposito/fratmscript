@@ -156,6 +156,10 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("'pe aspett' works only with 'dint'") {
         return "'pe aspett' funziona sulo cu 'dint', no cu ''ncopp'!".to_string();
     }
+    if message.contains("'caccia' works only inside") {
+        return "'caccia' se po' usà sulo dint'a nu generatore: facc* nomme() { caccia … }"
+            .to_string();
+    }
     if message.contains("'damme' getter takes no parameters") {
         return "Nu 'damme' (getter) nun piglia parametri: damme nome() { … }".to_string();
     }
