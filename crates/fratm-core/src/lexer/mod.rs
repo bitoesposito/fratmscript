@@ -175,17 +175,45 @@ impl<'a> Lexer<'a> {
                 '.' => self.make_token(TokenKind::Dot),
                 ':' => self.make_token(TokenKind::Colon),
                 ';' => self.make_token(TokenKind::Semicolon),
-                '?' => self.make_token(TokenKind::Question),
+                '?' => {
+                    if self.match_char('?') {
+                        if self.match_char('=') {
+                            self.make_token(TokenKind::QuestionQuestionEqual)
+                        } else {
+                            self.make_token(TokenKind::QuestionQuestion)
+                        }
+                    } else {
+                        self.make_token(TokenKind::Question)
+                    }
+                }
+                '|' if self.match_char('|') => {
+                    if self.match_char('=') {
+                        self.make_token(TokenKind::OrEqual)
+                    } else {
+                        self.make_token(TokenKind::Or)
+                    }
+                }
+                '&' if self.match_char('&') => {
+                    if self.match_char('=') {
+                        self.make_token(TokenKind::AndEqual)
+                    } else {
+                        self.make_token(TokenKind::And)
+                    }
+                }
                 
                 '+' => {
-                    if self.match_char('=') {
+                    if self.match_char('+') {
+                        self.make_token(TokenKind::PlusPlus)
+                    } else if self.match_char('=') {
                         self.make_token(TokenKind::PlusEqual)
                     } else {
                         self.make_token(TokenKind::Plus)
                     }
                 }
                 '-' => {
-                    if self.match_char('=') {
+                    if self.match_char('-') {
+                        self.make_token(TokenKind::MinusMinus)
+                    } else if self.match_char('=') {
                         self.make_token(TokenKind::MinusEqual)
                     } else {
                         self.make_token(TokenKind::Minus)
@@ -193,7 +221,11 @@ impl<'a> Lexer<'a> {
                 }
                 '*' => {
                     if self.match_char('*') {
-                        self.make_token(TokenKind::StarStar)
+                        if self.match_char('=') {
+                            self.make_token(TokenKind::StarStarEqual)
+                        } else {
+                            self.make_token(TokenKind::StarStar)
+                        }
                     } else if self.match_char('=') {
                         self.make_token(TokenKind::StarEqual)
                     } else {
@@ -207,7 +239,13 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::Slash)
                     }
                 }
-                '%' => self.make_token(TokenKind::Percent),
+                '%' => {
+                    if self.match_char('=') {
+                        self.make_token(TokenKind::PercentEqual)
+                    } else {
+                        self.make_token(TokenKind::Percent)
+                    }
+                }
                 
                 '=' => {
                     if self.match_char('=') {

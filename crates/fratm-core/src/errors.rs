@@ -103,6 +103,9 @@ pub fn napoletanize_error(message: &str) -> String {
         let found = message.split('\'').nth(1).unwrap_or("");
         return format!("Ccà ce sta '{}' ma l'istruzione era già fernuta! Va' a capo o miette ';'.", found);
     }
+    if message.contains("Invalid assignment target") {
+        return "Ccà nun se pò assegnà niente! Ce vo' 'na variabile o 'na proprietà, tipo 'x' o 'stu cos.nome'.".to_string();
+    }
     if message.starts_with("Invalid number") {
         return format!("Stu nummero nun se capisce: {}", message.trim_start_matches("Invalid number: "));
     }

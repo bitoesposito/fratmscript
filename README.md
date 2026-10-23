@@ -118,6 +118,9 @@ e / o / no                   // && / || / !
 pure                         // && (alias for "e")
 manco                        // ! (alias for "no")
 !                            // ! (direct)
+&& / ||                      // also accepted
+x += 1  x -= 1  x *= 2       // also /=, %=, **=, ??=, ||=, &&=
+i++  i--  ++i  --i           // increment / decrement
 ```
 
 ### Classes

@@ -366,12 +366,24 @@ impl Parser {
 
     fn parse_assignment(&mut self) -> Result<Expression, ParseError> {
         let expr = self.parse_ternary()?;
-        if self.match_token(&TokenKind::Equal) {
-            let value = self.parse_assignment()?;
-            let span = self.span_from(expr.span().start);
-            return Ok(Expression::Assignment { target: Box::new(expr), value: Box::new(value), span });
-        }
-        Ok(expr)
+        let operator = match self.peek().kind {
+            TokenKind::Equal => AssignOp::Assign,
+            TokenKind::PlusEqual => AssignOp::Add,
+            TokenKind::MinusEqual => AssignOp::Subtract,
+            TokenKind::StarEqual => AssignOp::Multiply,
+            TokenKind::SlashEqual => AssignOp::Divide,
+            TokenKind::PercentEqual => AssignOp::Modulo,
+            TokenKind::StarStarEqual => AssignOp::Power,
+            TokenKind::QuestionQuestionEqual => AssignOp::Nullish,
+            TokenKind::OrEqual => AssignOp::Or,
+            TokenKind::AndEqual => AssignOp::And,
+            _ => return Ok(expr),
+        };
+        let op_span = self.advance().span;
+        check_assignment_target(&expr, op_span)?;
+        let value = self.parse_assignment()?;
+        let span = self.span_from(expr.span().start);
+        Ok(Expression::Assignment { target: Box::new(expr), operator, value: Box::new(value), span })
     }
 
     fn parse_ternary(&mut self) -> Result<Expression, ParseError> {
@@ -510,6 +522,14 @@ impl Parser {
             let operand = self.parse_unary()?;
             return Ok(Expression::Delete { operand: Box::new(operand), span: self.span_from(start.start) });
         }
+        // Prefix update: ++x, --x
+        if self.check(&TokenKind::PlusPlus) || self.check(&TokenKind::MinusMinus) {
+            let token = self.advance();
+            let (start, operator) = (token.span, update_op(&token.kind));
+            let argument = self.parse_unary()?;
+            check_assignment_target(&argument, start)?;
+            return Ok(Expression::Update { operator, prefix: true, argument: Box::new(argument), span: self.span_from(start.start) });
+        }
         // Typeof: chè è (or plain `typeof`)
         if self.match_token(&TokenKind::CheE) {
             let start = self.previous().span;
@@ -519,7 +539,20 @@ impl Parser {
             let operand = self.parse_unary()?;
             return Ok(Expression::TypeOf { operand: Box::new(operand), span: self.span_from(start.start) });
         }
-        self.parse_call()
+        self.parse_postfix()
+    }
+
+    /// Postfix update: `x++`, `a.b--` (on the same line, since a newline ends the statement)
+    fn parse_postfix(&mut self) -> Result<Expression, ParseError> {
+        let expr = self.parse_call()?;
+        if self.check(&TokenKind::PlusPlus) || self.check(&TokenKind::MinusMinus) {
+            let token = self.advance();
+            let (op_span, operator) = (token.span, update_op(&token.kind));
+            check_assignment_target(&expr, op_span)?;
+            let span = self.span_from(expr.span().start);
+            return Ok(Expression::Update { operator, prefix: false, argument: Box::new(expr), span });
+        }
+        Ok(expr)
     }
 
     fn parse_call(&mut self) -> Result<Expression, ParseError> {
@@ -811,4 +844,16 @@ fn starts_operand(token: &Token) -> bool {
                 | TokenKind::Stu | TokenKind::OPate | TokenKind::Stamm | TokenKind::Avvis
                 | TokenKind::Not | TokenKind::Manco | TokenKind::Minus | TokenKind::Aspett | TokenKind::CheE
         )
+}
+
+/// Only names and properties can be assigned or updated (`x = 1`, `a.b += 1`, `i++`).
+fn check_assignment_target(target: &Expression, op_span: Span) -> Result<(), ParseError> {
+    match target {
+        Expression::Identifier { .. } | Expression::Member { .. } => Ok(()),
+        _ => Err(ParseError::new("Invalid assignment target", op_span)),
+    }
+}
+
+fn update_op(kind: &TokenKind) -> UpdateOp {
+    if matches!(kind, TokenKind::PlusPlus) { UpdateOp::Increment } else { UpdateOp::Decrement }
 }

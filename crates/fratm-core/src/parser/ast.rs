@@ -126,7 +126,15 @@ pub enum Expression {
     },
     Assignment {
         target: Box<Expression>,
+        operator: AssignOp,
         value: Box<Expression>,
+        span: Span,
+    },
+    /// `++x`, `x--`
+    Update {
+        operator: UpdateOp,
+        prefix: bool,
+        argument: Box<Expression>,
         span: Span,
     },
     Call {
@@ -203,6 +211,7 @@ impl Expression {
             Expression::Binary { span, .. } => *span,
             Expression::Unary { span, .. } => *span,
             Expression::Assignment { span, .. } => *span,
+            Expression::Update { span, .. } => *span,
             Expression::Call { span, .. } => *span,
             Expression::Member { span, .. } => *span,
             Expression::New { span, .. } => *span,
@@ -253,6 +262,44 @@ impl BinaryOp {
             BinaryOp::And => "&&",
             BinaryOp::Or => "||",
             BinaryOp::InstanceOf => "instanceof",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum AssignOp {
+    Assign, Add, Subtract, Multiply, Divide, Modulo, Power,
+    Nullish, Or, And,
+}
+
+impl AssignOp {
+    pub fn to_js(&self) -> &'static str {
+        match self {
+            AssignOp::Assign => "=",
+            AssignOp::Add => "+=",
+            AssignOp::Subtract => "-=",
+            AssignOp::Multiply => "*=",
+            AssignOp::Divide => "/=",
+            AssignOp::Modulo => "%=",
+            AssignOp::Power => "**=",
+            AssignOp::Nullish => "??=",
+            AssignOp::Or => "||=",
+            AssignOp::And => "&&=",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum UpdateOp {
+    Increment,
+    Decrement,
+}
+
+impl UpdateOp {
+    pub fn to_js(&self) -> &'static str {
+        match self {
+            UpdateOp::Increment => "++",
+            UpdateOp::Decrement => "--",
         }
     }
 }
