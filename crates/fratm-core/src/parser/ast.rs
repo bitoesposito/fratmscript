@@ -294,9 +294,29 @@ pub enum Pattern {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Property {
     /// `key: value`
-    KeyValue { key: String, value: Expression },
+    KeyValue { key: PropertyKey, value: Expression },
+    /// `{ nome }`
+    Shorthand { name: String, span: Span },
+    /// `saluta() { }`, `mo vir carica() { }`
+    Method {
+        key: PropertyKey,
+        params: Vec<Pattern>,
+        body: Vec<Statement>,
+        is_async: bool,
+    },
     /// `...object`
     Spread(Expression),
+}
+
+/// The key of an object literal entry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PropertyKey {
+    /// A word, keywords included: `{ si: 1 }`
+    Name(String),
+    String(String),
+    Number(f64),
+    /// `{ [chiave]: valore }`
+    Computed(Box<Expression>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

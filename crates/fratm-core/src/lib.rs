@@ -615,4 +615,43 @@ na famiglie Pizzaiolo figlio 'e Persona {
     fn test_call_arguments_can_span_lines() {
         assert_eq!(js("f(\n  1,\n  2\n)"), "f(1, 2);\n");
     }
+
+    #[test]
+    fn test_object_literal_shorthand_computed_and_literal_keys() {
+        assert_eq!(js("tien o = { a, b: 2 }"), "let o = { a, b: 2 };\n");
+        assert_eq!(
+            js("tien o = { [k]: v, [\"x\" + 1]: 2 }"),
+            "let o = { [k]: v, [(\"x\" + 1)]: 2 };\n"
+        );
+        assert_eq!(
+            js("tien o = { \"con spazi\": 1, 42: 2 }"),
+            "let o = { \"con spazi\": 1, 42: 2 };\n"
+        );
+        assert_eq!(js("tien o = { e, o }"), "let o = { e, o };\n");
+        assert_eq!(js("tien o = { for }"), "let o = { for: $for };\n");
+        assert!(compile("tien o = { \"a\" }", Default::default()).is_err());
+        assert!(compile("tien o = { si }", Default::default()).is_err());
+    }
+
+    #[test]
+    fn test_object_literal_methods() {
+        assert_eq!(
+            js("tien o = { saluta(a) { piglie a } }"),
+            "let o = { saluta(a) {\n  return a;\n} };\n"
+        );
+        assert_eq!(
+            js("tien o = { facc saluta() { } }"),
+            "let o = { saluta() {\n} };\n"
+        );
+        assert_eq!(
+            js("tien o = { mo vir carica() { } }"),
+            "let o = { async carica() {\n} };\n"
+        );
+        assert_eq!(js("tien o = { [k]() { } }"), "let o = { [k]() {\n} };\n");
+        // Keywords stay plain keys
+        assert_eq!(
+            js("tien o = { mo: 1, facc: 2, si: 3 }"),
+            "let o = { mo: 1, facc: 2, si: 3 };\n"
+        );
+    }
 }
