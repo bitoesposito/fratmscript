@@ -410,26 +410,76 @@ impl<'a> Lexer<'a> {
         self.make_token(TokenKind::Invalid("Unterminated string".to_string()))
     }
 
+    /// Scans a numeric literal with the same shapes JavaScript accepts:
+    /// decimals (`42`, `3.14`), exponents (`1e3`, `2.5E-4`), hex/octal/binary
+    /// (`0x1F`, `0o17`, `0b101`) and `_` separators (`1_000`).
     fn scan_number(&mut self) -> Token {
-        while self.peek().map(|c| c.is_ascii_digit()).unwrap_or(false) {
-            self.advance();
-        }
-        
-        if self.peek() == Some('.') {
-            if let Some(next) = self.peek_next() {
-                if next.is_ascii_digit() {
-                    self.advance();
-                    while self.peek().map(|c| c.is_ascii_digit()).unwrap_or(false) {
-                        self.advance();
-                    }
+        let first = &self.source[self.token_start..self.position];
+        let radix = match (first, self.peek()) {
+            ("0", Some('x' | 'X')) => Some(16),
+            ("0", Some('o' | 'O')) => Some(8),
+            ("0", Some('b' | 'B')) => Some(2),
+            _ => None,
+        };
+
+        let valid = if let Some(radix) = radix {
+            self.advance(); // consume x/o/b
+            let digits_start = self.position;
+            self.scan_digits(radix);
+            self.position > digits_start
+        } else {
+            self.scan_digits(10);
+            if self.peek() == Some('.') && self.peek_next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+                self.advance();
+                self.scan_digits(10);
+            }
+            let mut ok = true;
+            if matches!(self.peek(), Some('e' | 'E')) {
+                let mut rest = self.source[self.position..].chars().skip(1);
+                let next = rest.next();
+                let after_sign = if matches!(next, Some('+' | '-')) { rest.next() } else { next };
+                if after_sign.map(|c| c.is_ascii_digit()).unwrap_or(false) {
+                    self.advance(); // e/E
+                    if matches!(self.peek(), Some('+' | '-')) { self.advance(); }
+                    self.scan_digits(10);
+                } else {
+                    ok = false;
                 }
             }
+            ok
+        };
+
+        // An identifier character glued to a number (`3abc`, `0x1G`, `1e`) is an error, as in JS.
+        let glued = self.peek().map(is_ident_continue).unwrap_or(false);
+        while self.peek().map(is_ident_continue).unwrap_or(false) {
+            self.advance();
         }
-        
+
         let literal = &self.source[self.token_start..self.position];
-        match literal.parse::<f64>() {
-            Ok(n) => self.make_token(TokenKind::Number(n)),
-            Err(_) => self.make_token(TokenKind::Invalid(format!("Invalid number: {}", literal))),
+        let invalid = || TokenKind::Invalid(format!("Invalid number: {}", literal));
+        if !valid || glued || !separators_ok(literal, radix.unwrap_or(10)) {
+            return self.make_token(invalid());
+        }
+        // JS rejects legacy octal like `0123` in strict code: refuse it rather than guess.
+        if radix.is_none() && literal.len() > 1 && literal.starts_with('0') && literal.as_bytes()[1].is_ascii_digit() {
+            return self.make_token(invalid());
+        }
+
+        let clean: String = literal.chars().filter(|&c| c != '_').collect();
+        let value = match radix {
+            Some(radix) => parse_radix(&clean[2..], radix),
+            None => clean.parse::<f64>().ok(),
+        };
+        match value {
+            Some(n) => self.make_token(TokenKind::Number(n)),
+            None => self.make_token(invalid()),
+        }
+    }
+
+    /// Consumes digits of the given radix and `_` separators.
+    fn scan_digits(&mut self, radix: u32) {
+        while self.peek().map(|c| c.is_digit(radix) || c == '_').unwrap_or(false) {
+            self.advance();
         }
     }
 
@@ -446,6 +496,22 @@ impl<'a> Lexer<'a> {
             self.make_token(TokenKind::Identifier(literal.to_string()))
         }
     }
+}
+
+/// A `_` separator must sit between two digits (`1_000` ok, `1__0`, `1_`, `0x_1`, `1_.5`, `1_e3` not).
+fn separators_ok(literal: &str, radix: u32) -> bool {
+    let chars: Vec<char> = literal.chars().collect();
+    let is_digit = |j: usize| chars.get(j).map(|c| c.is_digit(radix)).unwrap_or(false);
+    chars.iter().enumerate().all(|(i, &c)| c != '_' || (i > 0 && is_digit(i - 1) && is_digit(i + 1)))
+}
+
+/// Parses hex/octal/binary digits, rounding like JS does for values above 2^53.
+fn parse_radix(digits: &str, radix: u32) -> Option<f64> {
+    if digits.is_empty() { return None; }
+    if let Ok(n) = u128::from_str_radix(digits, radix) {
+        return Some(n as f64);
+    }
+    digits.chars().try_fold(0f64, |acc, c| c.to_digit(radix).map(|d| acc * radix as f64 + d as f64))
 }
 
 fn is_ident_start(c: char) -> bool {
@@ -485,6 +551,17 @@ mod tests {
         let tokens = lexer.tokenize();
         assert!(matches!(tokens[0].kind, TokenKind::Number(n) if n == 42.0));
         assert!(matches!(tokens[1].kind, TokenKind::Number(n) if (n - 3.14).abs() < 0.001));
+    }
+
+    #[test]
+    fn test_js_number_shapes_are_single_tokens() {
+        let cases = [("0x1F", 31.0), ("0XfF", 255.0), ("0o17", 15.0), ("0b101", 5.0), ("1e3", 1000.0),
+                     ("1E+2", 100.0), ("2.5e-1", 0.25), ("1_000", 1000.0), ("0xFF_FF", 65535.0), ("0", 0.0)];
+        for (src, expected) in cases {
+            let tokens = Lexer::new(src).tokenize();
+            assert!(matches!(tokens[0].kind, TokenKind::Number(n) if n == expected), "{} -> {:?}", src, tokens[0].kind);
+            assert!(matches!(tokens[1].kind, TokenKind::Eof), "{} split into several tokens", src);
+        }
     }
 
     #[test]

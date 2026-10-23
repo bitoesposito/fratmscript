@@ -281,6 +281,9 @@ impl CodeGen {
             Expression::Number { value, .. } => {
                 if *value == value.floor() && value.abs() < 1e15 {
                     self.emit(&(*value as i64).to_string());
+                } else if value.abs() >= 1e21 || value.abs() < 1e-6 {
+                    // Use exponent notation instead of hundreds of digits (`1e300`)
+                    self.emit(&format!("{:e}", value));
                 } else {
                     self.emit(&value.to_string());
                 }
@@ -333,7 +336,14 @@ impl CodeGen {
             }
             Expression::Unary { operator, operand, .. } => {
                 self.emit(operator.to_js());
-                self.gen_expression(operand);
+                // `- -x` must not become `--x` (a decrement)
+                if matches!(operator, UnaryOp::Negate) && matches!(**operand, Expression::Unary { operator: UnaryOp::Negate, .. }) {
+                    self.emit("(");
+                    self.gen_expression(operand);
+                    self.emit(")");
+                } else {
+                    self.gen_expression(operand);
+                }
             }
             Expression::Assignment { target, value, .. } => {
                 self.gen_expression(target);

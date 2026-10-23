@@ -56,25 +56,42 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         while self.check(&TokenKind::Newline) { self.advance(); }
 
-        if self.check(&TokenKind::Chist) { return self.parse_const_declaration(); }
-        if self.check(&TokenKind::Tien) { return self.parse_let_declaration(); }
         if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) { return self.parse_async_function(); }
         if self.check(&TokenKind::Facc) { return self.parse_function(); }
-        if self.check(&TokenKind::Piglie) { return self.parse_return(); }
         if self.check(&TokenKind::Si) { return self.parse_if(); }
         if self.check(&TokenKind::Mentre) { return self.parse_while(); }
         if self.check(&TokenKind::Pe) { return self.parse_for(); }
-        if self.check(&TokenKind::Rompe) { return self.parse_break(); }
-        if self.check(&TokenKind::Salta) { return self.parse_continue(); }
-        if self.check(&TokenKind::Fermete) { return self.parse_debugger(); }
         if self.check(&TokenKind::Pruvamm) { return self.parse_try_catch(); }
-        if self.check(&TokenKind::Iett) { return self.parse_throw(); }
         if self.check(&TokenKind::Na) { return self.parse_class(); }
-        if self.check(&TokenKind::Chiamm) { return self.parse_import(); }
         if self.check(&TokenKind::Mann) { return self.parse_export(); }
         if self.check(&TokenKind::LeftBrace) { return self.parse_block(); }
 
-        self.parse_expression_statement()
+        // Simple statements must end the line: otherwise `typeof a` or `0x1F`
+        // would silently split into several statements.
+        let stmt = if self.check(&TokenKind::Chist) { self.parse_const_declaration()? }
+        else if self.check(&TokenKind::Tien) { self.parse_let_declaration()? }
+        else if self.check(&TokenKind::Piglie) { self.parse_return()? }
+        else if self.check(&TokenKind::Rompe) { self.parse_break()? }
+        else if self.check(&TokenKind::Salta) { self.parse_continue()? }
+        else if self.check(&TokenKind::Fermete) { self.parse_debugger()? }
+        else if self.check(&TokenKind::Iett) { self.parse_throw()? }
+        else if self.check(&TokenKind::Chiamm) { self.parse_import()? }
+        else { self.parse_expression_statement()? };
+        self.expect_statement_end()?;
+        Ok(stmt)
+    }
+
+    /// A simple statement ends at a newline, a `;`, a closing `}` or the end of file.
+    fn expect_statement_end(&mut self) -> Result<(), ParseError> {
+        if self.match_token(&TokenKind::Semicolon) { return Ok(()); }
+        if self.check(&TokenKind::Newline) || self.check(&TokenKind::RightBrace) || self.is_at_end() {
+            return Ok(());
+        }
+        let token = self.peek();
+        Err(ParseError::new(
+            format!("Unexpected '{}' after the end of the statement: go to a new line or use ';'", token.kind),
+            token.span,
+        ))
     }
 
     fn parse_const_declaration(&mut self) -> Result<Statement, ParseError> {
@@ -131,7 +148,7 @@ impl Parser {
     fn parse_return(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Piglie)?;
-        let value = if !self.check(&TokenKind::Newline) && !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+        let value = if !self.check(&TokenKind::Newline) && !self.check(&TokenKind::RightBrace) && !self.check(&TokenKind::Semicolon) && !self.is_at_end() {
             Some(self.parse_expression()?)
         } else { None };
         Ok(Statement::Return { value, span: self.span_from(start.start) })
@@ -309,6 +326,7 @@ impl Parser {
         self.expect(&TokenKind::For)?;
         if self.match_token(&TokenKind::Predefinit) {
             let value = self.parse_expression()?;
+            self.expect_statement_end()?;
             Ok(Statement::Export { declaration: None, default_value: Some(value), span: self.span_from(start.start) })
         } else {
             let decl = self.parse_statement()?;
@@ -410,6 +428,12 @@ impl Parser {
             else if self.match_token(&TokenKind::LessEqual) { BinaryOp::LessEqual }
             else if self.match_token(&TokenKind::Greater) { BinaryOp::GreaterThan }
             else if self.match_token(&TokenKind::GreaterEqual) { BinaryOp::GreaterEqual }
+            else if self.match_token(&TokenKind::EUno) { BinaryOp::InstanceOf }
+            else if self.check(&TokenKind::E) && self.check_next_identifier("uno") {
+                self.advance();
+                self.advance();
+                BinaryOp::InstanceOf
+            }
             else { break };
             let right = self.parse_term()?;
             let span = self.span_from(expr.span().start);
@@ -480,7 +504,15 @@ impl Parser {
             let operand = self.parse_unary()?;
             return Ok(Expression::Delete { operand: Box::new(operand), span: self.span_from(start.start) });
         }
-        // Typeof: chè è - not yet implemented as compound keyword, will use CheE if present
+        // Typeof: chè è (or plain `typeof`)
+        if self.match_token(&TokenKind::CheE) {
+            let start = self.previous().span;
+            if self.previous().literal == "chè" {
+                self.expect(&TokenKind::E)?;
+            }
+            let operand = self.parse_unary()?;
+            return Ok(Expression::TypeOf { operand: Box::new(operand), span: self.span_from(start.start) });
+        }
         self.parse_call()
     }
 
@@ -634,6 +666,9 @@ impl Parser {
     fn check_next(&self, kind: &TokenKind) -> bool {
         if self.current + 1 >= self.tokens.len() { return false; }
         std::mem::discriminant(&self.tokens[self.current + 1].kind) == std::mem::discriminant(kind)
+    }
+    fn check_next_identifier(&self, name: &str) -> bool {
+        matches!(self.tokens.get(self.current + 1).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)
     }
     fn match_token(&mut self, kind: &TokenKind) -> bool { if self.check(kind) { self.advance(); true } else { false } }
     fn expect(&mut self, kind: &TokenKind) -> Result<&Token, ParseError> {

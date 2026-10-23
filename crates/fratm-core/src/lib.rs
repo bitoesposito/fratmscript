@@ -313,4 +313,57 @@ na famiglie Pizzaiolo figlio 'e Persona {
         let result = compile("chist è a = 'e'\nstamm a dì(a)", Default::default()).unwrap();
         assert!(result.code.contains("const a = \"e\";"));
     }
+
+    fn js(source: &str) -> String {
+        compile(source, Default::default()).unwrap().code
+    }
+
+    #[test]
+    fn test_typeof_compiles_to_one_expression() {
+        assert_eq!(js("tien x = chè è a"), "let x = typeof a;\n");
+        assert_eq!(js("tien x = typeof a"), "let x = typeof a;\n");
+        assert_eq!(js("tien x = chè è a == \"number\""), "let x = (typeof a == \"number\");\n");
+    }
+
+    #[test]
+    fn test_instanceof_compiles_to_one_expression() {
+        assert_eq!(js("tien x = a è uno B"), "let x = (a instanceof B);\n");
+        assert_eq!(js("tien x = a instanceof B"), "let x = (a instanceof B);\n");
+    }
+
+    #[test]
+    fn test_number_literals() {
+        assert_eq!(js("tien x = 0x1F"), "let x = 31;\n");
+        assert_eq!(js("tien x = 0b101 + 0o17"), "let x = (5 + 15);\n");
+        assert_eq!(js("tien x = 1e3 + 2.5E-3"), "let x = (1000 + 0.0025);\n");
+        assert_eq!(js("tien x = 1_000_000"), "let x = 1000000;\n");
+        assert_eq!(js("tien x = 1e300"), "let x = 1e300;\n");
+    }
+
+    #[test]
+    fn test_malformed_numbers_are_errors() {
+        for src in ["tien x = 1_", "tien x = 1__0", "tien x = 0x", "tien x = 1e", "tien x = 3abc", "tien x = 0x1G", "tien x = 0123"] {
+            assert!(compile(src, Default::default()).is_err(), "{} should not compile", src);
+        }
+    }
+
+    #[test]
+    fn test_double_negation_is_not_decrement() {
+        assert_eq!(js("tien x = - -n"), "let x = -(-n);\n");
+    }
+
+    #[test]
+    fn test_juxtaposed_expressions_are_errors() {
+        // Used to compile silently into several statements
+        for src in ["tien x = a b", "stamm a dì(1) stamm a dì(2)", "piglie a b"] {
+            let err = compile(src, Default::default()).unwrap_err();
+            assert!(err.to_string().contains("già fernuta"), "{}: {}", src, err);
+        }
+    }
+
+    #[test]
+    fn test_semicolons_separate_statements() {
+        assert_eq!(js("tien a = 1; tien b = 2;"), "let a = 1;\nlet b = 2;\n");
+        assert!(js("facc f() { piglie; }").contains("return;"));
+    }
 }

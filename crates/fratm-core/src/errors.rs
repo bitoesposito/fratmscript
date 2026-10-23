@@ -99,6 +99,13 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("Aspettavo 'dì'") {
         return "Doppo 'stamm a' ce vo' 'dì'! Scrivi 'stamm a dì' pe stampà.".to_string();
     }
+    if message.contains("after the end of the statement") {
+        let found = message.split('\'').nth(1).unwrap_or("");
+        return format!("Ccà ce sta '{}' ma l'istruzione era già fernuta! Va' a capo o miette ';'.", found);
+    }
+    if message.starts_with("Invalid number") {
+        return format!("Stu nummero nun se capisce: {}", message.trim_start_matches("Invalid number: "));
+    }
     if message.contains("expression") || message.contains("espressione") {
         return "Ma che staje scrivenn?! Ccà ce vo' 'na espressione!".to_string();
     }
