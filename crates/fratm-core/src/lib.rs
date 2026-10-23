@@ -397,6 +397,23 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_statement_spans_start_at_their_first_token() {
+        let tokens = Lexer::new("tien a = 1\n  facc f() {\n    piglie a\n  }\n").tokenize();
+        let program = Parser::new(tokens).parse().unwrap();
+        let spans: Vec<_> = program
+            .statements
+            .iter()
+            .map(|s| match s {
+                parser::Statement::VariableDecl { span, .. }
+                | parser::Statement::FunctionDecl { span, .. } => (span.line, span.column),
+                _ => unreachable!(),
+            })
+            .collect();
+        // The function used to report the line of its closing `}` and column 0
+        assert_eq!(spans, vec![(1, 1), (2, 3)]);
+    }
+
+    #[test]
     fn test_keywords_without_accents() {
         assert_eq!(
             js("chist e x = sfols\nsi (x) { stamm a di(1) } sinno { avvis a di(2) }"),
