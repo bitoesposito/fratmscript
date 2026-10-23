@@ -80,15 +80,19 @@ impl CodeGen {
                 params,
                 body,
                 is_async,
+                is_generator,
                 span,
-                ..
             } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
                 if *is_async {
                     self.emit("async ");
                 }
-                self.emit("function ");
+                self.emit(if *is_generator {
+                    "function* "
+                } else {
+                    "function "
+                });
                 self.emit(&js_name(name));
                 self.gen_params(params);
                 self.emit(" {\n");
@@ -380,6 +384,9 @@ impl CodeGen {
                             if method.is_async {
                                 self.emit("async ");
                             }
+                            if method.is_generator {
+                                self.emit("*");
+                            }
                             match method.kind {
                                 MethodKind::Getter => self.emit("get "),
                                 MethodKind::Setter => self.emit("set "),
@@ -560,9 +567,13 @@ impl CodeGen {
                             params,
                             body,
                             is_async,
+                            is_generator,
                         } => {
                             if *is_async {
                                 self.emit("async ");
+                            }
+                            if *is_generator {
+                                self.emit("*");
                             }
                             self.gen_property_key(key);
                             self.gen_params(params);
@@ -748,6 +759,15 @@ impl CodeGen {
                 self.emit("await ");
                 self.gen_operand(argument);
             }
+            Expression::Yield {
+                argument, delegate, ..
+            } => {
+                self.emit(if *delegate { "yield*" } else { "yield" });
+                if let Some(argument) = argument {
+                    self.emit(" ");
+                    self.gen_expression(argument);
+                }
+            }
             Expression::Ternary {
                 condition,
                 consequent,
@@ -918,7 +938,9 @@ impl CodeGen {
     fn gen_operand(&mut self, expr: &Expression) {
         if matches!(
             expr,
-            Expression::ArrowFunction { .. } | Expression::Assignment { .. }
+            Expression::ArrowFunction { .. }
+                | Expression::Assignment { .. }
+                | Expression::Yield { .. }
         ) {
             self.emit("(");
             self.gen_expression(expr);

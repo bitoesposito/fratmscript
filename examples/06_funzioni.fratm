@@ -1,6 +1,6 @@
 // ============================================
 // Example 6: Advanced Functions
-// Arrow functions, recursion, closures
+// Arrow functions, recursion, closures, generators (facc* / caccia)
 // ============================================
 
 // Normal function
@@ -82,3 +82,16 @@ stamm a dì("\n=== Greetings with Style ===")
 stamm a dì(salutaConStile("Mario", "formal"))
 stamm a dì(salutaConStile("Gennaro", "napoletano"))
 stamm a dì(salutaConStile("Luigi", boh))
+
+// Generators - facc* and caccia (yield)
+stamm a dì("\n=== Pizza queue (generator) ===")
+facc* fornata(pizze) {
+    tien numero = 1
+    pe ogni (chist è pizza dint pizze) {
+        caccia numero + ". " + pizza
+        numero++
+    }
+}
+pe ogni (chist è turno dint fornata(["Margherita", "Capricciosa"])) {
+    stamm a dì(turno)
+}

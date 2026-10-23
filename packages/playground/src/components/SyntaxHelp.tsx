@@ -29,6 +29,8 @@ const syntaxReference = [
     { fratm: 'facc', js: 'function', desc: 'Function declaration' },
     { fratm: 'piglie', js: 'return', desc: 'Return statement' },
     { fratm: 'mo vir facc', js: 'async function', desc: 'Async function' },
+    { fratm: 'facc* f() { caccia 1 }', js: 'function* f() { yield 1 }', desc: 'Generator' },
+    { fratm: 'caccia* altri()', js: 'yield* altri()', desc: 'Delegate to another generator' },
     { fratm: '(a, b) => a + b', js: '(a, b) => a + b', desc: 'Arrow function' },
     { fratm: 'mo vir (x) => …', js: 'async (x) => …', desc: 'Async arrow function' },
     { fratm: 'facc f(a = 1, ...resto)', js: 'function f(a = 1, ...resto)', desc: 'Default and rest parameters' },

@@ -56,3 +56,14 @@ console.log("\n=== Greetings with Style ===");
 console.log(salutaConStile("Mario", "formal"));
 console.log(salutaConStile("Gennaro", "napoletano"));
 console.log(salutaConStile("Luigi", undefined));
+console.log("\n=== Pizza queue (generator) ===");
+function* fornata(pizze) {
+  let numero = 1;
+  for (const pizza of pizze) {
+    yield ((numero + ". ") + pizza);
+    numero++;
+  }
+}
+for (const turno of fornata(["Margherita", "Capricciosa"])) {
+  console.log(turno);
+}

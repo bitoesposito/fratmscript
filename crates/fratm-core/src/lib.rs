@@ -397,6 +397,29 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_generators() {
+        assert_eq!(
+            js("facc* conta() {\ncaccia 1\ncaccia* altri()\nchist è x = caccia\n}"),
+            "function* conta() {\n  yield 1;\n  yield* altri();\n  const x = yield;\n}\n"
+        );
+        assert!(js("mo vir facc* f() { caccia aspett p }")
+            .contains("async function* f() {\n  yield await p;"));
+        assert!(js("na famiglie C { facc* a() { caccia 1 }\n*b() { } }")
+            .contains("  *a() {\n    yield 1;\n  }\n  *b() {"));
+        assert!(js("tien o = { *g() { caccia 1 } }").contains("{ *g() {"));
+        // A yield used as an operand keeps its parentheses
+        assert!(js("facc* f() { tien x = (caccia 1) + 2 }").contains("let x = ((yield 1) + 2);"));
+        // `caccia` needs an enclosing generator; arrows never are one
+        let err = compile("facc f() { caccia 1 }", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("dint'a nu generatore"), "{}", err);
+        assert!(compile(
+            "facc* f() { chist è g = () => caccia 1 }",
+            Default::default()
+        )
+        .is_err());
+    }
+
+    #[test]
     fn test_class_fields_getters_setters() {
         let out = js("na famiglie C {\n#x = 1\nfisso n = 0\ny\ndamme x() { piglie stu cos.#x }\nmiette x(v) { stu cos.#x = v }\nfisso damme tutti() { piglie C.n }\n#aiuto() { }\n}");
         assert_eq!(

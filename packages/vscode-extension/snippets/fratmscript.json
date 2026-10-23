@@ -88,6 +88,15 @@
     ],
     "description": "Ciclo for-of"
   },
+  "Generator (facc*)": {
+    "prefix": ["facc*", "generator"],
+    "body": [
+      "facc* ${1:nome}(${2}) {",
+      "\tcaccia ${0:valore}",
+      "}"
+    ],
+    "description": "Funzione generatore con caccia (yield)"
+  },
   "Do-while (primm fa)": {
     "prefix": ["primm", "do"],
     "body": [
