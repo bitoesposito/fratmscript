@@ -364,7 +364,7 @@ impl<'a> Lexer<'a> {
 
         // `'o pate` used for super calls
         if let Some(after_o) = rest.strip_prefix('o') {
-            let spaces_len = after_o.len() - after_o.trim_start_matches(|c| c == ' ' || c == '\t').len();
+            let spaces_len = after_o.len() - after_o.trim_start_matches([' ', '\t']).len();
             let trimmed = &after_o[spaces_len..];
             if spaces_len > 0 {
                 if let Some(after_pate) = trimmed.strip_prefix("pate") {
@@ -488,10 +488,10 @@ mod tests {
 
     #[test]
     fn test_numbers() {
-        let mut lexer = Lexer::new("42 3.14");
+        let mut lexer = Lexer::new("42 2.75");
         let tokens = lexer.tokenize();
         assert!(matches!(tokens[0].kind, TokenKind::Number(n) if n == 42.0));
-        assert!(matches!(tokens[1].kind, TokenKind::Number(n) if (n - 3.14).abs() < 0.001));
+        assert!(matches!(tokens[1].kind, TokenKind::Number(n) if n == 2.75));
     }
 
     #[test]
