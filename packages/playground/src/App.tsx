@@ -10,14 +10,18 @@ import { ToastProvider, toastManager } from '@/components/ui/toast'
 import { useCompiler } from '@/hooks/useCompiler'
 import { examples, defaultCode } from '@/lib/examples'
 import { SyntaxHelp } from '@/components/SyntaxHelp'
+import { MobileTabs, type MobileTab } from '@/components/MobileTabs'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
 
 function App() {
   const [code, setCode] = useState(defaultCode)
   const [selectedExample, setSelectedExample] = useState('')
   const compiler = useCompiler()
   const editorRef = useRef<EditorHandle>(null)
-  const outputRef = useRef<HTMLDivElement>(null)
   const isRunning = compiler.status === 'running'
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const [mobileTab, setMobileTab] = useState<MobileTab>('code')
 
   // Load code from URL on mount
   useEffect(() => {
@@ -35,14 +39,14 @@ function App() {
   const { runCode, stop } = compiler
   const handleRun = useCallback(() => {
     runCode(code)
-    // On narrow screens the output sits below the editor: bring it into view
-    if (window.matchMedia('(max-width: 767px)').matches) {
-      outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    // On phones the output lives in its own tab: show it
+    setMobileTab(tab => (tab === 'code' ? 'console' : tab))
   }, [code, runCode])
 
   const handleErrorClick = useCallback((line: number, column?: number) => {
-    editorRef.current?.revealLine(line, column)
+    setMobileTab('code')
+    // Wait a frame so the editor is visible before scrolling to the line
+    requestAnimationFrame(() => editorRef.current?.revealLine(line, column))
   }, [])
 
   const diagnostics = useMemo<EditorDiagnostic[]>(() => compiler.errors.flatMap(error => {
@@ -92,11 +96,27 @@ function App() {
           disabled={compiler.isLoading}
         />
 
-        {/* Main content area - fills remaining space. On mobile the panels
-            stack and the page scrolls; on desktop they sit side by side. */}
-        <div className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-y-auto md:overflow-hidden">
-          {/* Editor Panel */}
-          <div className="flex flex-col border-border border-b md:border-b-0 md:border-r h-[65dvh] md:h-auto min-h-[320px] md:min-h-0 overflow-hidden shrink-0">
+        {isMobile && (
+          <MobileTabs
+            value={mobileTab}
+            onChange={setMobileTab}
+            errorCount={compiler.errors.length}
+            logCount={compiler.consoleLogs.length}
+          />
+        )}
+
+        {/* Main content area - fills remaining space. Side by side on
+            desktop; on phones one full-height tab at a time. */}
+        <div className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-hidden">
+          {/* Editor Panel (kept mounted when hidden so the editor keeps its state) */}
+          <div
+            id="panel-code"
+            role={isMobile ? 'tabpanel' : undefined}
+            className={cn(
+              'flex flex-col flex-1 md:border-r border-border min-h-0 overflow-hidden',
+              isMobile && mobileTab !== 'code' && 'hidden',
+            )}
+          >
             {/* Sticky panel header */}
             <div className="flex justify-between items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
               <span className="font-medium text-muted-foreground text-sm">JavaScript ma comme si deve</span>
@@ -137,13 +157,20 @@ function App() {
           </div>
 
           {/* Output Panel */}
-          <div ref={outputRef} className="flex flex-col md:min-h-0 md:overflow-hidden">
+          <div
+            id="panel-output"
+            role={isMobile ? 'tabpanel' : undefined}
+            className={cn(
+              'flex flex-col flex-1 min-h-0 overflow-hidden',
+              isMobile && mobileTab === 'code' && 'hidden',
+            )}
+          >
             {/* Sticky output header */}
-            <div className="flex items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
+            <div className="hidden md:flex items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
               <span className="font-medium text-foreground text-sm">Output</span>
             </div>
             {/* Scrollable output content */}
-            <div className="flex-1 bg-background md:min-h-0 md:overflow-auto">
+            <div className="flex-1 bg-background min-h-0 overflow-auto">
               <OutputPanel
                 jsOutput={compiler.jsOutput}
                 consoleLogs={compiler.consoleLogs}
@@ -151,6 +178,7 @@ function App() {
                 notice={compiler.notice}
                 isRunning={isRunning}
                 onErrorClick={handleErrorClick}
+                show={isMobile && mobileTab !== 'code' ? mobileTab : 'all'}
               />
             </div>
           </div>
