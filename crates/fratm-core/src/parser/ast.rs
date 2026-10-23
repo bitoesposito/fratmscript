@@ -148,6 +148,7 @@ pub enum Expression {
     ArrowFunction {
         params: Vec<String>,
         body: ArrowBody,
+        is_async: bool,
         span: Span,
     },
     Await {

@@ -327,11 +327,11 @@ impl CodeGen {
             }
             Expression::Binary { left, operator, right, .. } => {
                 self.emit("(");
-                self.gen_expression(left);
+                self.gen_operand(left);
                 self.emit(" ");
                 self.emit(operator.to_js());
                 self.emit(" ");
-                self.gen_expression(right);
+                self.gen_operand(right);
                 self.emit(")");
             }
             Expression::Unary { operator, operand, .. } => {
@@ -342,7 +342,7 @@ impl CodeGen {
                     self.gen_expression(operand);
                     self.emit(")");
                 } else {
-                    self.gen_expression(operand);
+                    self.gen_operand(operand);
                 }
             }
             Expression::Assignment { target, value, .. } => {
@@ -351,7 +351,7 @@ impl CodeGen {
                 self.gen_expression(value);
             }
             Expression::Call { callee, arguments, .. } => {
-                self.gen_expression(callee);
+                self.gen_callee(callee);
                 self.emit("(");
                 for (i, arg) in arguments.iter().enumerate() {
                     if i > 0 { self.emit(", "); }
@@ -360,7 +360,7 @@ impl CodeGen {
                 self.emit(")");
             }
             Expression::Member { object, property, computed, .. } => {
-                self.gen_expression(object);
+                self.gen_callee(object);
                 if *computed {
                     self.emit("[");
                     self.gen_expression(property);
@@ -377,7 +377,7 @@ impl CodeGen {
             }
             Expression::New { callee, arguments, .. } => {
                 self.emit("new ");
-                self.gen_expression(callee);
+                self.gen_callee(callee);
                 self.emit("(");
                 for (i, arg) in arguments.iter().enumerate() {
                     if i > 0 { self.emit(", "); }
@@ -385,11 +385,18 @@ impl CodeGen {
                 }
                 self.emit(")");
             }
-            Expression::ArrowFunction { params, body, .. } => {
+            Expression::ArrowFunction { params, body, is_async, .. } => {
+                if *is_async { self.emit("async "); }
                 self.emit("(");
                 self.emit(&js_names(params));
                 self.emit(") => ");
                 match body {
+                    // `() => ({ … })`: a bare `{` would start a block
+                    ArrowBody::Expression(e) if matches!(**e, Expression::Object { .. }) => {
+                        self.emit("(");
+                        self.gen_expression(e);
+                        self.emit(")");
+                    }
                     ArrowBody::Expression(e) => self.gen_expression(e),
                     ArrowBody::Block(stmts) => {
                         self.emit("{\n");
@@ -403,11 +410,11 @@ impl CodeGen {
             }
             Expression::Await { argument, .. } => {
                 self.emit("await ");
-                self.gen_expression(argument);
+                self.gen_operand(argument);
             }
             Expression::Ternary { condition, consequent, alternate, .. } => {
                 self.emit("(");
-                self.gen_expression(condition);
+                self.gen_operand(condition);
                 self.emit(" ? ");
                 self.gen_expression(consequent);
                 self.emit(" : ");
@@ -440,12 +447,40 @@ impl CodeGen {
             }
             Expression::TypeOf { operand, .. } => {
                 self.emit("typeof ");
-                self.gen_expression(operand);
+                self.gen_operand(operand);
             }
             Expression::Delete { operand, .. } => {
                 self.emit("delete ");
-                self.gen_expression(operand);
+                self.gen_operand(operand);
             }
+        }
+    }
+
+    /// Operand of an operator: arrows and assignments bind looser than any
+    /// operator, so they need parentheses (`(x => x) || f`).
+    fn gen_operand(&mut self, expr: &Expression) {
+        if matches!(expr, Expression::ArrowFunction { .. } | Expression::Assignment { .. }) {
+            self.emit("(");
+            self.gen_expression(expr);
+            self.emit(")");
+        } else {
+            self.gen_expression(expr);
+        }
+    }
+
+    /// Callee or object of a member access: prefix operators need parentheses
+    /// too (`(await p).x`, `(() => 1)()`).
+    fn gen_callee(&mut self, expr: &Expression) {
+        let prefix = matches!(
+            expr,
+            Expression::Unary { .. } | Expression::Await { .. } | Expression::TypeOf { .. } | Expression::Delete { .. }
+        );
+        if prefix {
+            self.emit("(");
+            self.gen_expression(expr);
+            self.emit(")");
+        } else {
+            self.gen_operand(expr);
         }
     }
 
