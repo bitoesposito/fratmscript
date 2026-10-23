@@ -941,6 +941,22 @@ impl Parser {
                 value: s.clone(),
                 span,
             }),
+            TokenKind::Template {
+                quasis,
+                expressions,
+            } => {
+                let quasis = quasis.clone();
+                let expressions = expressions
+                    .clone()
+                    .into_iter()
+                    .map(|tokens| parse_interpolation(tokens, span))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Expression::Template {
+                    quasis,
+                    expressions,
+                    span,
+                })
+            }
             TokenKind::Overo => Ok(Expression::Boolean { value: true, span }),
             TokenKind::Sfols => Ok(Expression::Boolean { value: false, span }),
             TokenKind::Nisciun => Ok(Expression::Null { span }),
@@ -1286,6 +1302,7 @@ fn starts_operand(token: &Token) -> bool {
             TokenKind::Identifier(_)
                 | TokenKind::Number(_)
                 | TokenKind::String(_)
+                | TokenKind::Template { .. }
                 | TokenKind::LeftParen
                 | TokenKind::LeftBracket
                 | TokenKind::LeftBrace
@@ -1319,4 +1336,27 @@ fn update_op(kind: &TokenKind) -> UpdateOp {
     } else {
         UpdateOp::Decrement
     }
+}
+
+/// Parses the tokens of one `${ … }` as a single expression.
+fn parse_interpolation(
+    mut tokens: Vec<Token>,
+    template_span: Span,
+) -> Result<Expression, ParseError> {
+    let end = tokens.last().map(|t| t.span).unwrap_or(template_span);
+    tokens.retain(|t| t.kind != TokenKind::Newline);
+    if tokens.is_empty() {
+        return Err(ParseError::new("Expected an expression inside '${}'", end));
+    }
+    tokens.push(Token::new(TokenKind::Eof, end, String::new()));
+    let mut parser = Parser::new(tokens);
+    let expr = parser.parse_expression()?;
+    if !parser.is_at_end() {
+        let token = parser.peek();
+        return Err(ParseError::new(
+            format!("Expected '}}', but found '{}'", token.kind),
+            token.span,
+        ));
+    }
+    Ok(expr)
 }

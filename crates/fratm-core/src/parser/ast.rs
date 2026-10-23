@@ -141,6 +141,12 @@ pub enum Expression {
         elements: Vec<Expression>,
         span: Span,
     },
+    /// Template literal; `quasis` are raw text, one more than `expressions`
+    Template {
+        quasis: Vec<String>,
+        expressions: Vec<Expression>,
+        span: Span,
+    },
     Object {
         properties: Vec<(String, Expression)>,
         span: Span,
@@ -239,6 +245,7 @@ impl Expression {
             Expression::This { span } => *span,
             Expression::Super { span } => *span,
             Expression::Array { span, .. } => *span,
+            Expression::Template { span, .. } => *span,
             Expression::Object { span, .. } => *span,
             Expression::Binary { span, .. } => *span,
             Expression::Unary { span, .. } => *span,
