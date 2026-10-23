@@ -1,0 +1,27 @@
+// primm fa { } mentre che (…) (do...while)
+tien n = 0
+primm fa {
+    n++
+    stamm a dì("giro", n)
+} mentre che (n < 3)
+
+// 'o corpo gira almeno na vota, pure si 'a condizione è falsa
+primm fa {
+    stamm a dì("na vota sola")
+} mentre che (sfòls)
+
+// rompe e salta funzionano comme int'a nu ciclo normale
+tien k = 0
+primm fa {
+    k++
+    si (k == 2) {
+        salta
+    }
+    si (k == 4) {
+        rompe
+    }
+    stamm a dì("k =", k)
+} mentre che (overo)
+
+tien primm = "primm", fa = "fa"
+stamm a dì(primm, fa)

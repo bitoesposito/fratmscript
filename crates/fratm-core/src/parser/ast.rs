@@ -38,6 +38,12 @@ pub enum Statement {
         body: Vec<Statement>,
         span: Span,
     },
+    /// `primm fa { } mentre che (cond)`
+    DoWhile {
+        body: Vec<Statement>,
+        condition: Expression,
+        span: Span,
+    },
     For {
         init: Option<Box<Statement>>,
         condition: Option<Expression>,

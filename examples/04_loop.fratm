@@ -1,6 +1,6 @@
 // ============================================
 // Example 4: Loops
-// mentre che (while), pe (for), pe ogni … dint / 'ncopp (for...of / for...in), ++ and +=
+// mentre che (while), primm fa (do...while), pe (for), pe ogni … dint / 'ncopp (for...of / for...in), ++ and +=
 // ============================================
 
 // While loop - mentre che
@@ -11,6 +11,14 @@ mentre che (countdown > 0) {
     countdown--
 }
 stamm a dì("🎆 Happy New Year!")
+
+// Do...while - primm fa { } mentre che (…): the body runs at least once
+stamm a dì("\n=== Coffee refills (do...while) ===")
+tien tazzine = 0
+primm fa {
+    tazzine++
+    stamm a dì("☕ Tazzina " + tazzine)
+} mentre che (tazzine < 2)
 
 // For loop - pe (ogni is optional)
 stamm a dì("\n=== Multiplication Table of 7 ===")
