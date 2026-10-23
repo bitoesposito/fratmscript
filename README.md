@@ -128,6 +128,7 @@ vedimm (x) {                  // switch
     predefinit:               // default
 }
 mentre che (cond) { }         // while
+primm fa { } mentre che (cond)   // do...while
 pe (init; cond; upd) { }      // for (ogni is optional)
 pe ogni (chist è x dint xs) { }    // for...of
 pe ogni (tien k 'ncopp obj) { }    // for...in
@@ -225,6 +226,7 @@ fermete                      // debugger
 | `sinnò` | `else` | "otherwise" |
 | `vedimm` / `caso` / `predefinit` | `switch` / `case` / `default` | "let's see" / "case" / "default" |
 | `mentre che` | `while` | "while" |
+| `primm fa … mentre che` | `do … while` | "first do … while" |
 | `pe` | `for` | "for" |
 | `dint` | `of` (for...of) | "inside" |
 | `'ncopp` | `in` (for...in) | "on top of" |
@@ -256,7 +258,7 @@ fermete                      // debugger
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 
-Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp`, `dint` and `vedimm` are not reserved at all: they mean `finally` only right after a `pruvamm` block, `of` only in a `pe` header and `switch` only in `vedimm (…) {`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
+Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp`, `dint`, `vedimm`, `primm` and `fa` are not reserved at all: they mean `finally` only right after a `pruvamm` block, `of` only in a `pe` header, `switch` only in `vedimm (…) {` and `do` only in `primm fa {`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
 
 ---
 

@@ -87,6 +87,15 @@ impl Parser {
         if self.at_switch() {
             return self.parse_switch();
         }
+        // `primm fa {` (do...while); both words stay ordinary names elsewhere
+        if self.check_identifier_at(0, "primm")
+            && self.check_identifier_at(1, "fa")
+            && self.check_at(2, &TokenKind::LeftBrace)
+        {
+            let stmt = self.parse_do_while()?;
+            self.expect_statement_end()?;
+            return Ok(stmt);
+        }
         // `na` and `mann` are keywords only in `na famiglie` / `mann for`; otherwise they are names
         if self.check(&TokenKind::Na) && self.check_next(&TokenKind::Famiglie) {
             return self.parse_class();
@@ -444,6 +453,35 @@ impl Parser {
         })
     }
 
+    fn parse_do_while(&mut self) -> Result<Statement, ParseError> {
+        let start = self.current_span();
+        self.advance(); // `primm`
+        self.advance(); // `fa`
+        let body = self.parse_block_body()?;
+        // `mentre che` stays on the line of the `}`: on the next line it would
+        // read as a new while loop
+        if !self.check(&TokenKind::Mentre) {
+            let token = self.peek();
+            return Err(ParseError::new(
+                format!(
+                    "Missing 'mentre che (…)' on the line that closes 'primm fa', found '{}'",
+                    token.kind
+                ),
+                token.span,
+            ));
+        }
+        self.advance();
+        self.expect(&TokenKind::Che)?;
+        self.expect(&TokenKind::LeftParen)?;
+        let condition = self.parse_expression()?;
+        self.expect(&TokenKind::RightParen)?;
+        Ok(Statement::DoWhile {
+            body,
+            condition,
+            span: self.span_from(start.start),
+        })
+    }
+
     fn parse_for(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Pe)?;
@@ -477,7 +515,7 @@ impl Parser {
         if is_await {
             let token = self.peek();
             return Err(ParseError::new(
-                format!("Expected 'dint' in 'pe aspett', but found '{}'", token.kind),
+                format!("Missing 'dint' in 'pe aspett', found '{}'", token.kind),
                 token.span,
             ));
         }
@@ -589,7 +627,7 @@ impl Parser {
                 let token = self.peek();
                 return Err(ParseError::new(
                     format!(
-                        "Expected 'caso' or 'predefinit' in 'vedimm', but found '{}'",
+                        "Missing 'caso' or 'predefinit' in 'vedimm', found '{}'",
                         token.kind
                     ),
                     token.span,

@@ -244,6 +244,20 @@ impl CodeGen {
                 self.write_indent();
                 self.emit("}");
             }
+            Statement::DoWhile {
+                body,
+                condition,
+                span,
+            } => {
+                self.write_indent();
+                self.add_mapping(span.line, span.column);
+                self.emit("do {\n");
+                self.gen_block_statements(body);
+                self.write_indent();
+                self.emit("} while (");
+                self.gen_expression(condition);
+                self.emit(");");
+            }
             Statement::Switch {
                 discriminant,
                 cases,

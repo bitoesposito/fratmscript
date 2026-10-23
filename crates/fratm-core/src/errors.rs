@@ -129,6 +129,33 @@ pub fn napoletanize_error(message: &str) -> String {
     if message.contains("Invalid assignment target") {
         return "Ccà nun se pò assegnà niente! Ce vo' 'na variabile o 'na proprietà, tipo 'x' o 'stu cos.nome'.".to_string();
     }
+    if let Some(found) =
+        message.strip_prefix("Missing 'mentre che (…)' on the line that closes 'primm fa', found ")
+    {
+        return format!(
+            "Doppo 'primm fa {{ … }}' ce vo' 'mentre che (…)' ncopp' 'a stessa riga, ma aggio truvato {}!",
+            found
+        );
+    }
+    if let Some(found) = message.strip_prefix("Missing 'caso' or 'predefinit' in 'vedimm', found ")
+    {
+        return format!(
+            "Dint'a 'vedimm' ogni pezzo accummencia cu 'caso …:' o 'predefinit:', ma aggio truvato {}!",
+            found
+        );
+    }
+    if message.contains("only one 'predefinit'") {
+        return "Nu 'vedimm' po' tené nu 'predefinit' sulo!".to_string();
+    }
+    if let Some(found) = message.strip_prefix("Missing 'dint' in 'pe aspett', found ") {
+        return format!(
+            "'pe aspett' vo' 'nu ciclo cu 'dint', tipo 'pe aspett (chist è x dint lista)', ma aggio truvato {}!",
+            found
+        );
+    }
+    if message.contains("'pe aspett' works only with 'dint'") {
+        return "'pe aspett' funziona sulo cu 'dint', no cu ''ncopp'!".to_string();
+    }
     if message.starts_with("Invalid number") {
         return format!(
             "Stu nummero nun se capisce: {}",
@@ -169,6 +196,8 @@ pub fn get_suggestion(error: &CompileError) -> Option<String> {
             // Checked first: the message quotes the offending token, which may be `stamm`, `}`...
             if message.contains("after the end of the statement") {
                 Some("💡 Scrive n'istruzione pe riga, o separale cu ';'".to_string())
+            } else if message.contains("'primm fa'") {
+                Some("💡 Esempio: primm fa { i++ } mentre che (i < 3)".to_string())
             } else if message.contains("'}'") {
                 Some("💡 Conta 'e parentesi graffe: ogni '{' adda avè 'o suo '}'".to_string())
             } else if message.contains("')'") {

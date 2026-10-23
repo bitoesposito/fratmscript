@@ -5,6 +5,12 @@ while ((countdown > 0)) {
   countdown--;
 }
 console.log("🎆 Happy New Year!");
+console.log("\n=== Coffee refills (do...while) ===");
+let tazzine = 0;
+do {
+  tazzine++;
+  console.log(("☕ Tazzina " + tazzine));
+} while ((tazzine < 2));
 console.log("\n=== Multiplication Table of 7 ===");
 for (let i = 1; (i <= 10); i++) {
   console.log(((("7 x " + i) + " = ") + (7 * i)));

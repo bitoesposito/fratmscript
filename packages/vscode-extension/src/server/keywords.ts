@@ -85,6 +85,13 @@ export const KEYWORDS: KeywordInfo[] = [
     categoria: 'controllo'
   },
   {
+    napoletano: 'primm fa',
+    javascript: 'do',
+    descrizione: 'Ciclo do...while: primm fa { } mentre che (cond)',
+    categoria: 'controllo',
+    snippet: 'primm fa {\n\t$0\n} mentre che (${1:condizione})'
+  },
+  {
     napoletano: 'vedimm',
     javascript: 'switch',
     descrizione: 'Switch: vedimm (x) { caso 1: … predefinit: … }',

@@ -397,6 +397,39 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_do_while() {
+        assert_eq!(
+            js("primm fa {\n  i++\n} mentre che (i < 3)"),
+            "do {\n  i++;\n} while ((i < 3));\n"
+        );
+        assert_eq!(
+            js("primm fa { f() } mentre che (x); g()"),
+            "do {\n  f();\n} while (x);\ng();\n"
+        );
+        // Both words stay names
+        assert_eq!(js("tien primm = 1, fa = 2"), "let primm = 1, fa = 2;\n");
+        // `mentre che` on the next line would start a new while loop
+        let err = compile("primm fa { }\nmentre che (x) { }", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("ncopp' 'a stessa riga"), "{}", err);
+    }
+
+    #[test]
+    fn test_new_statement_errors_are_neapolitan() {
+        for (src, expected) in [
+            ("vedimm (x) { f() }", "Dint'a 'vedimm'"),
+            (
+                "vedimm (x) { predefinit: f()\n predefinit: g() }",
+                "nu 'predefinit' sulo",
+            ),
+            ("pe aspett (tien i = 0; i < 3; i++) { }", "'pe aspett' vo'"),
+            ("pe aspett (tien k 'ncopp o) { }", "sulo cu 'dint'"),
+        ] {
+            let err = compile(src, Default::default()).unwrap_err().to_string();
+            assert!(err.contains(expected), "{}: {}", src, err);
+        }
+    }
+
+    #[test]
     fn test_switch() {
         assert_eq!(
             js("vedimm (x) {\n caso 1:\n f()\n rompe\n caso 2:\n caso 3: g()\n predefinit:\n h()\n}"),
