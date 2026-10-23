@@ -41,6 +41,7 @@ const syntaxReference = [
   { category: 'Control Flow', items: [
     { fratm: 'si', js: 'if', desc: 'If condition' },
     { fratm: 'sinnò', js: 'else', desc: 'Else branch' },
+    { fratm: 'vedimm (x) { caso 1: … predefinit: … }', js: 'switch (x) { case 1: … default: … }', desc: 'Switch' },
     { fratm: 'mentre che', js: 'while', desc: 'While loop' },
     { fratm: 'pe', js: 'for', desc: 'For loop' },
     { fratm: 'pe ogni (chist è x dint xs)', js: 'for (const x of xs)', desc: 'For...of loop' },

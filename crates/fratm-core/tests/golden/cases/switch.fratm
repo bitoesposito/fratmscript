@@ -1,0 +1,37 @@
+// vedimm / caso / predefinit (switch)
+facc giudizio(voto) {
+    vedimm (voto) {
+        caso 10:
+            piglie "è nu capolavoro"
+        caso 8:
+        caso 9:
+            piglie "bbuono assaje"
+        caso 6:
+            piglie "se po' fa'"
+        predefinit:
+            piglie "aggia studià"
+    }
+}
+stamm a dì(giudizio(10))
+stamm a dì(giudizio(9))
+stamm a dì(giudizio(3))
+
+// caduta tra i casi, rompe e blocchi
+tien log = []
+vedimm ("b") {
+    caso "a":
+        log.push("a")
+    caso "b": {
+        log.push("b")
+    }
+    caso "c":
+        log.push("c")
+        rompe
+    predefinit:
+        log.push("mai")
+}
+stamm a dì(log.join(","))
+
+// vedimm senza blocco è na funzione qualsiasi
+facc vedimm(x) { piglie `vedimm ${x}` }
+stamm a dì(vedimm("nu poco"))
