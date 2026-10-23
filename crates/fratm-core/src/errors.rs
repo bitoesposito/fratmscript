@@ -120,7 +120,10 @@ pub fn napoletanize_error(message: &str) -> String {
 pub fn get_suggestion(error: &CompileError) -> Option<String> {
     match error {
         CompileError::ParseError { message, .. } => {
-            if message.contains("'}'") {
+            // Checked first: the message quotes the offending token, which may be `stamm`, `}`...
+            if message.contains("after the end of the statement") {
+                Some("💡 Scrive n'istruzione pe riga, o separale cu ';'".to_string())
+            } else if message.contains("'}'") {
                 Some("💡 Conta 'e parentesi graffe: ogni '{' adda avè 'o suo '}'".to_string())
             } else if message.contains("')'") {
                 Some("💡 Conta 'e parentesi tonne: ogni '(' adda avè 'o suo ')'".to_string())

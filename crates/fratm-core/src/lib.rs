@@ -358,6 +358,7 @@ na famiglie Pizzaiolo figlio 'e Persona {
         for src in ["tien x = a b", "stamm a dì(1) stamm a dì(2)", "piglie a b"] {
             let err = compile(src, Default::default()).unwrap_err();
             assert!(err.to_string().contains("già fernuta"), "{}: {}", src, err);
+            assert!(errors::get_suggestion(&err).unwrap().contains("';'"), "{}", src);
         }
     }
 
