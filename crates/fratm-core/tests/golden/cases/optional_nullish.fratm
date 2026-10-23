@@ -1,0 +1,11 @@
+// Optional chaining (?.) and nullish coalescing (??)
+chist è ordine = { cliente: { nome: "Ciro" }, righe: [{ pizza: "Margherita" }], totale() { piglie 12 } }
+chist è vuoto = nisciun
+
+stamm a dì(ordine.cliente?.nome, vuoto?.cliente.nome)
+stamm a dì(ordine.righe?.[0]?.pizza, vuoto?.[0])
+stamm a dì(ordine.totale?.(), ordine.sconto?.())
+stamm a dì(vuoto ?? "default", 0 ?? 1, "" ?? "pieno", ordine.mancia ?? 0)
+stamm a dì(vuoto ?? sfòls || overo)
+tien x = vuoto ? 1 : 2
+stamm a dì(x)
