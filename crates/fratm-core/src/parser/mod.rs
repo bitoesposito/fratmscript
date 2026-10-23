@@ -948,6 +948,82 @@ impl Parser {
         Ok(args)
     }
 
+    /// One entry of an object literal: `key: value`, `nome`, `[k]: v`,
+    /// `saluta() { }`, `mo vir carica() { }` or `...altro`.
+    fn parse_object_property(&mut self) -> Result<Property, ParseError> {
+        if self.match_token(&TokenKind::Ellipsis) {
+            return Ok(Property::Spread(self.parse_assignment()?));
+        }
+        let is_async = self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir);
+        if is_async {
+            self.advance();
+            self.advance();
+        }
+        // `facc` before a method name is optional, as in classes
+        if self.check(&TokenKind::Facc)
+            && !self.check_next(&TokenKind::Colon)
+            && !self.check_next(&TokenKind::LeftParen)
+        {
+            self.advance();
+        }
+        let key_token = self.peek().clone();
+        let key = self.parse_property_key()?;
+        if self.check(&TokenKind::LeftParen) {
+            let params = self.parse_parameters()?;
+            let body = self.parse_block_body()?;
+            return Ok(Property::Method {
+                key,
+                params,
+                body,
+                is_async,
+            });
+        }
+        if is_async {
+            return Err(ParseError::new(
+                format!("Expected '(', but found '{}'", self.peek().kind),
+                self.peek().span,
+            ));
+        }
+        if self.match_token(&TokenKind::Colon) {
+            let value = self.parse_expression()?;
+            return Ok(Property::KeyValue { key, value });
+        }
+        // Shorthand `{ nome }` needs a name that can be a variable
+        let is_name = matches!(key_token.kind, TokenKind::Identifier(_))
+            || contextual_name(&key_token).is_some();
+        match key {
+            PropertyKey::Name(name) if is_name => Ok(Property::Shorthand {
+                name,
+                span: key_token.span,
+            }),
+            _ => Err(ParseError::new(
+                format!("Expected ':', but found '{}'", self.peek().kind),
+                self.peek().span,
+            )),
+        }
+    }
+
+    fn parse_property_key(&mut self) -> Result<PropertyKey, ParseError> {
+        if self.match_token(&TokenKind::LeftBracket) {
+            let key = self.parse_assignment()?;
+            self.expect(&TokenKind::RightBracket)?;
+            return Ok(PropertyKey::Computed(Box::new(key)));
+        }
+        match &self.peek().kind {
+            TokenKind::String(s) => {
+                let s = s.clone();
+                self.advance();
+                Ok(PropertyKey::String(s))
+            }
+            TokenKind::Number(n) => {
+                let n = *n;
+                self.advance();
+                Ok(PropertyKey::Number(n))
+            }
+            _ => Ok(PropertyKey::Name(self.expect_property_name()?)),
+        }
+    }
+
     fn parse_spread_or_expression(&mut self) -> Result<Expression, ParseError> {
         if self.match_token(&TokenKind::Ellipsis) {
             let start = self.previous().span;
@@ -1129,14 +1205,7 @@ impl Parser {
                         if self.check(&TokenKind::RightBrace) {
                             break;
                         }
-                        if self.match_token(&TokenKind::Ellipsis) {
-                            properties.push(Property::Spread(self.parse_assignment()?));
-                        } else {
-                            let key = self.expect_property_name()?;
-                            self.expect(&TokenKind::Colon)?;
-                            let value = self.parse_expression()?;
-                            properties.push(Property::KeyValue { key, value });
-                        }
+                        properties.push(self.parse_object_property()?);
                         // Skip newlines after the value
                         while self.check(&TokenKind::Newline) {
                             self.advance();

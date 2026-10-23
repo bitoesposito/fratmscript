@@ -98,6 +98,19 @@ facc saluta(nome = "Gennà", ...altri) { }  // default and rest parameters
 somma(...numeri)                          // spread in calls, [...a] and { ...o }
 ```
 
+### Objects
+```fratm
+chist è pizza = {
+    nome,                        // shorthand for nome: nome
+    [chiave]: 1,                 // computed key
+    "con spazi": 2,
+    descrivi() {                 // method ("facc" optional)
+        piglie "Pizza " + stu cos.nome
+    },
+    mo vir carica() { }          // async method
+}
+```
+
 ### Control Flow
 ```fratm
 si (cond) { } sinnò { }       // if/else
