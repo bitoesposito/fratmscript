@@ -77,6 +77,7 @@ const syntaxReference = [
   { category: 'Error Handling', items: [
     { fratm: 'pruvamm', js: 'try', desc: 'Try block' },
     { fratm: 'e si schiatta', js: 'catch', desc: 'Catch block' },
+    { fratm: 'aropp', js: 'finally', desc: 'Always runs after try/catch' },
     { fratm: 'iett', js: 'throw', desc: 'Throw error' },
   ]},
   { category: 'Modules', items: [

@@ -1,6 +1,6 @@
 // ============================================
 // Example 12: Try/Catch e Validazione
-// pruvamm, e si schiatta, iett
+// pruvamm, e si schiatta, aropp, iett
 // ============================================
 
 facc validaEta(eta) {
@@ -18,11 +18,16 @@ facc provaValore(eta) {
         stamm a dì(validaEta(eta))
     } e si schiatta (err) {
         avvis a dì("Valore " + eta + " scartato: " + err.message)
+    } aropp {
+        controllati++
     }
 }
+
+tien controllati = 0
 
 stamm a dì("=== Validazione eta ===")
 provaValore(35)
 provaValore(-2)
 provaValore(200)
 provaValore(90)
+stamm a dì("Valori controllati: " + controllati)

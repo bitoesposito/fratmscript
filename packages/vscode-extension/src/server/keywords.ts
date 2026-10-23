@@ -321,6 +321,13 @@ export const KEYWORDS: KeywordInfo[] = [
     categoria: 'errore'
   },
   {
+    napoletano: 'aropp',
+    javascript: 'finally',
+    descrizione: 'Blocco finally, gira sempre dopo pruvamm/schiatta',
+    categoria: 'errore',
+    snippet: 'aropp {\n\t$0\n}'
+  },
+  {
     napoletano: 'iett',
     javascript: 'throw',
     descrizione: 'Lancia un\'eccezione',

@@ -55,10 +55,13 @@ pub enum Statement {
     Debugger {
         span: Span,
     },
+    /// `pruvamm { } e si schiatta (e) { } aropp { }`; at least one of
+    /// `catch_body` and `finally_body` is present
     TryCatch {
         try_body: Vec<Statement>,
         catch_param: Option<Pattern>,
-        catch_body: Vec<Statement>,
+        catch_body: Option<Vec<Statement>>,
+        finally_body: Option<Vec<Statement>>,
         span: Span,
     },
     Throw {

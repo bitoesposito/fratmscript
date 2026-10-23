@@ -232,34 +232,33 @@ impl CodeGen {
                 try_body,
                 catch_param,
                 catch_body,
+                finally_body,
                 span,
-                ..
             } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
                 self.emit("try {\n");
-                self.indent += 1;
-                for s in try_body {
-                    self.gen_statement(s);
-                    self.emit("\n");
-                }
-                self.indent -= 1;
-                self.write_indent();
-                self.emit("} catch");
-                if let Some(param) = catch_param {
-                    self.emit(" (");
-                    self.gen_pattern(param);
-                    self.emit(")");
-                }
-                self.emit(" {\n");
-                self.indent += 1;
-                for s in catch_body {
-                    self.gen_statement(s);
-                    self.emit("\n");
-                }
-                self.indent -= 1;
+                self.gen_block_statements(try_body);
                 self.write_indent();
                 self.emit("}");
+                if let Some(catch_body) = catch_body {
+                    self.emit(" catch");
+                    if let Some(param) = catch_param {
+                        self.emit(" (");
+                        self.gen_pattern(param);
+                        self.emit(")");
+                    }
+                    self.emit(" {\n");
+                    self.gen_block_statements(catch_body);
+                    self.write_indent();
+                    self.emit("}");
+                }
+                if let Some(finally_body) = finally_body {
+                    self.emit(" finally {\n");
+                    self.gen_block_statements(finally_body);
+                    self.write_indent();
+                    self.emit("}");
+                }
             }
 
             Statement::Throw { value, .. } => {
@@ -857,6 +856,16 @@ impl CodeGen {
         } else {
             self.gen_operand(expr);
         }
+    }
+
+    /// The statements of a block, one level deeper, each on its own line.
+    fn gen_block_statements(&mut self, statements: &[Statement]) {
+        self.indent += 1;
+        for s in statements {
+            self.gen_statement(s);
+            self.emit("\n");
+        }
+        self.indent -= 1;
     }
 
     fn write_indent(&mut self) {
