@@ -16,8 +16,9 @@
 //! ### Operators
 //! - **Arithmetic**: `+`, `-`, `*`, `/`, `%`, `**`
 //! - **Comparison**: `==`, `===`, `!=`, `!==`, `<`, `>`, `<=`, `>=`
-//! - **Logical**: `e` (and), `o` (or), `no` (not)
-//! - **Assignment**: `=`, `+=`, `-=`, `*=`, `/=`
+//! - **Logical**: `e` / `&&` (and), `o` / `||` (or), `no` (not), `??`
+//! - **Assignment**: `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `??=`, `||=`, `&&=`
+//! - **Update**: `++`, `--`
 
 use std::fmt;
 use serde::{Serialize, Deserialize};
@@ -224,6 +225,14 @@ pub enum TokenKind {
     MinusEqual,
     StarEqual,
     SlashEqual,
+    PercentEqual,
+    StarStarEqual,
+    QuestionQuestionEqual,
+    OrEqual,
+    AndEqual,
+    PlusPlus,
+    MinusMinus,
+    QuestionQuestion,
 
     // === Punctuation ===
     LeftParen,
@@ -331,6 +340,14 @@ impl fmt::Display for TokenKind {
             TokenKind::MinusEqual => write!(f, "-="),
             TokenKind::StarEqual => write!(f, "*="),
             TokenKind::SlashEqual => write!(f, "/="),
+            TokenKind::PercentEqual => write!(f, "%="),
+            TokenKind::StarStarEqual => write!(f, "**="),
+            TokenKind::QuestionQuestionEqual => write!(f, "??="),
+            TokenKind::OrEqual => write!(f, "||="),
+            TokenKind::AndEqual => write!(f, "&&="),
+            TokenKind::PlusPlus => write!(f, "++"),
+            TokenKind::MinusMinus => write!(f, "--"),
+            TokenKind::QuestionQuestion => write!(f, "??"),
             TokenKind::LeftParen => write!(f, "("),
             TokenKind::RightParen => write!(f, ")"),
             TokenKind::LeftBrace => write!(f, "{{"),

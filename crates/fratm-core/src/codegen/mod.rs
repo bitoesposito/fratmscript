@@ -336,8 +336,13 @@ impl CodeGen {
             }
             Expression::Unary { operator, operand, .. } => {
                 self.emit(operator.to_js());
-                // `- -x` must not become `--x` (a decrement)
-                if matches!(operator, UnaryOp::Negate) && matches!(**operand, Expression::Unary { operator: UnaryOp::Negate, .. }) {
+                // `- -x` and `- --x` must not become `--x` / `---x`
+                let starts_with_minus = matches!(
+                    **operand,
+                    Expression::Unary { operator: UnaryOp::Negate, .. }
+                        | Expression::Update { operator: UpdateOp::Decrement, prefix: true, .. }
+                );
+                if matches!(operator, UnaryOp::Negate) && starts_with_minus {
                     self.emit("(");
                     self.gen_expression(operand);
                     self.emit(")");
@@ -345,10 +350,17 @@ impl CodeGen {
                     self.gen_operand(operand);
                 }
             }
-            Expression::Assignment { target, value, .. } => {
+            Expression::Assignment { target, operator, value, .. } => {
                 self.gen_expression(target);
-                self.emit(" = ");
+                self.emit(" ");
+                self.emit(operator.to_js());
+                self.emit(" ");
                 self.gen_expression(value);
+            }
+            Expression::Update { operator, prefix, argument, .. } => {
+                if *prefix { self.emit(operator.to_js()); }
+                self.gen_expression(argument);
+                if !*prefix { self.emit(operator.to_js()); }
             }
             Expression::Call { callee, arguments, .. } => {
                 self.gen_callee(callee);

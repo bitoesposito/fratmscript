@@ -424,4 +424,37 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert_eq!(js("tien x = (aspett p).valore"), "let x = (await p).valore;\n");
         assert_eq!(js("tien x = (no a).b"), "let x = (!a).b;\n");
     }
+
+    #[test]
+    fn test_compound_assignment() {
+        for op in ["+=", "-=", "*=", "/=", "%=", "**=", "??=", "||=", "&&="] {
+            assert_eq!(js(&format!("x {} 2", op)), format!("x {} 2;\n", op));
+            assert_eq!(js(&format!("a.b[0] {} 2", op)), format!("a.b[0] {} 2;\n", op));
+        }
+        assert_eq!(js("a = b += 1"), "a = b += 1;\n");
+    }
+
+    #[test]
+    fn test_increment_and_decrement() {
+        assert_eq!(js("i++"), "i++;\n");
+        assert_eq!(js("--i"), "--i;\n");
+        assert_eq!(js("stu cos.n++"), "this.n++;\n");
+        assert_eq!(js("tien x = ++a[0]"), "let x = ++a[0];\n");
+        assert_eq!(js("pe (tien i = 0; i < 3; i++) { }"), "for (let i = 0; (i < 3); i++) {\n}\n");
+        assert_eq!(js("tien x = - --i"), "let x = -(--i);\n");
+        assert_eq!(js("tien x = a - -b"), "let x = (a - -b);\n");
+    }
+
+    #[test]
+    fn test_symbolic_logical_operators() {
+        assert_eq!(js("tien x = a || b && !c"), "let x = (a || (b && !c));\n");
+    }
+
+    #[test]
+    fn test_invalid_assignment_targets_are_errors() {
+        for src in ["1 = 2", "f() += 1", "++1", "(a + b)++", "tien x = 1 = 2"] {
+            let err = compile(src, Default::default()).unwrap_err();
+            assert!(err.to_string().contains("nun se pò assegnà"), "{}: {}", src, err);
+        }
+    }
 }
