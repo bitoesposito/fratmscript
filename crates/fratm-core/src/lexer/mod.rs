@@ -82,6 +82,8 @@ pub struct Lexer<'a> {
     token_line: usize,
     /// Column where current token starts
     token_column: usize,
+    /// Kind of the last token emitted, used to disambiguate `'e`
+    prev_kind: Option<TokenKind>,
 }
 
 impl<'a> Lexer<'a> {
@@ -108,6 +110,7 @@ impl<'a> Lexer<'a> {
             token_start: 0,
             token_line: 1,
             token_column: 1,
+            prev_kind: None,
         }
     }
 
@@ -133,6 +136,7 @@ impl<'a> Lexer<'a> {
         loop {
             let token = self.next_token();
             let is_eof = token.kind == TokenKind::Eof;
+            self.prev_kind = Some(token.kind.clone());
             tokens.push(token);
             if is_eof {
                 break;
@@ -348,8 +352,10 @@ impl<'a> Lexer<'a> {
     fn scan_apostrophe_or_string(&mut self) -> Token {
         let rest = &self.source[self.position..];
 
-        // `'e` (used in "figlio 'e Padre")
-        if let Some(after_e) = rest.strip_prefix('e') {
+        // `'e` (used in "figlio 'e Padre"), only right after `figlio` so that
+        // strings like 'e poi' still lex as strings
+        let after_figlio = matches!(self.prev_kind, Some(TokenKind::Figlio));
+        if let Some(after_e) = rest.strip_prefix('e').filter(|_| after_figlio) {
             if after_e.chars().next().map(|c| c.is_whitespace()).unwrap_or(false) {
                 self.advance(); // consume 'e'
                 return self.make_token(TokenKind::De);
@@ -362,7 +368,8 @@ impl<'a> Lexer<'a> {
             let trimmed = &after_o[spaces_len..];
             if spaces_len > 0 {
                 if let Some(after_pate) = trimmed.strip_prefix("pate") {
-                    if after_pate.chars().next().map(|c| !is_ident_continue(c)).unwrap_or(true) {
+                    // super is always called or accessed: `'o pate(...)` / `'o pate.x`
+                    if matches!(after_pate.chars().next(), Some('(') | Some('.')) {
                         let consumed = 1 + spaces_len + "pate".len();
                         for _ in 0..consumed {
                             self.advance();
@@ -573,5 +580,15 @@ mod tests {
         assert!(matches!(tokens[1].kind, TokenKind::De));
         assert!(matches!(tokens[2].kind, TokenKind::Identifier(_)));
         assert!(matches!(tokens[4].kind, TokenKind::OPate));
+    }
+
+    #[test]
+    fn test_apostrophe_strings_are_not_oop_keywords() {
+        let mut lexer = Lexer::new("'e poi' 'o pate mio' 'e'");
+        let tokens = lexer.tokenize();
+
+        assert!(matches!(&tokens[0].kind, TokenKind::String(s) if s == "e poi"));
+        assert!(matches!(&tokens[1].kind, TokenKind::String(s) if s == "o pate mio"));
+        assert!(matches!(&tokens[2].kind, TokenKind::String(s) if s == "e"));
     }
 }

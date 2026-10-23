@@ -36,10 +36,6 @@ packages/vscode-extension/out/
 packages/vscode-extension/*.vsix
 examples/*.js
 examples/*.js.map
-Games/*/*.js
-Games/*/*.js.map
-PersonalScripts/**/*.js
-PersonalScripts/**/*.js.map
 .fratm_tmp_*.js
 **/.fratm_tmp_*.js
 

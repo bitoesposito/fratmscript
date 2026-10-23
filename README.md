@@ -34,9 +34,7 @@ fratmscript/
 ├── packages/
 │   ├── vscode-extension/ # Syntax highlighting
 │   └── playground/       # Online editor
-├── examples/             # Example programs
-├── Games/                # Games written in FratmScript
-└── PersonalScripts/      # Utility scripts + launcher
+└── examples/             # Example programs
 ```
 
 ---
@@ -57,8 +55,6 @@ cargo build --release
 # REPL
 ./target/release/fratm repl
 ```
-
-Per una guida completa a esempi, giochi e script: **[Run Guide](RUN_EXAMPLES.md)**.
 
 ---
 
@@ -214,9 +210,7 @@ fermete                      // debugger
 
 ## Development
 
-Install `just` (Linux/macOS/Windows) and official guide:
-- [RUN_EXAMPLES.md](RUN_EXAMPLES.md#install-just-optional-but-recommended)
-- https://just.systems/man/en/
+Install `just`: https://just.systems/man/en/
 
 ```bash
 # Recommended task runner
@@ -275,16 +269,7 @@ Check the `examples/` folder for complete programs:
 10. `10_nuove_feature.fratm` - New features
 11. `11_oop_avanzato.fratm` - Inheritance, super and static methods
 12. `12_trycatch_validazione.fratm` - Try/catch and validation
-
----
-
-## Script Launcher
-
-You can launch extra scripts from one entrypoint:
-
-```bash
-fratm lancia PersonalScripts/run_personal_scripts.fratm
-```
+13. `13_pomodor_e_muzzarel.fratm` - Interactive tic-tac-toe in the terminal
 
 ---
 
