@@ -77,6 +77,7 @@
 //! // Error: "Doppo 'chist' ce vo' 'è'! Scrivi 'chist è' pe fà 'na costante."
 //! ```
 
+pub mod checker;
 pub mod codegen;
 pub mod errors;
 pub mod lexer;
@@ -219,6 +220,13 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
             line: first.span.line,
             column: first.span.column,
         }
+    })?;
+
+    // Semantic checks
+    checker::check(&program).map_err(|e| CompileError::SemanticError {
+        message: e.message,
+        line: e.span.line,
+        column: e.span.column,
     })?;
 
     // Code generation
