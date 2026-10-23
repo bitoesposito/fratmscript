@@ -92,6 +92,19 @@ export const KEYWORDS: KeywordInfo[] = [
     snippet: 'pe ogni (tien ${1:i} = 0; ${1:i} < ${2:n}; ${1:i} = ${1:i} + 1) {\n\t$0\n}'
   },
   {
+    napoletano: 'dint',
+    javascript: 'of',
+    descrizione: 'Ciclo for...of: pe ogni (tien x dint lista)',
+    categoria: 'controllo',
+    snippet: 'pe ogni (chist è ${1:x} dint ${2:lista}) {\n\t$0\n}'
+  },
+  {
+    napoletano: "'ncopp",
+    javascript: 'in',
+    descrizione: "Ciclo for...in: pe ogni (tien k 'ncopp oggetto)",
+    categoria: 'controllo'
+  },
+  {
     napoletano: 'ogni',
     javascript: '',
     descrizione: 'Parte del costrutto "pe ogni" (for)',

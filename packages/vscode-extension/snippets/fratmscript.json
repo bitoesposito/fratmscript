@@ -82,11 +82,20 @@
   "For-of": {
     "prefix": ["peogni", "forof"],
     "body": [
-      "pe ogni (chist ${1:item} dint'a ${2:array}) {",
+      "pe ogni (chist è ${1:item} dint ${2:array}) {",
       "\t$0",
       "}"
     ],
     "description": "Ciclo for-of"
+  },
+  "For-in": {
+    "prefix": ["forin"],
+    "body": [
+      "pe ogni (tien ${1:chiave} 'ncopp ${2:oggetto}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Ciclo for-in"
   },
   "Console.log (stamm a dì)": {
     "prefix": ["stamm", "log", "console"],

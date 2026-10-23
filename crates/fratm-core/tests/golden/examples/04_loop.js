@@ -9,6 +9,16 @@ console.log("\n=== Multiplication Table of 7 ===");
 for (let i = 1; (i <= 10); i++) {
   console.log(((("7 x " + i) + " = ") + (7 * i)));
 }
+console.log("\n=== Pizza menu (for...of) ===");
+const pizze = ["Margherita", "Marinara", "Diavola"];
+for (const pizza of pizze) {
+  console.log(("🍕 " + pizza));
+}
+console.log("\n=== Prices (for...in) ===");
+const prezzi = { margherita: 5, marinara: 4 };
+for (let nome in prezzi) {
+  console.log((((nome + ": ") + prezzi[nome]) + "€"));
+}
 console.log("\n=== Find the number (break) ===");
 for (let n = 1; (n <= 100); n++) {
   if ((n == 42)) {

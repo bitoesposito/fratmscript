@@ -215,6 +215,35 @@ impl CodeGen {
                 self.emit("}");
             }
 
+            Statement::ForEach {
+                binding,
+                of,
+                is_await,
+                iterable,
+                body,
+                span,
+            } => {
+                self.write_indent();
+                self.add_mapping(span.line, span.column);
+                self.emit(if *is_await { "for await (" } else { "for (" });
+                match binding {
+                    ForBinding::Let(pattern) => {
+                        self.emit("let ");
+                        self.gen_pattern(pattern);
+                    }
+                    ForBinding::Const(pattern) => {
+                        self.emit("const ");
+                        self.gen_pattern(pattern);
+                    }
+                    ForBinding::Existing(name) => self.emit(&js_name(name)),
+                }
+                self.emit(if *of { " of " } else { " in " });
+                self.gen_expression(iterable);
+                self.emit(") {\n");
+                self.gen_block_statements(body);
+                self.write_indent();
+                self.emit("}");
+            }
             Statement::Break { .. } => {
                 self.write_indent();
                 self.emit("break;");

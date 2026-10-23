@@ -408,6 +408,7 @@ impl<'a> Lexer<'a> {
     /// Supported forms:
     /// - `'e`   -> extends connector (`TokenKind::De`)
     /// - `'o pate` -> super (`TokenKind::OPate`)
+    /// - `'ncopp` -> for...in (`TokenKind::Ncopp`)
     fn scan_apostrophe_or_string(&mut self) -> Token {
         let rest = &self.source[self.position..];
 
@@ -423,6 +424,23 @@ impl<'a> Lexer<'a> {
             {
                 self.advance(); // consume 'e'
                 return self.make_token(TokenKind::De);
+            }
+        }
+
+        // `'ncopp` (for...in), only right after the loop variable: a string
+        // never follows a name directly, so 'ncopp a tavola' still lexes as a string
+        let after_name = matches!(self.prev_kind, Some(TokenKind::Identifier(_)));
+        if let Some(after_ncopp) = rest.strip_prefix("ncopp").filter(|_| after_name) {
+            if after_ncopp
+                .chars()
+                .next()
+                .map(|c| c.is_whitespace())
+                .unwrap_or(false)
+            {
+                for _ in 0.."ncopp".len() {
+                    self.advance();
+                }
+                return self.make_token(TokenKind::Ncopp);
             }
         }
 
