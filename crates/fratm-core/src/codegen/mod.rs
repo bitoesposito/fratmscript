@@ -341,9 +341,8 @@ impl CodeGen {
             Statement::ClassDecl {
                 name,
                 super_class,
-                methods,
+                members,
                 span,
-                ..
             } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
@@ -355,31 +354,51 @@ impl CodeGen {
                 }
                 self.emit(" {\n");
                 self.indent += 1;
-                for method in methods {
+                for member in members {
                     self.write_indent();
-                    if method.is_static {
-                        self.emit("static ");
+                    match member {
+                        ClassMember::Field {
+                            name,
+                            value,
+                            is_static,
+                            ..
+                        } => {
+                            if *is_static {
+                                self.emit("static ");
+                            }
+                            self.emit(name);
+                            if let Some(value) = value {
+                                self.emit(" = ");
+                                self.gen_expression(value);
+                            }
+                            self.emit(";\n");
+                        }
+                        ClassMember::Method(method) => {
+                            if method.is_static {
+                                self.emit("static ");
+                            }
+                            if method.is_async {
+                                self.emit("async ");
+                            }
+                            match method.kind {
+                                MethodKind::Getter => self.emit("get "),
+                                MethodKind::Setter => self.emit("set "),
+                                MethodKind::Method => {}
+                            }
+                            // Translate "costruttore" to JavaScript "constructor"
+                            let js_method_name = if method.name == "costruttore" {
+                                "constructor"
+                            } else {
+                                method.name.as_str()
+                            };
+                            self.emit(js_method_name);
+                            self.gen_params(&method.params);
+                            self.emit(" {\n");
+                            self.gen_block_statements(&method.body);
+                            self.write_indent();
+                            self.emit("}\n");
+                        }
                     }
-                    if method.is_async {
-                        self.emit("async ");
-                    }
-                    // Translate "costruttore" to JavaScript "constructor"
-                    let js_method_name = if method.name == "costruttore" {
-                        "constructor"
-                    } else {
-                        method.name.as_str()
-                    };
-                    self.emit(js_method_name);
-                    self.gen_params(&method.params);
-                    self.emit(" {\n");
-                    self.indent += 1;
-                    for s in &method.body {
-                        self.gen_statement(s);
-                        self.emit("\n");
-                    }
-                    self.indent -= 1;
-                    self.write_indent();
-                    self.emit("}\n");
                 }
                 self.indent -= 1;
                 self.write_indent();

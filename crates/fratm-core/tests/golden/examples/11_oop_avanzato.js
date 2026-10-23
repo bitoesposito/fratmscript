@@ -33,3 +33,20 @@ console.log(gennaro.faiPizza("Diavola"));
 console.log(("Pizze fatte: " + gennaro.pizzeFatte));
 console.log(("Categoria: " + Persona.categoria()));
 console.log(("Static subclass: " + Pizzaiolo.salutoDiClasse()));
+class Forno {
+  #temperatura = 20;
+  static forniAccesi = 0;
+  pizzeInForno = [];
+  get temperatura() {
+    return (this.#temperatura + "°C");
+  }
+  set temperatura(gradi) {
+    this.#temperatura = this.#limita(gradi);
+  }
+  #limita(gradi) {
+    return Math.min(gradi, 485);
+  }
+}
+const forno = new Forno();
+forno.temperatura = 900;
+console.log(("Forno: " + forno.temperatura));

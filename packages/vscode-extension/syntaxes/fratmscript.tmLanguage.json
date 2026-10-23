@@ -117,7 +117,7 @@
         {
           "comment": "Variable declarations: chist è (const), tien (let), facc (function)",
           "name": "storage.type.fratm",
-          "match": "\\b(chist|è|tien|facc|mo|na|famiglie|fisso)\\b"
+          "match": "\\b(chist|è|tien|facc|mo|na|famiglie|fisso|damme|miette)\\b"
         },
         {
           "comment": "Class/OOP: nu bell (new), figlio 'e (extends), 'o pate (super), costruttore",

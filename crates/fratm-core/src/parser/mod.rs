@@ -750,51 +750,111 @@ impl Parser {
         };
 
         self.expect(&TokenKind::LeftBrace)?;
-        let mut methods = Vec::new();
-        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-            while self.check(&TokenKind::Newline) {
-                self.advance();
-            }
-            if self.check(&TokenKind::RightBrace) {
+        let mut members = Vec::new();
+        loop {
+            self.skip_newlines();
+            if self.check(&TokenKind::RightBrace) || self.is_at_end() {
                 break;
             }
-            methods.push(self.parse_class_method()?);
+            members.push(self.parse_class_member()?);
         }
         self.expect(&TokenKind::RightBrace)?;
         Ok(Statement::ClassDecl {
             name,
             super_class,
-            methods,
+            members,
             span: self.span_from(start.start),
         })
     }
 
-    fn parse_class_method(&mut self) -> Result<ClassMethod, ParseError> {
+    fn parse_class_member(&mut self) -> Result<ClassMember, ParseError> {
         let start = self.current_span();
-        let is_static = self.match_token(&TokenKind::Fisso);
+        // `fisso` and `mo vir` are modifiers only when a member follows them
+        let is_static = !self.check_next(&TokenKind::LeftParen)
+            && !self.check_next(&TokenKind::Equal)
+            && self.match_token(&TokenKind::Fisso);
 
-        let is_async = if self.match_token(&TokenKind::Mo) {
-            self.expect(&TokenKind::Vir)?;
+        let is_async = if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) {
+            self.current += 2;
             true
         } else {
             false
         };
 
         // "facc" inside classes is optional.
-        self.match_token(&TokenKind::Facc);
+        let has_facc = self.match_token(&TokenKind::Facc);
 
-        let name = self.expect_identifier()?;
+        // `damme x()` / `miette x(v)`; `damme()` alone is a method called damme
+        let mut kind = MethodKind::Method;
+        if !is_async && !has_facc && self.check_at(2, &TokenKind::LeftParen) {
+            if self.check_identifier_at(0, "damme") {
+                kind = MethodKind::Getter;
+            } else if self.check_identifier_at(0, "miette") {
+                kind = MethodKind::Setter;
+            }
+            if kind != MethodKind::Method {
+                self.advance();
+            }
+        }
+
+        let name = self.expect_member_name()?;
+
+        if kind == MethodKind::Method
+            && !is_async
+            && !has_facc
+            && !self.check(&TokenKind::LeftParen)
+        {
+            let value = if self.match_token(&TokenKind::Equal) {
+                Some(self.parse_expression()?)
+            } else {
+                None
+            };
+            self.expect_statement_end()?;
+            return Ok(ClassMember::Field {
+                name,
+                value,
+                is_static,
+                span: self.span_from(start.start),
+            });
+        }
+
         let params = self.parse_parameters()?;
+        let expected = match kind {
+            MethodKind::Getter => Some(0),
+            MethodKind::Setter => Some(1),
+            MethodKind::Method => None,
+        };
+        if expected.is_some_and(|n| n != params.len()) {
+            return Err(ParseError::new(
+                if kind == MethodKind::Getter {
+                    "A 'damme' getter takes no parameters"
+                } else {
+                    "A 'miette' setter takes exactly one parameter"
+                },
+                self.span_from(start.start),
+            ));
+        }
         let body = self.parse_block_body()?;
 
-        Ok(ClassMethod {
+        Ok(ClassMember::Method(ClassMethod {
             name,
+            kind,
             params,
             body,
             is_async,
             is_static,
             span: self.span_from(start.start),
-        })
+        }))
+    }
+
+    /// A class member name: any word (keywords included, as in JS) or `#private`.
+    fn expect_member_name(&mut self) -> Result<String, ParseError> {
+        if let TokenKind::PrivateName(name) = &self.peek().kind {
+            let name = name.clone();
+            self.advance();
+            return Ok(name);
+        }
+        self.expect_property_name()
     }
 
     fn parse_import(&mut self) -> Result<Statement, ParseError> {
@@ -1229,7 +1289,7 @@ impl Parser {
                     span,
                 };
             } else if optional || self.match_token(&TokenKind::Dot) {
-                let name = self.expect_property_name()?;
+                let name = self.expect_member_name()?;
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Member {
                     object: Box::new(expr),

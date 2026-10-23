@@ -204,6 +204,8 @@ pub enum TokenKind {
     De,      // extends (part 2) - "'e" (of)
     OPate,   // super - "'o pate" (the father)
     Ncopp,   // for...in - "'ncopp" (on top of)
+    /// `#segreto`, a private class member name (stored with its `#`)
+    PrivateName(String),
     CheE,    // typeof - "chè è" (what is)
     EUno,    // instanceof (part 1) - "è uno"
     Leva,    // delete
@@ -340,6 +342,7 @@ impl fmt::Display for TokenKind {
             TokenKind::De => write!(f, "'e"),
             TokenKind::OPate => write!(f, "'o pate"),
             TokenKind::Ncopp => write!(f, "'ncopp"),
+            TokenKind::PrivateName(name) => write!(f, "{}", name),
             TokenKind::CheE => write!(f, "chè è"),
             TokenKind::EUno => write!(f, "è uno"),
             TokenKind::Leva => write!(f, "leva"),
