@@ -199,24 +199,15 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
     let mut lexer = Lexer::new(source);
     let tokens = lexer.tokenize();
 
-    // Check for lexer errors
-    let lex_errors: Vec<_> = tokens
-        .iter()
-        .filter_map(|t| {
-            if let lexer::TokenKind::Invalid(msg) = &t.kind {
-                Some(CompileError::LexerError {
-                    message: msg.clone(),
-                    line: t.span.line,
-                    column: t.span.column,
-                })
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    if !lex_errors.is_empty() {
-        return Err(lex_errors.into_iter().next().unwrap());
+    // Check for lexer errors, including inside template interpolations
+    if let Some(t) = first_invalid(&tokens) {
+        if let lexer::TokenKind::Invalid(msg) = &t.kind {
+            return Err(CompileError::LexerError {
+                message: msg.clone(),
+                line: t.span.line,
+                column: t.span.column,
+            });
+        }
     }
 
     // Parsing
@@ -244,6 +235,16 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
         code,
         source_map,
         warnings: vec![],
+    })
+}
+
+fn first_invalid(tokens: &[lexer::Token]) -> Option<&lexer::Token> {
+    tokens.iter().find_map(|t| match &t.kind {
+        lexer::TokenKind::Invalid(_) => Some(t),
+        lexer::TokenKind::Template { expressions, .. } => {
+            expressions.iter().find_map(|e| first_invalid(e))
+        }
+        _ => None,
     })
 }
 
@@ -524,5 +525,55 @@ na famiglie Pizzaiolo figlio 'e Persona {
                 err
             );
         }
+    }
+
+    #[test]
+    fn test_template_literals() {
+        assert_eq!(js("tien x = `Uè ${nome}!`"), "let x = `Uè ${nome}!`;\n");
+        assert_eq!(js("tien x = ``"), "let x = ``;\n");
+        assert_eq!(
+            js("tien x = `${a ? `x` : \"y\"}`"),
+            "let x = `${(a ? `x` : \"y\")}`;\n"
+        );
+        assert_eq!(
+            js("tien x = `${`${`deep`}`}`"),
+            "let x = `${`${`deep`}`}`;\n"
+        );
+        assert_eq!(
+            js("tien x = `${ { k: 1 }.k }`"),
+            "let x = `${{ k: 1 }.k}`;\n"
+        );
+        // Escapes stay as written, and text spans lines
+        assert_eq!(
+            js("tien x = `a \\` \\${b} \\n\nc`"),
+            "let x = `a \\` \\${b} \\n\nc`;\n"
+        );
+        // Short keywords are names inside interpolations too
+        assert_eq!(js("tien x = `${e}`"), "let x = `${e}`;\n");
+    }
+
+    #[test]
+    fn test_template_errors() {
+        for src in [
+            "tien x = `abc",
+            "tien x = `${a`",
+            "tien x = `${}`",
+            "tien x = `${a b}`",
+            "tien x = `${ @ }`",
+        ] {
+            assert!(
+                compile(src, Default::default()).is_err(),
+                "{} should not compile",
+                src
+            );
+        }
+        let err = compile("tien x = `abc", Default::default()).unwrap_err();
+        assert!(err.to_string().contains("template nun è chiuso"), "{}", err);
+    }
+
+    #[test]
+    fn test_statements_after_multiline_template_keep_their_line() {
+        let err = compile("tien x = `a\nb\nc`\ntien y = = 1", Default::default()).unwrap_err();
+        assert_eq!(err.line(), Some(4));
     }
 }

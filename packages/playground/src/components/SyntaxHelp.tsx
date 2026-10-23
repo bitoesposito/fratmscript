@@ -51,6 +51,7 @@ const syntaxReference = [
     { fratm: 'sfòls', js: 'false', desc: 'Boolean false' },
     { fratm: 'nisciun', js: 'null', desc: 'Null value' },
     { fratm: 'boh', js: 'undefined', desc: 'Undefined value' },
+    { fratm: '`Uè ${nome}!`', js: '`Uè ${nome}!`', desc: 'Template literal' },
   ]},
   { category: 'Operators', items: [
     { fratm: 'e / pure', js: '&&', desc: 'Logical AND' },

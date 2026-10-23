@@ -416,6 +416,22 @@ impl CodeGen {
                 }
                 self.emit("\"");
             }
+            Expression::Template {
+                quasis,
+                expressions,
+                ..
+            } => {
+                self.emit("`");
+                for (i, quasi) in quasis.iter().enumerate() {
+                    self.emit(quasi);
+                    if let Some(expr) = expressions.get(i) {
+                        self.emit("${");
+                        self.gen_expression(expr);
+                        self.emit("}");
+                    }
+                }
+                self.emit("`");
+            }
             Expression::Boolean { value, .. } => self.emit(if *value { "true" } else { "false" }),
             Expression::Null { .. } => self.emit("null"),
             Expression::Undefined { .. } => self.emit("undefined"),

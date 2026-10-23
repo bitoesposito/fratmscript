@@ -270,6 +270,12 @@ pub enum TokenKind {
     Identifier(String),
     String(String),
     Number(f64),
+    /// Template literal: raw text chunks around the tokens of each `${ … }`
+    /// (`quasis.len() == expressions.len() + 1`).
+    Template {
+        quasis: Vec<String>,
+        expressions: Vec<Vec<Token>>,
+    },
 
     // === Special ===
     Newline,
@@ -381,6 +387,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Identifier(s) => write!(f, "{}", s),
             TokenKind::String(s) => write!(f, "\"{}\"", s),
             TokenKind::Number(n) => write!(f, "{}", n),
+            TokenKind::Template { .. } => write!(f, "`…`"),
             TokenKind::Newline => write!(f, "\\n"),
             TokenKind::Eof => write!(f, "EOF"),
             TokenKind::Invalid(s) => write!(f, "INVALID({})", s),
