@@ -1879,13 +1879,17 @@ impl Parser {
     fn current_span(&self) -> Span {
         self.peek().span
     }
+    /// The span from the token that starts at byte `start` to the previous
+    /// token. Line and column are those of the first token, so that errors
+    /// and source maps point at where the construct begins.
     fn span_from(&self, start: usize) -> Span {
-        Span::new(
-            start,
-            self.previous().span.end,
-            self.previous().span.line,
-            0,
-        )
+        let first = self.tokens[..self.current]
+            .iter()
+            .rev()
+            .find(|t| t.span.start == start)
+            .map(|t| t.span)
+            .unwrap_or(self.previous().span);
+        Span::new(start, self.previous().span.end, first.line, first.column)
     }
     fn synchronize(&mut self) {
         self.advance();
