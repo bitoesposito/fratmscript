@@ -151,6 +151,19 @@
     ],
     "description": "Blocco try-catch"
   },
+  "Try-catch-finally (pruvamm-schiatta-aropp)": {
+    "prefix": ["aropp", "finally"],
+    "body": [
+      "pruvamm {",
+      "\t$1",
+      "} e si schiatta (${2:errore}) {",
+      "\t$3",
+      "} aropp {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Blocco try-catch-finally"
+  },
   "Throw (iett)": {
     "prefix": ["iett", "throw"],
     "body": ["iett nu bell Error(${1:messaggio})"],

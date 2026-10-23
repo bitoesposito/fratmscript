@@ -509,23 +509,43 @@ impl Parser {
         let start = self.current_span();
         self.expect(&TokenKind::Pruvamm)?;
         let try_body = self.parse_block_body()?;
-        self.expect(&TokenKind::And)?;
-        self.expect(&TokenKind::Si)?;
-        self.expect(&TokenKind::Schiatta)?;
-        let catch_param = if self.match_token(&TokenKind::LeftParen) {
-            let param = self.parse_binding_target()?;
-            self.expect(&TokenKind::RightParen)?;
-            Some(param)
+        let mut catch_param = None;
+        let mut catch_body = None;
+        if !self.at_finally() {
+            self.expect(&TokenKind::And)?;
+            self.expect(&TokenKind::Si)?;
+            self.expect(&TokenKind::Schiatta)?;
+            if self.match_token(&TokenKind::LeftParen) {
+                catch_param = Some(self.parse_binding_target()?);
+                self.expect(&TokenKind::RightParen)?;
+            }
+            catch_body = Some(self.parse_block_body()?);
+        }
+        let finally_body = if self.at_finally() {
+            self.skip_newlines();
+            self.advance();
+            Some(self.parse_block_body()?)
         } else {
             None
         };
-        let catch_body = self.parse_block_body()?;
         Ok(Statement::TryCatch {
             try_body,
             catch_param,
             catch_body,
+            finally_body,
             span: self.span_from(start.start),
         })
+    }
+
+    /// `aropp {` (finally), on the same line or the next ones. `aropp` is
+    /// not reserved: anywhere else it is an ordinary name.
+    fn at_finally(&self) -> bool {
+        let mut offset = 0;
+        while self.check_at(offset, &TokenKind::Newline) {
+            offset += 1;
+        }
+        self.check_identifier_at(offset, "aropp")
+            && self.check_at(offset + 1, &TokenKind::LeftBrace)
     }
 
     fn parse_throw(&mut self) -> Result<Statement, ParseError> {
@@ -1459,6 +1479,9 @@ impl Parser {
             .get(self.current + 1)
             .map(starts_operand)
             .unwrap_or(false)
+    }
+    fn check_identifier_at(&self, offset: usize, name: &str) -> bool {
+        matches!(self.tokens.get(self.current + offset).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)
     }
     fn check_next_identifier(&self, name: &str) -> bool {
         matches!(self.tokens.get(self.current + 1).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)

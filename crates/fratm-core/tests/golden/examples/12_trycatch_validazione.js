@@ -12,10 +12,14 @@ function provaValore(eta) {
     console.log(validaEta(eta));
   } catch (err) {
     console.warn(((("Valore " + eta) + " scartato: ") + err.message));
+  } finally {
+    controllati++;
   }
 }
+let controllati = 0;
 console.log("=== Validazione eta ===");
 provaValore(35);
 provaValore(-2);
 provaValore(200);
 provaValore(90);
+console.log(("Valori controllati: " + controllati));
