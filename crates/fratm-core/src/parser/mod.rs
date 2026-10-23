@@ -543,6 +543,44 @@ impl Parser {
         Ok(expr)
     }
 
+    /// Whether the tokens at the cursor are arrow parameters: a name or a
+    /// balanced `( … )` group followed by `=>`.
+    fn at_arrow_params(&self) -> bool {
+        let token = self.peek();
+        if matches!(token.kind, TokenKind::Identifier(_)) || contextual_name(token).is_some() {
+            return self.check_next(&TokenKind::Arrow);
+        }
+        if !self.check(&TokenKind::LeftParen) { return false; }
+        let mut depth = 0usize;
+        for (i, t) in self.tokens[self.current..].iter().enumerate() {
+            match t.kind {
+                TokenKind::LeftParen | TokenKind::LeftBracket | TokenKind::LeftBrace => depth += 1,
+                TokenKind::RightParen | TokenKind::RightBracket | TokenKind::RightBrace => {
+                    depth -= 1;
+                    if depth == 0 { return self.check_at(i + 1, &TokenKind::Arrow); }
+                }
+                TokenKind::Eof => return false,
+                _ => {}
+            }
+        }
+        false
+    }
+
+    fn parse_arrow(&mut self, start: Span, is_async: bool) -> Result<Expression, ParseError> {
+        let params = if self.check(&TokenKind::LeftParen) {
+            self.parse_parameters()?
+        } else {
+            vec![self.expect_identifier()?]
+        };
+        self.expect(&TokenKind::Arrow)?;
+        let body = if self.check(&TokenKind::LeftBrace) {
+            ArrowBody::Block(self.parse_block_body()?)
+        } else {
+            ArrowBody::Expression(Box::new(self.parse_assignment()?))
+        };
+        Ok(Expression::ArrowFunction { params, body, is_async, span: self.span_from(start.start) })
+    }
+
     fn parse_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
         let mut args = Vec::new();
         if !self.check(&TokenKind::RightParen) {
@@ -554,6 +592,18 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        // Arrow functions: `x => …`, `(a, b) => …`, `mo vir (x) => …`
+        if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) {
+            let start = self.current_span();
+            self.advance();
+            self.advance();
+            return self.parse_arrow(start, true);
+        }
+        if self.at_arrow_params() {
+            let start = self.current_span();
+            return self.parse_arrow(start, false);
+        }
+
         // Short keywords are names unless they start their own construct here
         let starts_construct = match self.peek().kind {
             TokenKind::Nu => self.check_next(&TokenKind::Bell),
@@ -619,15 +669,6 @@ impl Parser {
             TokenKind::LeftParen => {
                 let expr = self.parse_expression()?;
                 self.expect(&TokenKind::RightParen)?;
-                if self.match_token(&TokenKind::Arrow) {
-                    let params = if let Expression::Identifier { name, .. } = expr { vec![name] } else { vec![] };
-                    let body = if self.check(&TokenKind::LeftBrace) {
-                        ArrowBody::Block(self.parse_block_body()?)
-                    } else {
-                        ArrowBody::Expression(Box::new(self.parse_expression()?))
-                    };
-                    return Ok(Expression::ArrowFunction { params, body, span: self.span_from(span.start) });
-                }
                 Ok(expr)
             }
             TokenKind::LeftBracket => {

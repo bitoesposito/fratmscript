@@ -28,6 +28,8 @@ const syntaxReference = [
     { fratm: 'facc', js: 'function', desc: 'Function declaration' },
     { fratm: 'piglie', js: 'return', desc: 'Return statement' },
     { fratm: 'mo vir facc', js: 'async function', desc: 'Async function' },
+    { fratm: '(a, b) => a + b', js: '(a, b) => a + b', desc: 'Arrow function' },
+    { fratm: 'mo vir (x) => …', js: 'async (x) => …', desc: 'Async arrow function' },
     { fratm: 'aspett', js: 'await', desc: 'Await expression' },
   ]},
   { category: 'Control Flow', items: [

@@ -402,4 +402,26 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert_eq!(js("facc f(class) { piglie class }"), "function f($class) {\n  return $class;\n}\n");
         assert_eq!(js("tien x = o.for + { si: 1, for: 2 }.si"), "let x = (o.for + { si: 1, for: 2 }.si);\n");
     }
+
+    #[test]
+    fn test_arrow_functions() {
+        assert_eq!(js("tien f = () => 1"), "let f = () => 1;\n");
+        assert_eq!(js("tien f = (a, b) => a + b"), "let f = (a, b) => (a + b);\n");
+        assert_eq!(js("tien f = x => x"), "let f = (x) => x;\n");
+        assert_eq!(js("tien f = (a) => { piglie a }"), "let f = (a) => {\n  return a;\n};\n");
+        assert_eq!(js("tien f = mo vir (x) => aspett g(x)"), "let f = async (x) => await g(x);\n");
+        assert_eq!(js("tien f = mo vir x => x"), "let f = async (x) => x;\n");
+        assert_eq!(js("xs.map((v, i) => v * i)"), "xs.map((v, i) => (v * i));\n");
+        assert_eq!(js("tien f = () => ({ a: 1 })"), "let f = () => ({ a: 1 });\n");
+        assert_eq!(js("tien f = (e) => e"), "let f = (e) => e;\n");
+        // A parenthesized expression is still an expression
+        assert_eq!(js("tien x = (a) + 1"), "let x = (a + 1);\n");
+    }
+
+    #[test]
+    fn test_low_precedence_operands_are_parenthesized() {
+        assert_eq!(js("tien x = (() => 7)()"), "let x = (() => 7)();\n");
+        assert_eq!(js("tien x = (aspett p).valore"), "let x = (await p).valore;\n");
+        assert_eq!(js("tien x = (no a).b"), "let x = (!a).b;\n");
+    }
 }
