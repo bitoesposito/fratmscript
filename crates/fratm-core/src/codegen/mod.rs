@@ -453,9 +453,40 @@ impl CodeGen {
                     }
                     match property {
                         Property::KeyValue { key, value } => {
-                            self.emit(key);
+                            self.gen_property_key(key);
                             self.emit(": ");
                             self.gen_expression(value);
+                        }
+                        Property::Shorthand { name, span } => {
+                            let escaped = js_name(name);
+                            if escaped != name.as_str() {
+                                // `{ for }` must become `{ for: $for }`
+                                self.emit(name);
+                                self.emit(": ");
+                            }
+                            self.add_mapping(span.line, span.column);
+                            self.emit(&escaped);
+                        }
+                        Property::Method {
+                            key,
+                            params,
+                            body,
+                            is_async,
+                        } => {
+                            if *is_async {
+                                self.emit("async ");
+                            }
+                            self.gen_property_key(key);
+                            self.gen_params(params);
+                            self.emit(" {\n");
+                            self.indent += 1;
+                            for s in body {
+                                self.gen_statement(s);
+                                self.emit("\n");
+                            }
+                            self.indent -= 1;
+                            self.write_indent();
+                            self.emit("}");
                         }
                         Property::Spread(argument) => {
                             self.emit("...");
@@ -668,6 +699,25 @@ impl CodeGen {
             Expression::Delete { operand, .. } => {
                 self.emit("delete ");
                 self.gen_operand(operand);
+            }
+        }
+    }
+
+    fn gen_property_key(&mut self, key: &PropertyKey) {
+        match key {
+            PropertyKey::Name(name) => self.emit(name),
+            PropertyKey::String(value) => self.gen_expression(&Expression::String {
+                value: value.clone(),
+                span: Default::default(),
+            }),
+            PropertyKey::Number(value) => self.gen_expression(&Expression::Number {
+                value: *value,
+                span: Default::default(),
+            }),
+            PropertyKey::Computed(expr) => {
+                self.emit("[");
+                self.gen_expression(expr);
+                self.emit("]");
             }
         }
     }
