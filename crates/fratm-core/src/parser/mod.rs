@@ -84,6 +84,9 @@ impl Parser {
         if self.check(&TokenKind::Pruvamm) {
             return self.parse_try_catch();
         }
+        if self.at_switch() {
+            return self.parse_switch();
+        }
         // `na` and `mann` are keywords only in `na famiglie` / `mann for`; otherwise they are names
         if self.check(&TokenKind::Na) && self.check_next(&TokenKind::Famiglie) {
             return self.parse_class();
@@ -532,6 +535,86 @@ impl Parser {
         }
         self.current = saved;
         None
+    }
+
+    /// `vedimm (…) {`: `vedimm` is not reserved, so `vedimm(x)` stays a call.
+    fn at_switch(&self) -> bool {
+        if !self.check_identifier_at(0, "vedimm") || !self.check_at(1, &TokenKind::LeftParen) {
+            return false;
+        }
+        let mut depth = 0;
+        for (offset, token) in self.tokens[self.current + 1..].iter().enumerate() {
+            match token.kind {
+                TokenKind::LeftParen => depth += 1,
+                TokenKind::RightParen => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return self.check_at(offset + 2, &TokenKind::LeftBrace);
+                    }
+                }
+                TokenKind::Eof => return false,
+                _ => {}
+            }
+        }
+        false
+    }
+
+    fn parse_switch(&mut self) -> Result<Statement, ParseError> {
+        let start = self.current_span();
+        self.advance(); // `vedimm`
+        self.expect(&TokenKind::LeftParen)?;
+        let discriminant = self.parse_expression()?;
+        self.expect(&TokenKind::RightParen)?;
+        self.expect(&TokenKind::LeftBrace)?;
+        let mut cases = Vec::new();
+        let mut has_default = false;
+        loop {
+            self.skip_newlines();
+            if self.match_token(&TokenKind::RightBrace) {
+                break;
+            }
+            let label = self.current_span();
+            let test = if self.match_token(&TokenKind::Caso) {
+                Some(self.parse_expression()?)
+            } else if self.match_token(&TokenKind::Predefinit) {
+                if has_default {
+                    return Err(ParseError::new(
+                        "A 'vedimm' can have only one 'predefinit'",
+                        label,
+                    ));
+                }
+                has_default = true;
+                None
+            } else {
+                let token = self.peek();
+                return Err(ParseError::new(
+                    format!(
+                        "Expected 'caso' or 'predefinit' in 'vedimm', but found '{}'",
+                        token.kind
+                    ),
+                    token.span,
+                ));
+            };
+            self.expect(&TokenKind::Colon)?;
+            let mut body = Vec::new();
+            loop {
+                self.skip_newlines();
+                if self.check(&TokenKind::Caso)
+                    || self.check(&TokenKind::Predefinit)
+                    || self.check(&TokenKind::RightBrace)
+                    || self.is_at_end()
+                {
+                    break;
+                }
+                body.push(self.parse_statement()?);
+            }
+            cases.push(SwitchCase { test, body });
+        }
+        Ok(Statement::Switch {
+            discriminant,
+            cases,
+            span: self.span_from(start.start),
+        })
     }
 
     fn parse_break(&mut self) -> Result<Statement, ParseError> {

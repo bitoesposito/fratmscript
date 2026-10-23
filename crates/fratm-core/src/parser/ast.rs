@@ -56,6 +56,12 @@ pub enum Statement {
         body: Vec<Statement>,
         span: Span,
     },
+    /// `vedimm (x) { caso 1: … predefinit: … }`
+    Switch {
+        discriminant: Expression,
+        cases: Vec<SwitchCase>,
+        span: Span,
+    },
     Break {
         span: Span,
     },
@@ -301,6 +307,13 @@ impl Expression {
             Expression::Delete { span, .. } => *span,
         }
     }
+}
+
+/// A `caso value:` (or `predefinit:` when `test` is `None`) label and its statements.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwitchCase {
+    pub test: Option<Expression>,
+    pub body: Vec<Statement>,
 }
 
 /// The loop variable of a for...of / for...in.

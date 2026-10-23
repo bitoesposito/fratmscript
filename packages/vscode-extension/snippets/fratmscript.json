@@ -88,6 +88,19 @@
     ],
     "description": "Ciclo for-of"
   },
+  "Switch (vedimm)": {
+    "prefix": ["vedimm", "switch"],
+    "body": [
+      "vedimm (${1:valore}) {",
+      "\tcaso ${2:1}:",
+      "\t\t$3",
+      "\t\trompe",
+      "\tpredefinit:",
+      "\t\t$0",
+      "}"
+    ],
+    "description": "Switch con caso e predefinit"
+  },
   "For-in": {
     "prefix": ["forin"],
     "body": [
