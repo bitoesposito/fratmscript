@@ -139,7 +139,7 @@ stamm a dì("  Pizza: " + ordine.pizza)
 stamm a dì("  Quantity: " + ordine.quantita)
 stamm a dì("  Delivery: " + (ordine.consegna ? "Yes" : "No"))`,
 
-  trycatch: `// Try/Catch and Throw
+  trycatch: `// Try/Catch/Finally and Throw
 facc validaEta(eta) {
     si (eta < 0) {
         iett nu bell Error("Eta negativa")
@@ -155,6 +155,8 @@ facc prova(eta) {
         stamm a dì(validaEta(eta))
     } e si schiatta (err) {
         avvis a dì("Errore con " + eta + ": " + err.message)
+    } aropp {
+        stamm a dì("Controllato: " + eta)
     }
 }
 

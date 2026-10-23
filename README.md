@@ -176,7 +176,10 @@ pruvamm {
     // ...
 } e si schiatta (err) {
     // ...
+} aropp {
+    // always runs (finally)
 }
+pruvamm { /* ... */ } aropp { /* ... */ }   // try/finally
 iett nu bell Error("message")
 ```
 
@@ -225,6 +228,7 @@ fermete                      // debugger
 | `aspett` | `await` | "wait" |
 | `pruvamm` | `try` | "let's try" |
 | `e si schiatta` | `catch` | "if it breaks" |
+| `aropp` | `finally` | "afterwards" |
 | `iett` | `throw` | "throw" |
 | `nu bell` | `new` | "a nice" |
 | `na famiglie` | `class` | "a family" |
@@ -241,7 +245,7 @@ fermete                      // debugger
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 
-Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
+Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp` is not reserved at all: it means `finally` only right after a `pruvamm` block. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
 
 ---
 

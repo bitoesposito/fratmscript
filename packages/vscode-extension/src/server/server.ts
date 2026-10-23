@@ -254,6 +254,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       severity: DiagnosticSeverity.Warning
     },
     {
+      regex: /\bfinally\b/g,
+      message: "Usa 'aropp' invece di 'finally'",
+      severity: DiagnosticSeverity.Warning
+    },
+    {
       regex: /\bthrow\b/g,
       message: "Usa 'iett' invece di 'throw'",
       severity: DiagnosticSeverity.Warning
@@ -478,7 +483,7 @@ connection.languages.semanticTokens.on((params: SemanticTokensParams): SemanticT
   }> = [
     // Keywords napoletane
     {
-      regex: /\b(chist|è|tien|facc|piglie|si|sinnò|mentre|che|pe|ogni|rompe|salta|vir|caso|na|famiglie|costruttore|nu|bell|figlio|fisso|stu|cos|chiamm|da|mann|for|predefinit|mo|aspett|caccia|pruvamm|schiatta|iett|stamm|dì|scrive|avvis|fermete|leva|overo|sfòls|nisciun|boh|e|o|no|manco|pure)\b/g,
+      regex: /\b(chist|è|tien|facc|piglie|si|sinnò|mentre|che|pe|ogni|rompe|salta|vir|caso|na|famiglie|costruttore|nu|bell|figlio|fisso|stu|cos|chiamm|da|mann|for|predefinit|mo|aspett|caccia|pruvamm|schiatta|aropp|iett|stamm|dì|scrive|avvis|fermete|leva|overo|sfòls|nisciun|boh|e|o|no|manco|pure)\b/g,
       tokenType: 0 // keyword
     },
     // Funzioni (identificatore seguito da parentesi)

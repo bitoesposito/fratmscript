@@ -397,6 +397,27 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_try_finally() {
+        assert_eq!(
+            js("pruvamm { f() } e si schiatta (e) { g(e) } aropp { h() }"),
+            "try {\n  f();\n} catch (e) {\n  g(e);\n} finally {\n  h();\n}\n"
+        );
+        assert_eq!(
+            js("pruvamm { f() } aropp { h() }"),
+            "try {\n  f();\n} finally {\n  h();\n}\n"
+        );
+        // `aropp` may start on the next line
+        assert_eq!(
+            js("pruvamm {\n f()\n}\naropp {\n h()\n}"),
+            "try {\n  f();\n} finally {\n  h();\n}\n"
+        );
+        // Outside a try it is an ordinary name
+        assert_eq!(js("tien aropp = 1\naropp++"), "let aropp = 1;\naropp++;\n");
+        // A try needs a catch or a finally
+        assert!(compile("pruvamm { f() }", Default::default()).is_err());
+    }
+
+    #[test]
     fn test_short_keywords_are_names_where_no_construct_starts() {
         assert!(js("pruvamm { } e si schiatta (e) { stamm a dì(e) }")
             .contains("} catch (e) {\n  console.log(e);"));
