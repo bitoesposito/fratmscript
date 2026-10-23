@@ -397,6 +397,35 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_for_of_and_in() {
+        assert_eq!(
+            js("pe ogni (tien x dint xs) { f(x) }"),
+            "for (let x of xs) {\n  f(x);\n}\n"
+        );
+        assert_eq!(
+            js("pe (chist è [k, v] dint m.entries()) { }"),
+            "for (const [k, v] of m.entries()) {\n}\n"
+        );
+        assert_eq!(
+            js("pe ogni (tien k 'ncopp o) { f(k) }"),
+            "for (let k in o) {\n  f(k);\n}\n"
+        );
+        assert_eq!(js("pe (x dint xs) { }"), "for (x of xs) {\n}\n");
+        assert!(js("mo vir facc f() { pe aspett (chist è r dint rs) { } }")
+            .contains("for await (const r of rs) {"));
+        // The classic header still works, and `dint` / 'ncopp ... are not reserved
+        assert!(js("pe (tien i = 0; i < 3; i++) { }").contains("for (let i = 0; (i < 3); i++) {"));
+        assert_eq!(js("tien dint = 1"), "let dint = 1;\n");
+        assert_eq!(
+            js("tien s = 'ncopp a tavola'"),
+            "let s = \"ncopp a tavola\";\n"
+        );
+        // for await needs `dint`
+        assert!(compile("pe aspett (tien k 'ncopp o) { }", Default::default()).is_err());
+        assert!(compile("pe aspett (tien i = 0; i < 3; i++) { }", Default::default()).is_err());
+    }
+
+    #[test]
     fn test_try_finally() {
         assert_eq!(
             js("pruvamm { f() } e si schiatta (e) { g(e) } aropp { h() }"),

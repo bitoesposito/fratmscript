@@ -124,6 +124,9 @@ chist è pizza = {
 si (cond) { } sinnò { }       // if/else
 mentre che (cond) { }         // while
 pe (init; cond; upd) { }      // for (ogni is optional)
+pe ogni (chist è x dint xs) { }    // for...of
+pe ogni (tien k 'ncopp obj) { }    // for...in
+pe aspett (chist è r dint stream) { }  // for await...of
 rompe                         // break
 salta                         // continue
 ```
@@ -217,6 +220,8 @@ fermete                      // debugger
 | `sinnò` | `else` | "otherwise" |
 | `mentre che` | `while` | "while" |
 | `pe` | `for` | "for" |
+| `dint` | `of` (for...of) | "inside" |
+| `'ncopp` | `in` (for...in) | "on top of" |
 | `overo` | `true` | "true" |
 | `sfòls` | `false` | "false" |
 | `nisciun` | `null` | "nobody" |
@@ -245,7 +250,7 @@ fermete                      // debugger
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 
-Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp` is not reserved at all: it means `finally` only right after a `pruvamm` block. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
+Short keywords (`e`, `o`, `no`, `da`, `de`, `na`, `nu`, `mo`, `che`, `cos`, `caso`, `pure`, `for`, `leva`, `scrive`) are keywords only where their construct can start, so they also work as names: `e si schiatta (e)`, `tien o = 1`, `facc f(da, a)`. `aropp` and `dint` are not reserved at all: they mean `finally` only right after a `pruvamm` block and `of` only in a `pe` header. Names that are reserved in JavaScript are renamed in the output (`tien for = 1` → `let $for = 1`).
 
 ---
 

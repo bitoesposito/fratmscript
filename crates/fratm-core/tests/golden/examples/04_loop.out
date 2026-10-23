@@ -18,6 +18,15 @@
 7 x 9 = 63
 7 x 10 = 70
 
+=== Pizza menu (for...of) ===
+🍕 Margherita
+🍕 Marinara
+🍕 Diavola
+
+=== Prices (for...in) ===
+margherita: 5€
+marinara: 4€
+
 === Find the number (break) ===
 Found it! The number is 42
 

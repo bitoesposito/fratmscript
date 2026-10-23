@@ -112,7 +112,7 @@
         {
           "comment": "Control flow: si (if), sinnò (else), mentre che (while), pe ogni (for), rompe (break), salta (continue)",
           "name": "keyword.control.fratm",
-          "match": "\\b(si|sinnò|mentre|che|pe|ogni|rompe|salta|piglie|pruvamm|schiatta|aropp|iett|vir|caso)\\b"
+          "match": "\\b(si|sinnò|mentre|che|pe|ogni|dint|rompe|salta|piglie|pruvamm|schiatta|aropp|iett|vir|caso)\\b"
         },
         {
           "comment": "Variable declarations: chist è (const), tien (let), facc (function)",
@@ -127,7 +127,7 @@
         {
           "comment": "Special keywords with apostrophe",
           "name": "keyword.other.fratm",
-          "match": "'(e|o pate)\\b"
+          "match": "'(e|o pate|ncopp)\\b"
         },
         {
           "comment": "Module: chiamm (import), da (from), mann for (export)",
