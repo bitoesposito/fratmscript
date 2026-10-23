@@ -200,7 +200,7 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::And)
                     }
                 }
-                
+
                 '+' => {
                     if self.match_char('+') {
                         self.make_token(TokenKind::PlusPlus)
@@ -246,7 +246,7 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::Percent)
                     }
                 }
-                
+
                 '=' => {
                     if self.match_char('=') {
                         if self.match_char('=') {
@@ -286,20 +286,20 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::Greater)
                     }
                 }
-                
+
                 '"' => self.scan_string(c),
                 '\'' => self.scan_apostrophe_or_string(),
                 c if c.is_ascii_digit() => self.scan_number(),
                 c if is_ident_start(c) => self.scan_identifier(),
-                
+
                 '\n' => {
                     self.line += 1;
                     self.column = 1;
                     self.make_token(TokenKind::Newline)
                 }
-                
+
                 _ => self.make_token(TokenKind::Invalid(c.to_string())),
-            }
+            },
         }
     }
 
@@ -377,7 +377,12 @@ impl<'a> Lexer<'a> {
         let literal = self.source[self.token_start..self.position].to_string();
         Token::new(
             kind,
-            Span::new(self.token_start, self.position, self.token_line, self.token_column),
+            Span::new(
+                self.token_start,
+                self.position,
+                self.token_line,
+                self.token_column,
+            ),
             literal,
         )
     }
@@ -394,7 +399,12 @@ impl<'a> Lexer<'a> {
         // strings like 'e poi' still lex as strings
         let after_figlio = matches!(self.prev_kind, Some(TokenKind::Figlio));
         if let Some(after_e) = rest.strip_prefix('e').filter(|_| after_figlio) {
-            if after_e.chars().next().map(|c| c.is_whitespace()).unwrap_or(false) {
+            if after_e
+                .chars()
+                .next()
+                .map(|c| c.is_whitespace())
+                .unwrap_or(false)
+            {
                 self.advance(); // consume 'e'
                 return self.make_token(TokenKind::De);
             }
@@ -424,7 +434,7 @@ impl<'a> Lexer<'a> {
 
     fn scan_string(&mut self, quote: char) -> Token {
         let mut value = String::new();
-        
+
         while let Some(c) = self.peek() {
             if c == quote {
                 self.advance();
@@ -437,13 +447,34 @@ impl<'a> Lexer<'a> {
             if c == '\\' {
                 self.advance();
                 match self.peek() {
-                    Some('n') => { self.advance(); value.push('\n'); }
-                    Some('t') => { self.advance(); value.push('\t'); }
-                    Some('r') => { self.advance(); value.push('\r'); }
-                    Some('\\') => { self.advance(); value.push('\\'); }
-                    Some('"') => { self.advance(); value.push('"'); }
-                    Some('\'') => { self.advance(); value.push('\''); }
-                    Some(c) => { self.advance(); value.push(c); }
+                    Some('n') => {
+                        self.advance();
+                        value.push('\n');
+                    }
+                    Some('t') => {
+                        self.advance();
+                        value.push('\t');
+                    }
+                    Some('r') => {
+                        self.advance();
+                        value.push('\r');
+                    }
+                    Some('\\') => {
+                        self.advance();
+                        value.push('\\');
+                    }
+                    Some('"') => {
+                        self.advance();
+                        value.push('"');
+                    }
+                    Some('\'') => {
+                        self.advance();
+                        value.push('\'');
+                    }
+                    Some(c) => {
+                        self.advance();
+                        value.push(c);
+                    }
                     None => break,
                 }
             } else {
@@ -451,7 +482,7 @@ impl<'a> Lexer<'a> {
                 value.push(c);
             }
         }
-        
+
         self.make_token(TokenKind::Invalid("Unterminated string".to_string()))
     }
 
@@ -474,7 +505,12 @@ impl<'a> Lexer<'a> {
             self.position > digits_start
         } else {
             self.scan_digits(10);
-            if self.peek() == Some('.') && self.peek_next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+            if self.peek() == Some('.')
+                && self
+                    .peek_next()
+                    .map(|c| c.is_ascii_digit())
+                    .unwrap_or(false)
+            {
                 self.advance();
                 self.scan_digits(10);
             }
@@ -482,10 +518,16 @@ impl<'a> Lexer<'a> {
             if matches!(self.peek(), Some('e' | 'E')) {
                 let mut rest = self.source[self.position..].chars().skip(1);
                 let next = rest.next();
-                let after_sign = if matches!(next, Some('+' | '-')) { rest.next() } else { next };
+                let after_sign = if matches!(next, Some('+' | '-')) {
+                    rest.next()
+                } else {
+                    next
+                };
                 if after_sign.map(|c| c.is_ascii_digit()).unwrap_or(false) {
                     self.advance(); // e/E
-                    if matches!(self.peek(), Some('+' | '-')) { self.advance(); }
+                    if matches!(self.peek(), Some('+' | '-')) {
+                        self.advance();
+                    }
                     self.scan_digits(10);
                 } else {
                     ok = false;
@@ -506,7 +548,11 @@ impl<'a> Lexer<'a> {
             return self.make_token(invalid());
         }
         // JS rejects legacy octal like `0123` in strict code: refuse it rather than guess.
-        if radix.is_none() && literal.len() > 1 && literal.starts_with('0') && literal.as_bytes()[1].is_ascii_digit() {
+        if radix.is_none()
+            && literal.len() > 1
+            && literal.starts_with('0')
+            && literal.as_bytes()[1].is_ascii_digit()
+        {
             return self.make_token(invalid());
         }
 
@@ -523,7 +569,11 @@ impl<'a> Lexer<'a> {
 
     /// Consumes digits of the given radix and `_` separators.
     fn scan_digits(&mut self, radix: u32) {
-        while self.peek().map(|c| c.is_digit(radix) || c == '_').unwrap_or(false) {
+        while self
+            .peek()
+            .map(|c| c.is_digit(radix) || c == '_')
+            .unwrap_or(false)
+        {
             self.advance();
         }
     }
@@ -532,9 +582,9 @@ impl<'a> Lexer<'a> {
         while self.peek().map(is_ident_continue).unwrap_or(false) {
             self.advance();
         }
-        
+
         let literal = &self.source[self.token_start..self.position];
-        
+
         if let Some(keyword) = lookup_keyword(literal) {
             self.make_token(keyword)
         } else {
@@ -547,16 +597,23 @@ impl<'a> Lexer<'a> {
 fn separators_ok(literal: &str, radix: u32) -> bool {
     let chars: Vec<char> = literal.chars().collect();
     let is_digit = |j: usize| chars.get(j).map(|c| c.is_digit(radix)).unwrap_or(false);
-    chars.iter().enumerate().all(|(i, &c)| c != '_' || (i > 0 && is_digit(i - 1) && is_digit(i + 1)))
+    chars
+        .iter()
+        .enumerate()
+        .all(|(i, &c)| c != '_' || (i > 0 && is_digit(i - 1) && is_digit(i + 1)))
 }
 
 /// Parses hex/octal/binary digits, rounding like JS does for values above 2^53.
 fn parse_radix(digits: &str, radix: u32) -> Option<f64> {
-    if digits.is_empty() { return None; }
+    if digits.is_empty() {
+        return None;
+    }
     if let Ok(n) = u128::from_str_radix(digits, radix) {
         return Some(n as f64);
     }
-    digits.chars().try_fold(0f64, |acc, c| c.to_digit(radix).map(|d| acc * radix as f64 + d as f64))
+    digits.chars().try_fold(0f64, |acc, c| {
+        c.to_digit(radix).map(|d| acc * radix as f64 + d as f64)
+    })
 }
 
 fn is_ident_start(c: char) -> bool {
@@ -575,7 +632,7 @@ mod tests {
     fn test_keywords() {
         let mut lexer = Lexer::new("chist è tien facc piglie");
         let tokens = lexer.tokenize();
-        
+
         assert!(matches!(tokens[0].kind, TokenKind::Chist));
         assert!(matches!(tokens[1].kind, TokenKind::E));
         assert!(matches!(tokens[2].kind, TokenKind::Tien));
@@ -600,12 +657,31 @@ mod tests {
 
     #[test]
     fn test_js_number_shapes_are_single_tokens() {
-        let cases = [("0x1F", 31.0), ("0XfF", 255.0), ("0o17", 15.0), ("0b101", 5.0), ("1e3", 1000.0),
-                     ("1E+2", 100.0), ("2.5e-1", 0.25), ("1_000", 1000.0), ("0xFF_FF", 65535.0), ("0", 0.0)];
+        let cases = [
+            ("0x1F", 31.0),
+            ("0XfF", 255.0),
+            ("0o17", 15.0),
+            ("0b101", 5.0),
+            ("1e3", 1000.0),
+            ("1E+2", 100.0),
+            ("2.5e-1", 0.25),
+            ("1_000", 1000.0),
+            ("0xFF_FF", 65535.0),
+            ("0", 0.0),
+        ];
         for (src, expected) in cases {
             let tokens = Lexer::new(src).tokenize();
-            assert!(matches!(tokens[0].kind, TokenKind::Number(n) if n == expected), "{} -> {:?}", src, tokens[0].kind);
-            assert!(matches!(tokens[1].kind, TokenKind::Eof), "{} split into several tokens", src);
+            assert!(
+                matches!(tokens[0].kind, TokenKind::Number(n) if n == expected),
+                "{} -> {:?}",
+                src,
+                tokens[0].kind
+            );
+            assert!(
+                matches!(tokens[1].kind, TokenKind::Eof),
+                "{} split into several tokens",
+                src
+            );
         }
     }
 

@@ -28,6 +28,7 @@ FratmScript is a Neapolitan-flavoured language that transpiles to JavaScript.
 Run these before you push. They mirror CI (`.github/workflows/ci.yml`).
 
 ```bash
+cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
 cargo build -p fratm-cli --locked && for f in examples/*.fratm; do ./target/debug/fratm build "$f"; done
