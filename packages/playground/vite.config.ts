@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   base: '/fratmscript/',
+  // The example picker imports ../../examples/*.fratm
+  server: { fs: { allow: [path.resolve(__dirname, '../..')] } },
   build: {
     outDir: 'dist',
     rollupOptions: {

@@ -12,25 +12,16 @@ import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
 import { ToastProvider, toastManager } from '@/components/ui/toast'
 import { useCompiler } from '@/hooks/useCompiler'
 import { formatSource } from '@/lib/compiler'
-import { examples, defaultCode } from '@/lib/examples'
+import { examples, exampleList, defaultCode } from '@/lib/examples'
 import { SyntaxHelp } from '@/components/SyntaxHelp'
 import { MobileTabs, type MobileTab } from '@/components/MobileTabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { buildShareUrl, readSharedCode, loadSavedCode, saveCode } from '@/lib/share'
 
-const EXAMPLE_OPTIONS: [keyof typeof examples, string][] = [
-  ['hello', 'Hello World'],
-  ['fibonacci', 'Fibonacci'],
-  ['classe', 'Pizzaiolo Class'],
-  ['oop_avanzato', 'Advanced OOP'],
-  ['async', 'Async/Await'],
-  ['operatori', 'Logical Operators'],
-  ['array', 'Arrays and Objects'],
-  ['trycatch', 'Try/Catch'],
-  ['moderna', 'Modern Syntax'],
-]
-const EXAMPLE_TITLES: Record<string, string> = Object.fromEntries(EXAMPLE_OPTIONS)
+const EXAMPLE_TITLES: Record<string, string> = Object.fromEntries(
+  exampleList.map(example => [example.id, `${example.id}.fratm`]),
+)
 
 const AUTO_RUN_KEY = 'fratm:autoRun'
 const AUTO_RUN_DELAY_MS = 700
@@ -109,7 +100,7 @@ function App() {
     setCode(value)
     // Editing an example turns it into custom code
     setSelectedExample(prev => (
-      prev && prev !== 'custom' && examples[prev as keyof typeof examples] !== value ? 'custom' : prev
+      prev && prev !== 'custom' && examples[prev] !== value ? 'custom' : prev
     ))
   }, [])
 
@@ -154,7 +145,7 @@ function App() {
   }, [code])
 
   const handleExampleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const name = e.target.value as keyof typeof examples
+    const name = e.target.value
     setSelectedExample(e.target.value)
     if (examples[name]) {
       setCode(examples[name])
@@ -227,8 +218,8 @@ function App() {
                 >
                   <option value="">-- Choose an example --</option>
                   {selectedExample === 'custom' && <option value="custom" disabled>Custom code</option>}
-                  {EXAMPLE_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {exampleList.map(example => (
+                    <option key={example.id} value={example.id}>{example.title}</option>
                   ))}
                 </NativeSelect>
               </div>
