@@ -85,6 +85,13 @@ fratm tokens <file>                 # Debug: show tokens
 fratm ast <file>                    # Debug: show AST
 ```
 
+A `.fratm` file can start with a shebang line and be run as a script:
+
+```fratm
+#!/usr/bin/env -S fratm lancia
+stamm a dì("Uè!")
+```
+
 ---
 
 ## Complete Syntax

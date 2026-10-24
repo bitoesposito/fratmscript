@@ -234,6 +234,9 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
 
     // Code generation
     let mut codegen = CodeGen::new(options.source_map);
+    if let Some(line) = shebang(source) {
+        codegen.emit_shebang(line);
+    }
     let code = codegen.generate(&program);
 
     let source_map = if options.source_map {
@@ -247,6 +250,15 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
         source_map,
         warnings: vec![],
     })
+}
+
+/// The `#!` line at the very start of `source`, if any (without the newline).
+pub(crate) fn shebang(source: &str) -> Option<&str> {
+    if !source.starts_with("#!") {
+        return None;
+    }
+    let line = source.lines().next().unwrap_or(source);
+    Some(line.strip_suffix('\r').unwrap_or(line))
 }
 
 fn first_invalid(tokens: &[lexer::Token]) -> Option<&lexer::Token> {
@@ -275,6 +287,38 @@ pub fn version() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_shebang_is_kept_at_the_top() {
+        let source = "#!/usr/bin/env fratm lancia\nstamm a dì(1)\n";
+        let result = compile(source, Default::default()).unwrap();
+        assert_eq!(
+            result.code,
+            "#!/usr/bin/env fratm lancia\nconsole.log(1);\n"
+        );
+    }
+
+    #[test]
+    fn test_shebang_keeps_error_lines() {
+        let err = compile("#!/usr/bin/env fratm\nchist è = 1\n", Default::default()).unwrap_err();
+        assert_eq!(err.line(), Some(2));
+    }
+
+    #[test]
+    fn test_shebang_shifts_source_map_by_one_line() {
+        let options = CompileOptions {
+            source_map: true,
+            ..Default::default()
+        };
+        let result = compile("#!/usr/bin/env fratm\nchist è x = 1\n", options).unwrap();
+        // Generated line 1 is the shebang; `const x` (line 2) maps to source line 2.
+        assert_eq!(result.source_map.unwrap().mappings, ";AACA,MAAQ");
+    }
+
+    #[test]
+    fn test_hash_bang_only_counts_at_the_start() {
+        assert!(compile("stamm a dì(1)\n#!nope\n", Default::default()).is_err());
+    }
 
     #[test]
     fn test_simple_compile() {

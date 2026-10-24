@@ -32,6 +32,12 @@ impl CodeGen {
         self.output.clone()
     }
 
+    /// Writes a shebang line before the program, keeping source map lines in step.
+    pub fn emit_shebang(&mut self, line: &str) {
+        self.emit(line);
+        self.emit("\n");
+    }
+
     pub fn get_source_map(&self) -> SourceMap {
         self.source_map_builder.clone().build(None)
     }
