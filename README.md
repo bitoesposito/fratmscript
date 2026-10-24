@@ -40,21 +40,39 @@ fratmscript/
 
 ---
 
-## Quick Start
+## Install
+
+No install needed to try it: open the [playground](https://kkratterf.github.io/fratmscript/).
+
+To get the `fratm` CLI (it runs programs with Node.js):
 
 ```bash
-# Clone
+# macOS and Linux (x64)
+curl -fsSL https://raw.githubusercontent.com/kkratterf/fratmscript/main/install.sh | sh
+
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/kkratterf/fratmscript/main/install.ps1 | iex
+```
+
+The script downloads the binary for your system from the [latest release](https://github.com/kkratterf/fratmscript/releases/latest), checks its SHA-256 and puts it in `~/.local/bin` (`~\.fratm\bin` on Windows; `FRATM_INSTALL_DIR` changes it, `FRATM_VERSION=v0.5.0` picks a version). You can also download the archive from the release page yourself.
+
+Then:
+
+```bash
+fratm lancia ciao.fratm   # compile and run
+fratm repl                # interactive REPL
+```
+
+### Build from source
+
+```bash
+cargo install --git https://github.com/kkratterf/fratmscript fratm-cli
+
+# or, from a clone
 git clone https://github.com/kkratterf/fratmscript
 cd fratmscript
-
-# Build
 cargo build --release
-
-# Launch
 ./target/release/fratm lancia examples/01_salutatore.fratm
-
-# REPL
-./target/release/fratm repl
 ```
 
 ---
