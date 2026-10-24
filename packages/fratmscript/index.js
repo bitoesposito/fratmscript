@@ -4,4 +4,4 @@ import { createApi } from './lib/api.js';
 
 const wasm = createRequire(import.meta.url)('./wasm/node/fratm_wasm.js');
 
-export const { compile, format, version } = createApi(wasm);
+export const { compile, format, version, runtimeError } = createApi(wasm);

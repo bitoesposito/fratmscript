@@ -73,7 +73,29 @@ fn main() {
     }
 }
 
-fn run_file(path: &PathBuf, sourcemap: bool) {
+/// Loaded with `node -r` before the program: reports an uncaught error as
+/// JSON in the file named by `FRATM_ERROR_FILE`, so `fratm lancia` can print
+/// it in Neapolitan at the `.fratm` line (the stack is source-mapped).
+const ERROR_HOOK: &str = r#"const fs = require('fs')
+function report(e) {
+  const isError = e !== null && typeof e === 'object'
+  fs.writeFileSync(process.env.FRATM_ERROR_FILE, JSON.stringify({
+    name: isError && e.name ? String(e.name) : 'Error',
+    message: isError && 'message' in e ? String(e.message) : String(e),
+    stack: isError && e.stack ? String(e.stack) : '',
+  }))
+  process.exit(1)
+}
+process.on('uncaughtException', report)
+process.on('unhandledRejection', report)
+"#;
+
+/// Source map name of the program, as it appears in source-mapped stacks.
+const SOURCE_NAME: &str = "input.fratm";
+
+/// `--sourcemap` is kept for compatibility: `lancia` always maps runtime
+/// errors back to the `.fratm` source now.
+fn run_file(path: &PathBuf, _sourcemap: bool) {
     let source = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
@@ -83,45 +105,93 @@ fn run_file(path: &PathBuf, sourcemap: bool) {
     };
 
     let options = CompileOptions {
-        source_map: sourcemap,
+        source_map: true,
         filename: Some(path.display().to_string()),
         minify: false,
     };
 
-    match compile(&source, options) {
-        Ok(result) => {
-            let script_dir = path.parent().unwrap_or_else(|| std::path::Path::new("."));
-            let temp_path = script_dir.join(format!(".fratm_temp_{}.js", std::process::id()));
-            let mut output = result.code;
-            if sourcemap {
-                if let Some(sm) = &result.source_map {
-                    output.push('\n');
-                    output.push_str(&sm.to_data_url());
-                }
-            }
-            if let Err(e) = fs::write(&temp_path, &output) {
-                eprintln!("{} {}", "Error: cannot write file:".red().bold(), e);
-                std::process::exit(1);
-            }
-            let cmd_status = Command::new("node").arg(&temp_path).status();
-            let _ = fs::remove_file(&temp_path);
-            match cmd_status {
-                Ok(status) => {
-                    if !status.success() {
-                        std::process::exit(status.code().unwrap_or(1));
-                    }
-                }
-                Err(e) => {
-                    eprintln!("{} {}", "Error: Node.js failed:".red().bold(), e);
-                    std::process::exit(1);
-                }
-            }
-        }
+    let result = match compile(&source, options) {
+        Ok(result) => result,
         Err(e) => {
             print_error(&source, &e);
             std::process::exit(1);
         }
+    };
+
+    let script_dir = path.parent().unwrap_or_else(|| std::path::Path::new("."));
+    let id = std::process::id();
+    let temp_path = script_dir.join(format!(".fratm_temp_{}.js", id));
+    let hook_path = std::env::temp_dir().join(format!("fratm_hook_{}.cjs", id));
+    let error_path = std::env::temp_dir().join(format!("fratm_error_{}.json", id));
+    let mut output = result.code;
+    if let Some(sm) = &result.source_map {
+        output.push('\n');
+        output.push_str(&sm.to_data_url());
     }
+    if let Err(e) = fs::write(&temp_path, &output).and_then(|_| fs::write(&hook_path, ERROR_HOOK)) {
+        eprintln!("{} {}", "Error: cannot write file:".red().bold(), e);
+        std::process::exit(1);
+    }
+    let _ = fs::remove_file(&error_path);
+    let cmd_status = Command::new("node")
+        .arg("--enable-source-maps")
+        .arg("--require")
+        .arg(&hook_path)
+        .arg(&temp_path)
+        .env("FRATM_ERROR_FILE", &error_path)
+        .status();
+    let _ = fs::remove_file(&temp_path);
+    let _ = fs::remove_file(&hook_path);
+    let report = fs::read_to_string(&error_path).ok();
+    let _ = fs::remove_file(&error_path);
+    match cmd_status {
+        Ok(status) => {
+            if let Some(report) = report {
+                print_runtime_error(&source, &report);
+                std::process::exit(1);
+            }
+            if !status.success() {
+                std::process::exit(status.code().unwrap_or(1));
+            }
+        }
+        Err(e) => {
+            eprintln!("{} {}", "Error: Node.js failed:".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Prints an uncaught runtime error reported by [`ERROR_HOOK`].
+fn print_runtime_error(source: &str, report: &str) {
+    let value: serde_json::Value = serde_json::from_str(report).unwrap_or_default();
+    let field = |key: &str| value[key].as_str().unwrap_or_default().to_string();
+    let message =
+        fratm_core::runtime::napoletanize_runtime_error(&field("name"), &field("message"));
+    match runtime_position(&field("stack")) {
+        Some((line, column)) => {
+            eprintln!(
+                "\n{} Riga {}, colonna {}: {}",
+                "✗ Errore a runtime:".red().bold(),
+                line,
+                column,
+                message
+            );
+            print_source_line(source, line, Some(column));
+        }
+        None => eprintln!("\n{} {}", "✗ Errore a runtime:".red().bold(), message),
+    }
+    eprintln!("\n{}", errors::random_encouragement().dimmed());
+}
+
+/// Line and column of the innermost stack frame inside the `.fratm` program.
+fn runtime_position(stack: &str) -> Option<(usize, usize)> {
+    stack.lines().find_map(|frame| {
+        let at = frame.find(SOURCE_NAME)? + SOURCE_NAME.len();
+        let mut parts = frame[at..].trim_start_matches(':').split(':');
+        let line = parts.next()?.parse().ok()?;
+        let column = parts.next()?.trim_end_matches(')').parse().ok()?;
+        Some((line, column))
+    })
 }
 
 fn build_file(path: &PathBuf, output: Option<PathBuf>, sourcemap: bool) {
@@ -383,24 +453,51 @@ fn show_ast(path: &PathBuf) {
 }
 
 fn print_error(source: &str, error: &fratm_core::errors::CompileError) {
-    let lines: Vec<&str> = source.lines().collect();
     eprintln!("\n{} {}", "✗ Error:".red().bold(), error);
     if let Some(line_num) = error.line() {
-        if line_num > 0 && line_num <= lines.len() {
-            let line = lines[line_num - 1];
-            eprintln!("  {} │ {}", line_num.to_string().dimmed(), line);
-            if let Some(col) = error.column() {
-                let pointer = " ".repeat(col.saturating_sub(1)) + "^";
-                eprintln!(
-                    "  {} │ {}",
-                    " ".repeat(line_num.to_string().len()),
-                    pointer.red()
-                );
-            }
-        }
+        print_source_line(source, line_num, error.column());
     }
     if let Some(suggestion) = errors::suggest(error, source) {
         eprintln!("\n{}", suggestion.yellow());
     }
     eprintln!("\n{}", errors::random_encouragement().dimmed());
+}
+
+/// Prints line `line_num` of `source` with a caret under `column`.
+fn print_source_line(source: &str, line_num: usize, column: Option<usize>) {
+    let lines: Vec<&str> = source.lines().collect();
+    if line_num == 0 || line_num > lines.len() {
+        return;
+    }
+    eprintln!(
+        "  {} │ {}",
+        line_num.to_string().dimmed(),
+        lines[line_num - 1]
+    );
+    if let Some(col) = column {
+        let pointer = " ".repeat(col.saturating_sub(1)) + "^";
+        eprintln!(
+            "  {} │ {}",
+            " ".repeat(line_num.to_string().len()),
+            pointer.red()
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finds_the_fratm_frame_in_a_mapped_stack() {
+        let stack = "TypeError: x\n    at f (/tmp/input.fratm:4:20)\n    at Object.<anonymous> (/tmp/input.fratm:6:1)";
+        assert_eq!(runtime_position(stack), Some((4, 20)));
+        let top_level =
+            "ReferenceError: y\n    at /home/a b/input.fratm:2:12\n    at node:internal";
+        assert_eq!(runtime_position(top_level), Some((2, 12)));
+        assert_eq!(
+            runtime_position("Error: z\n    at node:internal/x:1:1"),
+            None
+        );
+    }
 }

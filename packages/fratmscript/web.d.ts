@@ -9,3 +9,4 @@ export function init(input?: string | URL | Request | Response | BufferSource | 
 export function compile(source: string, options?: CompileOptions): CompileResult;
 export function format(source: string): FormatResult;
 export function version(): string;
+export function runtimeError(error: unknown): string;

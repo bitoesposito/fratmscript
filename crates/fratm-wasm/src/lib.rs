@@ -91,6 +91,13 @@ pub fn version() -> String {
     fratm_core::version().to_string()
 }
 
+/// Neapolitan version of a JavaScript runtime error, with the original in
+/// brackets (`'x' nun esiste … (ReferenceError: x is not defined)`)
+#[wasm_bindgen(js_name = runtimeError)]
+pub fn runtime_error(name: &str, message: &str) -> String {
+    fratm_core::runtime::napoletanize_runtime_error(name, message)
+}
+
 /// Tokenize source code (for syntax highlighting)
 #[wasm_bindgen]
 pub fn tokenize(source: &str) -> JsValue {
@@ -129,6 +136,11 @@ mod tests {
         let result = compile_to_response("chist è x = 42", true);
         assert!(result.success);
         assert!(result.source_map.is_some());
+    }
+
+    #[test]
+    fn test_runtime_error() {
+        assert!(runtime_error("ReferenceError", "x is not defined").starts_with("'x' nun esiste"));
     }
 
     #[test]
