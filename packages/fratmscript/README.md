@@ -53,7 +53,24 @@ import { saluta } from './saluto.fratm';
 
 Compile errors show up in the Vite overlay with their line and column, and source maps point at the `.fratm` files. The plugin has no dependency on Vite, so it also works as a Rollup plugin.
 
-## In the browser
+## In a web page, with a script tag
+
+No build step: load `browser.js` and write FratmScript in `<script type="text/fratmscript">` tags, inline or with `src`. They run in document order once the page has loaded; compile errors and uncaught runtime errors are printed in Neapolitan in the console, and dev tools show the `.fratm` source.
+
+```html
+<meta charset="utf-8">
+<script type="module" src="https://cdn.jsdelivr.net/npm/fratmscript/browser.js"></script>
+
+<script type="text/fratmscript">
+  chist è nome = "Gennaro"
+  stamm a dì(`Uè ${nome}!`)
+</script>
+<script type="text/fratmscript" src="pizzeria.fratm"></script>
+```
+
+`import { ready } from 'fratmscript/browser'` gives a promise that resolves when every script has run. Code that uses `chiamm`/`mann for` runs as a module.
+
+## In the browser, from JavaScript
 
 ```js
 import { init, compile } from 'fratmscript/web';
