@@ -1,0 +1,45 @@
+name: "🐛 Bug: 'o compilatore ha sbagliato"
+description: FratmScript code that fails to compile, compiles to the wrong JavaScript or crashes the playground.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: input
+    attributes:
+      label: FratmScript code
+      description: The smallest `.fratm` program that shows the problem.
+      render: fratm
+      placeholder: |
+        chist è x = 1
+        stamm a dì(x)
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected JavaScript or output
+      description: What you expected the compiler to generate or the program to print.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual JavaScript, output or error
+      description: What you got instead. Paste the error message as it is.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Playground
+        - CLI (fratm)
+        - npm package / Vite plugin
+        - VS Code extension
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`fratm --version`, the npm package version, or the compiler version badge in the playground."

@@ -1,0 +1,35 @@
+name: "🗣️ Parola nova: a new dialect word"
+description: Propose a Neapolitan keyword or a better word for an existing one.
+labels: ["compiler"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Existing keywords keep working for backwards compatibility, so a better word is added as an alias, not a replacement. See the keyword table in the README.
+  - type: input
+    id: word
+    attributes:
+      label: Neapolitan word or phrase
+      placeholder: "e.g. aropp"
+    validations:
+      required: true
+  - type: input
+    id: javascript
+    attributes:
+      label: JavaScript it stands for
+      placeholder: "e.g. finally"
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: A short FratmScript program that uses it.
+      render: fratm
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this word
+      description: Meaning, how it is used in Naples, and whether it clashes with a common variable name.
