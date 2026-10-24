@@ -5,6 +5,8 @@
 use fratm_core::{compile as core_compile, CompileOptions};
 use wasm_bindgen::prelude::*;
 
+mod inspect;
+
 /// Initialize panic hook for better error messages in browser console
 #[wasm_bindgen(start)]
 pub fn init() {
@@ -104,6 +106,13 @@ pub fn tokenize(source: &str) -> JsValue {
     let mut lexer = fratm_core::lexer::Lexer::new(source);
     let tokens = lexer.tokenize();
     serde_wasm_bindgen::to_value(&tokens).unwrap_or(JsValue::NULL)
+}
+
+/// Tokens and syntax tree for the playground's Token and Tree tabs, as a
+/// JSON string: `{ tokens, tree, error }` (positions in UTF-16 units)
+#[wasm_bindgen]
+pub fn inspect(source: &str) -> String {
+    serde_json::to_string(&inspect::inspect(source)).unwrap_or_default()
 }
 
 /// Response structure for compile function

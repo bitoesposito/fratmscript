@@ -2,9 +2,10 @@ import { cn } from '@/lib/utils'
 import type { LogEntry } from '@/lib/runner'
 import type { PlaygroundError } from '@/hooks/useCompiler'
 import { CircleAlert, TriangleAlert, ChevronRight, Timer, Ban, Copy, Check, Link2 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ValueTree, isExpandable } from '@/components/ValueTree'
-import { translateRuntimeError } from '@/lib/compiler'
+import { inspectSource, translateRuntimeError } from '@/lib/compiler'
+import { InspectView, type SourceRange } from '@/components/InspectView'
 import { useI18n, type Message, type MessageKey } from '@/lib/i18n'
 
 interface OutputPanelProps {
@@ -23,7 +24,19 @@ interface OutputPanelProps {
   show?: 'all' | 'console' | 'js'
   /** The code changed since this output was produced */
   stale?: boolean
+  /** Current editor source, for the Tokens and Tree views */
+  source: string
+  /** Highlights a source range in the editor (null clears) */
+  onHighlight: (range: SourceRange | null) => void
 }
+
+type CodeView = 'js' | 'tokens' | 'tree'
+
+const CODE_VIEWS: { id: CodeView; label: MessageKey }[] = [
+  { id: 'js', label: 'output.js' },
+  { id: 'tokens', label: 'output.tokens' },
+  { id: 'tree', label: 'output.tree' },
+]
 
 const ERROR_TITLES: Record<PlaygroundError['kind'], MessageKey> = {
   compile: 'error.compile',
@@ -163,9 +176,12 @@ function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onErrorCli
   )
 }
 
-export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, onErrorClick, onClearConsole, jsLineMap, cursorLine, show = 'all', stale = false }: OutputPanelProps) {
+export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, onErrorClick, onClearConsole, jsLineMap, cursorLine, show = 'all', stale = false, source, onHighlight }: OutputPanelProps) {
   const { t } = useI18n()
   const [mapLines, setMapLines] = useState(false)
+  const [codeView, setCodeView] = useState<CodeView>('js')
+  // Tokens and tree follow the editor as you type, not the last run
+  const inspection = useMemo(() => (codeView === 'js' ? null : inspectSource(source)), [codeView, source])
   const canMap = jsLineMap.some(line => line !== null)
   const showConsole = show !== 'js'
   const showJs = show !== 'console'
@@ -251,12 +267,29 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
       {/* JavaScript Output */}
       {showJs && (
         <section className="flex-1 p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider">
-              <span className="bg-success rounded-full w-2 h-2" />
-              {t('output.js')}
-            </h3>
-            <div className="flex items-center gap-1">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+            <div role="tablist" aria-label={t('output.view')} className="flex items-center gap-1">
+              <span className="bg-success mr-1 rounded-full w-2 h-2" />
+              {CODE_VIEWS.map(view => (
+                <button
+                  key={view.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={codeView === view.id}
+                  onClick={() => {
+                    setCodeView(view.id)
+                    onHighlight(null)
+                  }}
+                  className={cn(
+                    'px-1.5 py-0.5 rounded text-xs uppercase tracking-wider transition-colors',
+                    codeView === view.id ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {t(view.label)}
+                </button>
+              ))}
+            </div>
+            <div className={cn('flex items-center gap-1', codeView !== 'js' && 'hidden')}>
               <SectionAction
                 onClick={() => setMapLines(on => !on)}
                 disabled={!canMap}
@@ -267,7 +300,13 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
               <CopyButton text={jsOutput} />
             </div>
           </div>
-          {mapLines && canMap ? (
+          {codeView !== 'js' ? (
+            inspection ? (
+              <InspectView inspection={inspection} view={codeView} onHighlight={onHighlight} />
+            ) : (
+              <p className="text-muted-foreground/50 text-sm">{t('output.jsPlaceholder')}</p>
+            )
+          ) : mapLines && canMap ? (
             <MappedJs code={jsOutput} lineMap={jsLineMap} cursorLine={cursorLine} onLineClick={onErrorClick} />
           ) : (
             <pre className="bg-card/50 p-3 border border-border rounded-md font-mono text-foreground/90 text-sm break-words leading-relaxed whitespace-pre-wrap">

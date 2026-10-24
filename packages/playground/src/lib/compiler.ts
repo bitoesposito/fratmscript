@@ -3,6 +3,7 @@ interface WasmModule {
   compile: (source: string, sourceMap: boolean) => CompileResult
   format?: (source: string) => CompileResult
   runtimeError?: (name: string, message: string) => string
+  inspect?: (source: string) => string
   version: () => string
   default: (input?: { module_or_path?: WebAssembly.Module | URL | string }) => Promise<void>
 }
@@ -118,4 +119,42 @@ export function translateRuntimeError(name: string, message: string): string {
     }
   }
   return message ? `${name}: ${message}` : name
+}
+
+export interface InspectToken {
+  kind: string
+  category: 'keyword' | 'name' | 'literal' | 'punct' | 'invalid'
+  text: string
+  line: number
+  column: number
+  /** UTF-16 offsets in the source */
+  from: number
+  to: number
+}
+
+export interface InspectNode {
+  /** Field name in the parent, or the index in a list */
+  key?: string
+  /** Node type, `[n]` for lists, empty for a leaf */
+  label: string
+  value?: string
+  from?: number
+  to?: number
+  children?: InspectNode[]
+}
+
+export interface Inspection {
+  tokens: InspectToken[]
+  tree: InspectNode | null
+  error: string | null
+}
+
+/** Tokens and syntax tree of the source; null when the compiler is not loaded. */
+export function inspectSource(source: string): Inspection | null {
+  if (!wasmModule?.inspect) return null
+  try {
+    return JSON.parse(wasmModule.inspect(source)) as Inspection
+  } catch {
+    return null
+  }
 }

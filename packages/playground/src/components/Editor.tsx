@@ -144,6 +144,10 @@ const darkTheme = EditorView.theme({
     textDecoration: 'underline wavy #f87171',
     textUnderlineOffset: '3px',
   },
+  '.cm-inspectRange': {
+    backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
+    borderRadius: '2px',
+  },
   '.cm-errorLine': {
     backgroundColor: 'rgba(248, 113, 113, 0.12)',
   },
@@ -223,6 +227,10 @@ const lightTheme = EditorView.theme({
     textDecoration: 'underline wavy #dc2626',
     textUnderlineOffset: '3px',
   },
+  '.cm-inspectRange': {
+    backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
+    borderRadius: '2px',
+  },
   '.cm-errorLine': {
     backgroundColor: 'rgba(220, 38, 38, 0.08)',
   },
@@ -270,6 +278,8 @@ export interface EditorHandle {
   insertText: (text: string) => void
   /** Replaces the whole document as one undoable change */
   replaceAll: (text: string) => void
+  /** Highlights a source range (UTF-16 offsets), or clears it with null */
+  highlightRange: (range: { from: number; to: number } | null) => void
 }
 
 interface EditorProps {
@@ -299,6 +309,27 @@ const errorLines = StateField.define<DecorationSet>({
       if (effect.is(setErrorLines)) {
         const lines = [...new Set(effect.value)].sort((a, b) => a - b)
         deco = Decoration.set(lines.map(pos => errorLineDecoration.range(pos)))
+      }
+    }
+    return deco
+  },
+  provide: field => EditorView.decorations.from(field),
+})
+
+// Source range under the pointer in the Token and Tree views
+const rangeMark = Decoration.mark({ class: 'cm-inspectRange' })
+const setInspectRange = StateEffect.define<{ from: number; to: number } | null>()
+const inspectRange = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(deco, tr) {
+    deco = deco.map(tr.changes)
+    for (const effect of tr.effects) {
+      if (effect.is(setInspectRange)) {
+        const range = effect.value
+        const length = tr.state.doc.length
+        deco = range && range.to > range.from && range.to <= length
+          ? Decoration.set([rangeMark.range(range.from, range.to)])
+          : Decoration.none
       }
     }
     return deco
@@ -369,6 +400,13 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       view.dispatch(view.state.replaceSelection(text), { scrollIntoView: true })
       view.focus()
     },
+    highlightRange(range) {
+      const view = viewRef.current
+      if (!view) return
+      const effects: StateEffect<unknown>[] = [setInspectRange.of(range)]
+      if (range && range.to <= view.state.doc.length) effects.push(EditorView.scrollIntoView(range.from, { y: 'nearest' }))
+      view.dispatch({ effects })
+    },
     replaceAll(text) {
       const view = viewRef.current
       if (!view) return
@@ -415,6 +453,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         lintGutter(),
         errorLines,
+        inspectRange,
         keywordHelp,
         fratmScriptLanguage,
         highlightCompartment.of(syntaxHighlighting(isDark ? darkHighlighting : lightHighlighting)),
