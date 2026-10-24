@@ -1,224 +1,48 @@
-export const examples = {
-  hello: `// Hello World in FratmScript!
-chist è messaggio = "Ue, comme staje?"
-stamm a dì(messaggio)
+// The example picker lists the programs in the repo's examples/ folder, so the
+// playground always shows the same code that CI compiles and golden-tests.
 
-// Variables
-tien contatore = 0
-contatore = contatore + 1
-stamm a dì("Counter: " + contatore)`,
+const sources = import.meta.glob('../../../../examples/*.fratm', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
 
-  fibonacci: `// Fibonacci in FratmScript
-facc fibonacci(n) {
-    si (n <= 1) {
-        piglie n
-    }
-    piglie fibonacci(n - 1) + fibonacci(n - 2)
+/**
+ * Examples that cannot run in the browser: 09 imports Node modules
+ * (node:path, node:os) and 13 reads the terminal with readline.
+ */
+const NODE_ONLY = new Set(['09_moduli', '13_pomodor_e_muzzarel'])
+
+export interface Example {
+  /** File name without extension, e.g. `01_salutatore` */
+  id: string
+  /** Picker label, from the file's title comment */
+  title: string
+  code: string
 }
 
-stamm a dì("Fibonacci sequence:")
-pe (tien i = 0; i < 10; i = i + 1) {
-    stamm a dì("fib(" + i + ") = " + fibonacci(i))
-}`,
-
-  classe: `// Classes in FratmScript
-na famiglie Pizzaiolo {
-    facc costruttore(nome, specialita) {
-        stu cos.nome = nome
-        stu cos.specialita = specialita
-        stu cos.pizzeFatte = 0
-    }
-
-    facc faiPizza(tipo) {
-        stu cos.pizzeFatte = stu cos.pizzeFatte + 1
-        piglie stu cos.nome + " made a " + tipo + "!"
-    }
-
-    facc presentati() {
-        piglie "I am " + stu cos.nome + ", specialized in " + stu cos.specialita
-    }
+/** Title from the header comment (`// Example 1: Neapolitan Greeter`). */
+function exampleTitle(id: string, code: string): string {
+  const number = id.split('_')[0]
+  const header = code
+    .split('\n')
+    .map(line => line.replace(/^\/\/\s*/, '').trim())
+    .find(line => /^Example \d+:/.test(line))
+  const name = header ? header.replace(/^Example \d+:\s*/, '') : id.slice(number.length + 1).replace(/_/g, ' ')
+  return `${number} · ${name}`
 }
 
-chist è gennaro = nu bell Pizzaiolo("Gennaro", "Margherita DOC")
-stamm a dì(gennaro.presentati())
-stamm a dì(gennaro.faiPizza("Marinara"))
-stamm a dì(gennaro.faiPizza("Diavola"))
-stamm a dì("Pizzas made: " + gennaro.pizzeFatte)`,
+export const exampleList: Example[] = Object.entries(sources)
+  .map(([path, code]) => {
+    const id = path.split('/').pop()!.replace(/\.fratm$/, '')
+    return { id, title: exampleTitle(id, code), code }
+  })
+  .filter(example => !NODE_ONLY.has(example.id))
+  .sort((a, b) => a.id.localeCompare(b.id))
 
-  oop_avanzato: `// OOP avanzato: extends, super, static
-na famiglie Persona {
-    costruttore(nome) {
-        stu cos.nome = nome
-    }
-
-    saluta() {
-        piglie "Ue, so' " + stu cos.nome
-    }
-
-    fisso categoria() {
-        piglie "Essere umano"
-    }
-}
-
-na famiglie Pizzaiolo figlio 'e Persona {
-    costruttore(nome, specialita) {
-        'o pate(nome)
-        stu cos.specialita = specialita
-    }
-
-    saluta() {
-        piglie 'o pate.saluta() + " e faccio " + stu cos.specialita
-    }
-}
-
-chist è gennaro = nu bell Pizzaiolo("Gennaro", "Margherita")
-stamm a dì(gennaro.saluta())
-stamm a dì("Categoria: " + Persona.categoria())`,
-
-  async: `// Async/Await in FratmScript
-facc aspettaNuPoco(ms) {
-    piglie nu bell Promise((risolvi) => setTimeout(risolvi, ms))
-}
-
-mo vir facc caricaDati() {
-    stamm a dì("Loading...")
-    aspett aspettaNuPoco(1000)
-    piglie "Data loaded!"
-}
-
-mo vir facc main() {
-    chist è risultato = aspett caricaDati()
-    stamm a dì(risultato)
-}
-
-main()
-stamm a dì("This prints first: main() is still waiting")`,
-
-  operatori: `// Logical Operators in FratmScript
-chist è a = overo
-chist è b = sfòls
-
-// AND: "e" or "pure"
-stamm a dì("overo e sfols = " + (a e b))
-
-// OR: "o"
-stamm a dì("overo o sfols = " + (a o b))
-
-// NOT: "no", "!", or "manco"
-stamm a dì("no overo = " + (no a))
-stamm a dì("!sfols = " + (!b))
-
-// Combinations
-chist è x = 5
-chist è y = 10
-si (x < y e y < 20) {
-    stamm a dì("x is less than y, and y is less than 20")
-}`,
-
-  array: `// Arrays and Objects in FratmScript
-
-// Array
-chist è pizze = ["Margherita", "Marinara", "Diavola", "Capricciosa"]
-stamm a dì("Pizza menu:")
-pe (tien i = 0; i < 4; i = i + 1) {
-    stamm a dì("  " + (i + 1) + ". " + pizze[i])
-}
-
-// Object
-chist è ordine = {
-    cliente: "Mario",
-    pizza: "Margherita",
-    quantita: 2,
-    consegna: overo
-}
-
-stamm a dì("")
-stamm a dì("Order:")
-stamm a dì("  Customer: " + ordine.cliente)
-stamm a dì("  Pizza: " + ordine.pizza)
-stamm a dì("  Quantity: " + ordine.quantita)
-stamm a dì("  Delivery: " + (ordine.consegna ? "Yes" : "No"))`,
-
-  trycatch: `// Try/Catch/Finally and Throw
-facc validaEta(eta) {
-    si (eta < 0) {
-        iett nu bell Error("Eta negativa")
-    }
-    si (eta > 130) {
-        iett nu bell Error("Eta troppo alta")
-    }
-    piglie "Eta valida: " + eta
-}
-
-facc prova(eta) {
-    pruvamm {
-        stamm a dì(validaEta(eta))
-    } e si schiatta (err) {
-        avvis a dì("Errore con " + eta + ": " + err.message)
-    } aropp {
-        stamm a dì("Controllato: " + eta)
-    }
-}
-
-prova(35)
-prova(-1)
-prova(200)`,
-
-  moderna: `// Modern syntax in FratmScript
-// Arrow functions and template literals
-chist è saluta = (nome = "Gennà") => \`Uè \${nome}, comme staje?\`
-stamm a dì(saluta())
-stamm a dì(saluta("Totò"))
-
-// Objects: shorthand, computed keys, methods
-chist è nome = "Margherita"
-chist è campo = "prezzo"
-chist è pizza = {
-    nome,
-    [campo]: 6.5,
-    ingredienti: ["pummarola", "muzzarella", "basilico"],
-    descrivi() {
-        piglie \`\${stu cos.nome}: \${stu cos.ingredienti.join(", ")}\`
-    }
-}
-stamm a dì(pizza.descrivi())
-
-// Destructuring with defaults, renames and rest
-chist è { prezzo: costo, forno = "a legna", ...altro } = pizza
-chist è [primo, ...ato] = pizza.ingredienti
-stamm a dì(\`\${costo} euro, forno \${forno}, primo: \${primo}, ato: \${ato.length}\`)
-
-// Spread and rest parameters
-facc somma(...numeri) {
-    piglie numeri.reduce((totale, n) => totale + n, 0)
-}
-chist è prezzi = [6.5, 8, 7]
-stamm a dì("Totale: " + somma(...prezzi, 1.5))
-
-// Optional chaining and nullish coalescing
-chist è ordine = { cliente: { nome: "Ciro" } }
-stamm a dì(ordine.cliente?.nome ?? "anonimo")
-stamm a dì(ordine.consegna?.indirizzo ?? "ritiro al banco")
-
-// Compound assignment and ++
-tien conto = 0, pizze = 0
-pe (tien i = 0; i < prezzi.length; i++) {
-    conto += prezzi[i]
-    pizze++
-}
-stamm a dì(\`\${pizze} pizze, \${conto} euro\`)
-
-// Short keywords are names too: "e" as the catch parameter
-pruvamm {
-    iett nu bell Error("forno spento")
-} e si schiatta (e) {
-    stamm a dì("Errore: " + e.message)
-}
-
-// Regex literals
-chist è targa = /^[A-Z]{2}\\d{3}[A-Z]{2}$/
-stamm a dì(targa.test("NA123BC"), targa.test("pizza"))`,
-}
+export const examples: Record<string, string> = Object.fromEntries(
+  exampleList.map(example => [example.id, example.code]),
+)
 
 export const defaultCode = `// Try FratmScript!
 
