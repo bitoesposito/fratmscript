@@ -1,0 +1,5 @@
+chist è nome = "Gennaro"
+tien pizze = 2
+
+pizze += 1
+stamm a dì(nome, pizze)

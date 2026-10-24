@@ -1,0 +1,5 @@
+facc saluta(nome) {
+    piglie "Uè " + nome + "!"
+}
+
+stamm a dì(saluta("Ciro"))

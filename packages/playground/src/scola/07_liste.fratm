@@ -1,0 +1,8 @@
+chist è pizze = ["margherita", "marinara", "diavola"]
+
+stamm a dì(pizze.length, "pizze")
+stamm a dì(pizze[0])
+
+pe ogni (chist è pizza dint pizze) {
+    stamm a dì("-", pizza)
+}

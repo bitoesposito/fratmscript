@@ -1,0 +1,9 @@
+chist è giorno = "sabato"
+
+vedimm (giorno) {
+    caso "sabato":
+        stamm a dì("Pizza cu l'amici!")
+        rompe
+    predefinit:
+        stamm a dì("Se fatica...")
+}

@@ -1,0 +1,10 @@
+facc dividi(a, b) {
+    piglie a / b
+}
+
+pruvamm {
+    stamm a dì(dividi(10, 2))
+    stamm a dì(dividi(1, 0))
+} e si schiatta (errore) {
+    stamm a dì("Guaio:", errore.message)
+}

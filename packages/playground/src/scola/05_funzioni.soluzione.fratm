@@ -1,0 +1,10 @@
+facc saluta(nome) {
+    piglie "Uè " + nome + "!"
+}
+
+facc doppio(n) {
+    piglie n * 2
+}
+
+stamm a dì(saluta("Ciro"))
+stamm a dì(doppio(21))

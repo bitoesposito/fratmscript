@@ -1,0 +1,18 @@
+na famiglie Pizzaiolo {
+    costruttore(nome) {
+        stu cos.nome = nome
+        stu cos.pizze = 0
+    }
+
+    sforna() {
+        stu cos.pizze++
+        piglie stu cos.pizze
+    }
+
+    presentati() {
+        piglie "Songo " + stu cos.nome
+    }
+}
+
+chist è gennaro = nu bell Pizzaiolo("Gennaro")
+stamm a dì(gennaro.presentati())

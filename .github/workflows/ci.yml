@@ -50,6 +50,21 @@ jobs:
           ./target/debug/fratm check examples/*.fratm
           ./target/debug/fratm fmt --check examples/*.fratm
 
+      - name: Check the playground tour lessons
+        run: |
+          cd packages/playground/src/scola
+          ../../../../target/debug/fratm check *.fratm
+          ../../../../target/debug/fratm fmt --check *.fratm
+          for solution in *.soluzione.fratm; do
+            lesson="${solution%.soluzione.fratm}"
+            # The solution prints exactly the expected output, the starter does not
+            diff -u "$lesson.out" <(../../../../target/debug/fratm lancia "$solution")
+            if diff -q "$lesson.out" <(../../../../target/debug/fratm lancia "$lesson.fratm") > /dev/null; then
+              echo "::error file=packages/playground/src/scola/$lesson.fratm::the starter already prints the expected output"
+              exit 1
+            fi
+          done
+
   npm-package:
     name: npm package and VS Code extension
     runs-on: ubuntu-latest

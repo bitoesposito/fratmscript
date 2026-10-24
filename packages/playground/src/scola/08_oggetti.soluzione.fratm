@@ -1,0 +1,8 @@
+chist è pizza = {
+    nome: "Margherita",
+    prezzo: 6,
+    ingredienti: ["pummarola", "muzzarella", "basilico"],
+}
+
+chist è { nome, prezzo } = pizza
+stamm a dì(`${nome}: ${prezzo} euro`)

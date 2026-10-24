@@ -1,0 +1,8 @@
+chist è aspetta = ms => nu bell Promise(risolvi => setTimeout(risolvi, ms))
+
+mo vir facc cucina() {
+    stamm a dì("Metto 'a pizza dint'o furno...")
+    aspett aspetta(500)
+}
+
+cucina()

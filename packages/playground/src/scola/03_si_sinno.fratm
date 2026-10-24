@@ -1,0 +1,5 @@
+tien ora = 9
+
+si (ora < 12) {
+    stamm a dì("Bongiorno!")
+}
