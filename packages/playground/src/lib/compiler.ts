@@ -2,6 +2,7 @@
 interface WasmModule {
   compile: (source: string, sourceMap: boolean) => CompileResult
   format?: (source: string) => CompileResult
+  runtimeError?: (name: string, message: string) => string
   version: () => string
   default: (input?: { module_or_path?: WebAssembly.Module | URL | string }) => Promise<void>
 }
@@ -102,4 +103,19 @@ export function formatSource(source: string): string | null {
   } catch {
     return null
   }
+}
+
+/**
+ * Runtime error in Neapolitan, with the original JS message in brackets.
+ * Falls back to `name: message` if the compiler is not loaded.
+ */
+export function translateRuntimeError(name: string, message: string): string {
+  if (wasmModule?.runtimeError) {
+    try {
+      return wasmModule.runtimeError(name, message)
+    } catch {
+      // fall through
+    }
+  }
+  return message ? `${name}: ${message}` : name
 }

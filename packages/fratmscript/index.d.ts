@@ -44,3 +44,9 @@ export function compile(source: string, options?: CompileOptions): CompileResult
 export function format(source: string): FormatResult;
 /** Version of the compiler. */
 export function version(): string;
+/**
+ * A JavaScript error thrown by compiled code, in Neapolitan, with the
+ * original message in brackets. Errors the program throws itself keep
+ * their message.
+ */
+export function runtimeError(error: unknown): string;

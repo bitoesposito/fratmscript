@@ -83,6 +83,7 @@ pub mod errors;
 pub mod formatter;
 pub mod lexer;
 pub mod parser;
+pub mod runtime;
 pub mod sourcemap;
 
 use codegen::CodeGen;

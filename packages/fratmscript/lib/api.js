@@ -41,5 +41,11 @@ export function createApi(wasm) {
     return wasm.version();
   }
 
-  return { compile, format, version };
+  function runtimeError(error) {
+    const name = error && error.name ? String(error.name) : 'Error';
+    const message = error && error.message !== undefined ? String(error.message) : String(error);
+    return wasm.runtimeError(name, message);
+  }
+
+  return { compile, format, version, runtimeError };
 }

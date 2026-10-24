@@ -21,6 +21,19 @@ format('si (overo) {\nstamm a dì(1)\n}').code; // same output as `fratm fmt`
 
 `compile` never throws on invalid source: check `errors`.
 
+Errors thrown by the compiled code can be shown in Neapolitan too:
+
+```js
+import { runtimeError } from 'fratmscript';
+
+try {
+  run(code);
+} catch (e) {
+  console.error(runtimeError(e));
+  // 'nonEsiste' nun esiste: nun l'hê maje dichiarato cu 'chist è' o 'tien' (ReferenceError: nonEsiste is not defined)
+}
+```
+
 ## Vite plugin
 
 ```js

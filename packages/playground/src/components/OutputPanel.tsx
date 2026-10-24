@@ -4,6 +4,7 @@ import type { PlaygroundError } from '@/hooks/useCompiler'
 import { CircleAlert, TriangleAlert, ChevronRight, Timer, Ban, Copy, Check, Link2 } from 'lucide-react'
 import { useState } from 'react'
 import { ValueTree, isExpandable } from '@/components/ValueTree'
+import { translateRuntimeError } from '@/lib/compiler'
 
 interface OutputPanelProps {
   jsOutput: string
@@ -115,7 +116,7 @@ function CopyButton({ text }: { text: string }) {
 function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onErrorClick: OutputPanelProps['onErrorClick'] }) {
   const line = error.kind === 'compile' || error.kind === 'runtime' ? error.line : undefined
   const column = error.kind === 'compile' || error.kind === 'runtime' ? error.column : undefined
-  const message = error.kind === 'runtime' ? `${error.name}: ${error.message}` : error.message
+  const message = error.kind === 'runtime' ? translateRuntimeError(error.name, error.message) : error.message
   const Icon = error.kind === 'timeout' ? Timer : CircleAlert
 
   return (

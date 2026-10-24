@@ -341,8 +341,9 @@ impl CodeGen {
                 }
             }
 
-            Statement::Throw { value, .. } => {
+            Statement::Throw { value, span } => {
                 self.write_indent();
+                self.add_mapping(span.line, span.column);
                 self.emit("throw ");
                 self.gen_expression(value);
                 self.emit(";");
@@ -449,8 +450,9 @@ impl CodeGen {
                 }
             }
 
-            Statement::Expression { expression, .. } => {
+            Statement::Expression { expression, span } => {
                 self.write_indent();
+                self.add_mapping(span.line, span.column);
                 self.gen_expression(expression);
                 self.emit(";");
             }

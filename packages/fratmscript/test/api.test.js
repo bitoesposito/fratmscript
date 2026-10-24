@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { compile, format, version } from '../index.js';
+import { compile, format, version, runtimeError } from '../index.js';
 import fratmscript from '../vite.js';
 
 test('compile returns code, a source map and no errors', () => {
@@ -31,6 +31,18 @@ test('format reindents and keeps comments', () => {
     errors: [],
   });
   assert.equal(format('tien = 1').code, null);
+});
+
+test('runtime errors are translated', () => {
+  let error;
+  try {
+    // eslint-disable-next-line no-undef
+    nonEsiste;
+  } catch (e) {
+    error = e;
+  }
+  assert.match(runtimeError(error), /^'nonEsiste' nun esiste.*\(ReferenceError: nonEsiste is not defined\)$/);
+  assert.equal(runtimeError(new Error('Pizza bruciata')), 'Error: Pizza bruciata');
 });
 
 test('version matches the package', async () => {

@@ -31,3 +31,8 @@ export function version() {
   assertLoaded();
   return api.version();
 }
+
+export function runtimeError(error) {
+  assertLoaded();
+  return api.runtimeError(error);
+}
