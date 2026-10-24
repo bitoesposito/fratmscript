@@ -1,0 +1,14 @@
+chiamm { a_caso, quanti, arrotonda, ripeti, mischia, uno_a_caso, aspetta } da "fratm"
+
+chist è pizze = ["margherita", "marinara", "diavola"]
+stamm a dì(quanti(pizze), quanti("Napule"), quanti({ a: 1, b: 2 }))
+stamm a dì(a_caso(7, 7), arrotonda(3.14159, 2), arrotonda(2.5))
+ripeti(3, giro => stamm a dì("giro", giro))
+chist è mischiate = mischia(pizze)
+stamm a dì(quanti(mischiate), mischiate.every(p => pizze.includes(p)), pizze[0])
+stamm a dì(pizze.includes(uno_a_caso(pizze)))
+mo vir facc main() {
+    aspett aspetta(10)
+    stamm a dì("fatto")
+}
+main()

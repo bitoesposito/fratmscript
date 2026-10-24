@@ -419,6 +419,23 @@ impl CodeGen {
                 self.emit("}");
             }
 
+            // The fratm library is inlined: one definition per imported helper
+            Statement::Import {
+                specifiers, source, ..
+            } if source == crate::stdlib::MODULE => {
+                for (i, s) in specifiers.iter().enumerate() {
+                    if i > 0 {
+                        self.emit("\n");
+                    }
+                    self.write_indent();
+                    self.emit("const ");
+                    self.emit(&js_name(&s.local));
+                    self.emit(" = ");
+                    self.emit(crate::stdlib::helper(&s.imported).unwrap_or("undefined"));
+                    self.emit(";");
+                }
+            }
+
             Statement::Import {
                 specifiers, source, ..
             } => {

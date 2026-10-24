@@ -174,6 +174,17 @@ pub fn napoletanize_error(message: &str) -> String {
             );
         }
     }
+    if let Some(rest) = message.strip_prefix('\'') {
+        if let Some((name, available)) =
+            rest.split_once("' is not in the fratm library (available: ")
+        {
+            return format!(
+                "'{}' nun sta int'a libreria \"fratm\". Ce stanno: {}.",
+                name,
+                available.trim_end_matches(')')
+            );
+        }
+    }
     if message.contains("'caccia' works only inside") {
         return "'caccia' se po' usà sulo dint'a nu generatore: facc* nomme() { caccia … }"
             .to_string();

@@ -1,7 +1,8 @@
 //! Semantic checks over the AST, run after parsing.
 //!
 //! Today this reports names declared twice in the same scope, which JS
-//! would only reject when the generated code is loaded.
+//! would only reject when the generated code is loaded, and imports of
+//! helpers the `fratm` library does not have.
 
 use std::collections::HashMap;
 
@@ -47,6 +48,14 @@ struct Scope {
 }
 
 impl Checker {
+    /// Records an error unless the current scope already has one.
+    fn fail(&mut self, error: SemanticError) {
+        let scope = self.scopes.last_mut().expect("a scope is always open");
+        if scope.error.is_none() {
+            scope.error = Some(error);
+        }
+    }
+
     fn declare(&mut self, name: &str, binding: Binding, span: Span) {
         let scope = self.scopes.last_mut().expect("a scope is always open");
         if scope.error.is_some() {
@@ -303,9 +312,23 @@ impl Checker {
             }
             Statement::Throw { value, .. } => self.expression(value),
             Statement::Import {
-                specifiers, span, ..
+                specifiers,
+                source,
+                span,
             } => {
                 for s in specifiers {
+                    if source == crate::stdlib::MODULE
+                        && crate::stdlib::helper(&s.imported).is_none()
+                    {
+                        self.fail(SemanticError {
+                            message: format!(
+                                "'{}' is not in the fratm library (available: {})",
+                                s.imported,
+                                crate::stdlib::names()
+                            ),
+                            span: *span,
+                        });
+                    }
                     self.declare(&s.local, Binding::Lexical, *span);
                 }
             }
