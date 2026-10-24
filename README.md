@@ -27,6 +27,8 @@ facc saluta(chi) {
 stamm a dì(saluta(nome))
 ```
 
+▶️ [Prova stu codice int'o playground](https://kkratterf.github.io/fratmscript/#code=MYCwlgzgLgBAFzAdgewLYFMYF4YCIDi6iiAhgE7K4BQVAZicMDBCQDYCuUJAFKGAJQwA3lRhjmYGL3DYciSMDDtEgkePUwADmADmrMJlwBRGHwkwo7APzV1AX1Hjteg3gCqCXDADUpmb9wAQmoHKmgSVFQYEhgAEwAb7hYOLm4UDH5+KiA)
+
 ---
 
 ## Monorepo Structure
@@ -376,7 +378,9 @@ just wasm
 
 ## Playground
 
-The [playground](https://kkratterf.github.io/fratmscript/) is a web-based editor to try FratmScript in your browser. Press **Scola** for *'A scola 'e FratmScript*, a tour of 12 short lessons with an exercise each, checked against the console output. Lessons live in `packages/playground/src/scola/` (starter, `.soluzione.fratm` and expected `.out`; CI runs every solution).
+The [playground](https://kkratterf.github.io/fratmscript/) is a web-based editor to try FratmScript in your browser. Press **Impara** (Learn, Scola) for *'A scola 'e FratmScript*, a tour of 12 short lessons with an exercise each, checked against the console output. Lessons live in `packages/playground/src/scola/` (starter, `.soluzione.fratm` and expected `.out`; CI runs every solution).
+
+**Share** copies a link with the code in the URL. The `</>` button next to it copies an `<iframe>` that embeds the playground (`?embed=1`: editor, output and Run only, nothing is saved in the visitor's browser), for docs and blog posts.
 
 ```bash
 # Build WASM module

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AlignLeft } from 'lucide-react'
-import { Header } from '@/components/Header'
+import { Header, EmbedHeader } from '@/components/Header'
 import { Editor, type EditorHandle, type EditorDiagnostic } from '@/components/Editor'
 import { OutputPanel } from '@/components/OutputPanel'
 import { StatusBar } from '@/components/StatusBar'
@@ -17,11 +17,11 @@ import { SyntaxHelp } from '@/components/SyntaxHelp'
 import { MobileTabs, type MobileTab } from '@/components/MobileTabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
-import { buildShareUrl, readSharedCode, loadSavedCode, saveCode } from '@/lib/share'
+import { buildShareUrl, buildEmbedSnippet, isEmbed, readSharedCode, loadSavedCode, saveCode } from '@/lib/share'
 import { lessons } from '@/lib/lessons'
 import { LessonPanel } from '@/components/LessonPanel'
 import type { LogValue } from '@/lib/runner'
-import { useI18n } from '@/lib/i18n'
+import { useI18n, type MessageKey } from '@/lib/i18n'
 
 const EXAMPLE_TITLES: Record<string, string> = Object.fromEntries(
   exampleList.map(example => [example.id, `${example.id}.fratm`]),
@@ -81,8 +81,11 @@ function writeStoredFlag(key: string, value: boolean) {
 }
 
 function App() {
+  const [embed] = useState(isEmbed)
   // A share link wins over the autosaved code, which wins over the default
   const [initial] = useState(() => {
+    // An embed shows only the code from its link
+    if (embed) return { code: readSharedCode() ?? defaultCode, example: '', lesson: null }
     const lesson = lessonFromHash()
     if (lesson !== null) {
       const id = lessons[lesson].id
@@ -100,7 +103,8 @@ function App() {
   const { lang, t } = useI18n()
   const editorRef = useRef<EditorHandle>(null)
   const isRunning = compiler.status === 'running'
-  const isMobile = useMediaQuery('(max-width: 767px)')
+  // A narrow embed stacks editor and output instead of using tabs
+  const isMobile = useMediaQuery('(max-width: 767px)') && !embed
   const [mobileTab, setMobileTab] = useState<MobileTab>('code')
   const [cursorLine, setCursorLine] = useState(1)
   // Source of the last run, to tell whether the output is out of date
@@ -120,13 +124,15 @@ function App() {
   // Autosave, debounced so typing doesn't write on every keystroke.
   // In the tour each lesson keeps its own code, so the playground code is untouched.
   const lessonId = lesson?.id
+  // An embed never autosaves, so it can't overwrite the visitor's own code.
   useEffect(() => {
+    if (embed) return
     const timer = setTimeout(() => {
       if (lessonId) writeStored(LESSON_CODE_KEY + lessonId, code)
       else saveCode(code)
     }, 500)
     return () => clearTimeout(timer)
-  }, [code, lessonId])
+  }, [code, embed, lessonId])
 
   const { runCode, stop } = compiler
   const run = useCallback((source: string) => {
@@ -221,23 +227,21 @@ function App() {
     })
   }, [code, compiler.busy, compiler.consoleLogs, compiler.errors.length, compiler.status, completed, lastRunCode, lesson])
 
-  const handleShare = useCallback(() => {
-    const url = buildShareUrl(code)
-
-    navigator.clipboard.writeText(url).then(() => {
-      toastManager.add({
-        title: t('share.copied'),
-        description: t('share.copiedDesc'),
-        type: 'success',
-      })
+  const copy = useCallback((text: string, title: MessageKey, description: MessageKey) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toastManager.add({ title: t(title), description: t(description), type: 'success' })
     }).catch(() => {
-      toastManager.add({
-        title: t('share.failed'),
-        description: url,
-        type: 'error',
-      })
+      toastManager.add({ title: t('share.failed'), description: text, type: 'error' })
     })
-  }, [code, t])
+  }, [t])
+
+  const handleShare = useCallback(() => {
+    copy(buildShareUrl(code), 'share.copied', 'share.copiedDesc')
+  }, [code, copy])
+
+  const handleEmbed = useCallback(() => {
+    copy(buildEmbedSnippet(code), 'share.embedCopied', 'share.embedCopiedDesc')
+  }, [code, copy])
 
   const handleExampleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const name = e.target.value
@@ -253,15 +257,26 @@ function App() {
         <LoadingOverlay isVisible={compiler.isLoading} />
 
         {/* Sticky Header */}
-        <Header
-          onRun={handleRun}
-          onStop={stop}
-          onShare={handleShare}
-          onTour={handleTour}
-          tourActive={lesson !== null}
-          isRunning={isRunning}
-          disabled={compiler.isLoading}
-        />
+        {embed ? (
+          <EmbedHeader
+            onRun={handleRun}
+            onStop={stop}
+            playgroundUrl={buildShareUrl(code)}
+            isRunning={isRunning}
+            disabled={compiler.isLoading}
+          />
+        ) : (
+          <Header
+            onRun={handleRun}
+            onStop={stop}
+            onShare={handleShare}
+            onEmbed={handleEmbed}
+            onTour={handleTour}
+            tourActive={lesson !== null}
+            isRunning={isRunning}
+            disabled={compiler.isLoading}
+          />
+        )}
 
         {isMobile && (
           <MobileTabs
@@ -296,7 +311,7 @@ function App() {
               />
             )}
             {/* Sticky panel header */}
-            <div className="flex justify-between items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
+            <div className={cn('flex justify-between items-center bg-card px-4 py-2.5 border-border border-b shrink-0', embed && 'hidden')}>
               <span className="font-medium text-muted-foreground text-sm truncate">
                 {lesson ? `scola/${lesson.id}.fratm` : EXAMPLE_TITLES[selectedExample] ?? 'main.fratm'}
                 {selectedExample === 'custom' && <span className="ml-1.5 text-xs">{t('editor.edited')}</span>}
@@ -316,7 +331,7 @@ function App() {
               />
             </div>
             {/* Sticky examples bar */}
-            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-4 py-2.5 border-border border-t shrink-0">
+            <div className={cn('flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-4 py-2.5 border-border border-t shrink-0', embed && 'hidden')}>
               <div className={cn('flex items-center gap-3 min-w-0', lesson && 'invisible')}>
                 <label className="text-muted-foreground text-xs">{t('editor.examples')}</label>
                 <NativeSelect
@@ -395,13 +410,13 @@ function App() {
         </div>
 
         {/* Sticky StatusBar */}
-        <StatusBar
+        {!embed && <StatusBar
           status={isStale && !isRunning ? 'stale' : compiler.status}
           statusText={isStale && !isRunning
             ? t(autoRun ? 'status.staleAuto' : 'status.staleManual')
             : t(compiler.statusText.key, compiler.statusText.params)}
           compileTime={compiler.compileTime === null ? '' : t('status.compiledIn', { ms: compiler.compileTime.toFixed(1) })}
-        />
+        />}
       </div>
     </ToastProvider>
   )
