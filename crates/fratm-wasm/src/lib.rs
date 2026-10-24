@@ -45,7 +45,7 @@ fn compile_to_response(source: &str, generate_source_map: bool) -> CompileRespon
             column: None,
             suggestion: None,
         },
-        Err(e) => error_response(&e),
+        Err(e) => error_response(&e, source),
     }
 }
 
@@ -69,11 +69,11 @@ fn format_to_response(source: &str) -> CompileResponse {
             column: None,
             suggestion: None,
         },
-        Err(e) => error_response(&e),
+        Err(e) => error_response(&e, source),
     }
 }
 
-fn error_response(e: &fratm_core::errors::CompileError) -> CompileResponse {
+fn error_response(e: &fratm_core::errors::CompileError, source: &str) -> CompileResponse {
     CompileResponse {
         success: false,
         code: None,
@@ -81,7 +81,7 @@ fn error_response(e: &fratm_core::errors::CompileError) -> CompileResponse {
         error: Some(format!("{}", e)),
         line: e.line(),
         column: e.column(),
-        suggestion: fratm_core::errors::get_suggestion(e),
+        suggestion: fratm_core::errors::suggest(e, source),
     }
 }
 

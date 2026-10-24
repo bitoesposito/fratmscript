@@ -256,6 +256,129 @@ pub fn get_suggestion(error: &CompileError) -> Option<String> {
     }
 }
 
+// ============== Typos of dialect keywords ==============
+
+/// Keywords worth suggesting for a typo, with the phrase to write.
+/// Short words (`si`, `pe`, `mo`, ...) are left out: too many names are one
+/// letter away from them.
+const TYPO_CANDIDATES: &[(&str, &str)] = &[
+    ("stamm", "stamm a dì"),
+    ("avvis", "avvis a dì"),
+    ("scrive", "scrive a dì"),
+    ("chist", "chist è"),
+    ("tien", "tien"),
+    ("facc", "facc"),
+    ("piglie", "piglie"),
+    ("sinnò", "sinnò"),
+    ("mentre", "mentre che"),
+    ("overo", "overo"),
+    ("sfòls", "sfòls"),
+    ("nisciun", "nisciun"),
+    ("aspett", "aspett"),
+    ("pruvamm", "pruvamm"),
+    ("schiatta", "e si schiatta"),
+    ("iett", "iett"),
+    ("famiglie", "na famiglie"),
+    ("chiamm", "chiamm"),
+    ("predefinit", "predefinit"),
+    ("rompe", "rompe"),
+    ("salta", "salta"),
+    ("fisso", "fisso"),
+    ("figlio", "figlio 'e"),
+    ("fermete", "fermete"),
+    ("manco", "manco"),
+    ("vedimm", "vedimm"),
+    ("aropp", "aropp"),
+    ("primm", "primm fa"),
+    ("caccia", "caccia"),
+    ("costruttore", "costruttore"),
+];
+
+/// Like [`get_suggestion`], but first checks whether the error comes from a
+/// misspelled keyword on the error line (`stama a dì` → `stamm a dì`).
+pub fn suggest(error: &CompileError, source: &str) -> Option<String> {
+    if let CompileError::ParseError { line, column, .. } = error {
+        if let Some((typo, phrase)) = keyword_typo(source, *line, *column) {
+            return Some(format!(
+                "💡 Forse vulive scrivere '{}' invece 'e '{}'?",
+                phrase, typo
+            ));
+        }
+    }
+    get_suggestion(error)
+}
+
+/// The identifier closest before the error position (on the same line) that
+/// looks like a misspelled keyword, with the keyword phrase it resembles.
+fn keyword_typo(source: &str, line: usize, column: usize) -> Option<(String, &'static str)> {
+    let tokens = crate::lexer::Lexer::new(source).tokenize();
+    tokens
+        .iter()
+        .filter(|t| t.span.line == line && t.span.column <= column)
+        .rev()
+        .find_map(|t| match &t.kind {
+            crate::lexer::TokenKind::Identifier(name) => {
+                closest_keyword(name).map(|phrase| (name.clone(), phrase))
+            }
+            _ => None,
+        })
+}
+
+fn closest_keyword(name: &str) -> Option<&'static str> {
+    let name = strip_accents(&name.to_lowercase());
+    if name.chars().count() < 3 {
+        return None;
+    }
+    TYPO_CANDIDATES
+        .iter()
+        .filter_map(|(keyword, phrase)| {
+            let keyword = strip_accents(keyword);
+            let max = if keyword.chars().count() <= 5 { 1 } else { 2 };
+            let distance = edit_distance(&name, &keyword);
+            (distance > 0 && distance <= max).then_some((distance, *phrase))
+        })
+        .min_by_key(|(distance, _)| *distance)
+        .map(|(_, phrase)| phrase)
+}
+
+fn strip_accents(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            'à' | 'á' => 'a',
+            'è' | 'é' => 'e',
+            'ì' | 'í' => 'i',
+            'ò' | 'ó' => 'o',
+            'ù' | 'ú' => 'u',
+            c => c,
+        })
+        .collect()
+}
+
+/// Levenshtein distance, with a swap of two neighbouring letters counted as one edit.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    let mut d = vec![vec![0usize; b.len() + 1]; a.len() + 1];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[0] = i;
+    }
+    for (j, cell) in d[0].iter_mut().enumerate() {
+        *cell = j;
+    }
+    for i in 1..=a.len() {
+        for j in 1..=b.len() {
+            let cost = usize::from(a[i - 1] != b[j - 1]);
+            d[i][j] = (d[i - 1][j] + 1)
+                .min(d[i][j - 1] + 1)
+                .min(d[i - 1][j - 1] + cost);
+            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
+                d[i][j] = d[i][j].min(d[i - 2][j - 2] + 1);
+            }
+        }
+    }
+    d[a.len()][b.len()]
+}
+
 // ============== Random Napoletano Phrases ==============
 
 /// Get a random encouragement phrase
@@ -297,6 +420,55 @@ mod tests {
         let msg = format!("{}", error);
         assert!(msg.contains("parentesi graffa"));
         assert!(msg.contains("Riga 5"));
+    }
+
+    fn suggestion_for(source: &str) -> Option<String> {
+        let err = crate::compile(source, Default::default()).unwrap_err();
+        suggest(&err, source)
+    }
+
+    #[test]
+    fn suggests_misspelled_keywords() {
+        let cases = [
+            ("stama a dì(1)\n", "'stamm a dì' invece 'e 'stama'"),
+            ("stam a di(1)\n", "'stamm a dì' invece 'e 'stam'"),
+            ("chsit è x = 1\n", "'chist è' invece 'e 'chsit'"),
+            (
+                "facc f() {\n    piglia 1\n}\n",
+                "'piglie' invece 'e 'piglia'",
+            ),
+            (
+                "tien x = 1\nmentra che (x) { }\n",
+                "'mentre che' invece 'e 'mentra'",
+            ),
+            ("fac f() { }\n", "'facc' invece 'e 'fac'"),
+        ];
+        for (source, expected) in cases {
+            let suggestion = suggestion_for(source).unwrap_or_default();
+            assert!(
+                suggestion.contains(expected),
+                "{:?}: got {:?}",
+                source,
+                suggestion
+            );
+        }
+    }
+
+    #[test]
+    fn no_typo_hint_for_unrelated_names() {
+        // `pizza x` is a juxtaposition error, but `pizza` is not close to any keyword
+        let suggestion = suggestion_for("tien pizza = 1\npizza 2\n").unwrap_or_default();
+        assert!(!suggestion.contains("Forse"), "{:?}", suggestion);
+        // Other errors keep their existing suggestion
+        let suggestion = suggestion_for("chist è x = (1 + 2\n").unwrap_or_default();
+        assert!(suggestion.contains("tonne"), "{:?}", suggestion);
+    }
+
+    #[test]
+    fn edit_distance_counts_swaps_once() {
+        assert_eq!(edit_distance("chsit", "chist"), 1);
+        assert_eq!(edit_distance("stama", "stamm"), 1);
+        assert_eq!(edit_distance("tien", "tien"), 0);
     }
 
     #[test]

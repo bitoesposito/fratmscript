@@ -399,7 +399,7 @@ fn print_error(source: &str, error: &fratm_core::errors::CompileError) {
             }
         }
     }
-    if let Some(suggestion) = errors::get_suggestion(error) {
+    if let Some(suggestion) = errors::suggest(error, source) {
         eprintln!("\n{}", suggestion.yellow());
     }
     eprintln!("\n{}", errors::random_encouragement().dimmed());
