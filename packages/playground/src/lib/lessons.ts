@@ -135,6 +135,111 @@ const NAP_TEXTS: Record<string, LessonText> = {
   },
 }
 
+const IT_TEXTS: Record<string, LessonText> = {
+  '01_ue_munno': {
+    title: 'Ciao, mondo!',
+    body: [
+      'Benvenuto nel tour! Qui impari FratmScript: JavaScript scritto come si deve, in napoletano.',
+      'Sotto c\'è l\'editor; il risultato compare a destra, nella console (sul telefono, nella scheda Console). Ogni volta che cambi il codice, il programma riparte.',
+      '`stamm a dì(…)` stampa quello che metti tra le parentesi. È il `console.log` di JavaScript.',
+      'Se sbagli a scrivere una parola, il compilatore te lo dice in napoletano e ti suggerisce quella giusta. Prova a scrivere `stama` invece di `stamm`.',
+    ],
+    task: 'Fai stampare "Uè, Napule!" invece di "Uè, munno!".',
+  },
+  '02_variabili': {
+    title: 'chist è e tien',
+    body: [
+      '`chist è` dichiara una costante: un valore che non cambia mai (`const`).',
+      '`tien` dichiara una variabile che può cambiare (`let`). Per aumentarla ci sono `+= 1` e `++`.',
+      '`stamm a dì` accetta più valori separati da virgole e li stampa sulla stessa riga.',
+    ],
+    task: 'Gennaro mangia un\'altra pizza: aumenta `pizze` di uno prima di stampare, così esce "Gennaro 3".',
+  },
+  '03_si_sinno': {
+    title: 'si e sinnò',
+    body: [
+      '`si (condizione) { … }` esegue il blocco solo se la condizione è vera (`if`).',
+      '`sinnò { … }` è quello che succede quando non lo è (`else`). Per più casi: `sinnò si (…) { … }`.',
+      'Per confrontare: `<`, `>`, `<=`, `>=`, `==`, `!=`. Per combinare: `e`, `o`, `no`.',
+    ],
+    task: 'Aggiungi un `sinnò` che stampa "Bonasera!" e metti `ora` a 20.',
+  },
+  '04_loop': {
+    title: 'pe e mentre che',
+    body: [
+      '`pe (tien i = 1; i <= 3; i++) { … }` ripete il blocco contando (`for`).',
+      '`mentre che (condizione) { … }` ripete finché la condizione è vera (`while`). Attento a non scrivere un ciclo che non finisce mai: il playground lo ferma dopo poco.',
+    ],
+    task: 'Fai contare il primo ciclo da 1 a 5 e togli il secondo ciclo.',
+  },
+  '05_funzioni': {
+    title: 'facc e piglie',
+    body: [
+      '`facc nome(parametri) { … }` crea una funzione (`function`).',
+      '`piglie valore` è il `return`: la funzione si ferma e restituisce quel valore a chi l\'ha chiamata.',
+    ],
+    task: 'Scrivi una funzione `doppio(n)` che restituisce `n * 2` e stampa `doppio(21)` sotto il saluto.',
+  },
+  '06_frecce_e_template': {
+    title: 'Frecce e template',
+    body: [
+      'Per una funzione corta c\'è la freccia: `chist è doppio = n => n * 2`. Con più parametri: `(a, b) => a + b`.',
+      'Una stringa tra backtick (`` ` ``) è un template: tutto quello che sta dentro `${…}` viene calcolato e messo nel testo.',
+    ],
+    task: 'Con una freccia `prezzo = n => n * 6` e un template, stampa "3 pizze costano 18 euro".',
+  },
+  '07_liste': {
+    title: 'Liste',
+    body: [
+      'Una lista si scrive tra parentesi quadre: `["margherita", "marinara"]`. `lista[0]` è il primo elemento, `lista.length` quanti ce ne sono.',
+      '`pe ogni (chist è x dint lista) { … }` passa gli elementi uno alla volta (`for…of`).',
+      'Funzionano tutti i metodi di JavaScript: `map`, `filter`, `join`, `toUpperCase`…',
+    ],
+    task: 'Stampa ogni pizza in maiuscolo (`pizza.toUpperCase()`), una per riga, senza altre righe.',
+  },
+  '08_oggetti': {
+    title: 'Oggetti',
+    body: [
+      'Un oggetto raccoglie più valori con un nome: `{ nome: "Margherita", prezzo: 6 }`. Si leggono con `pizza.nome`.',
+      'Con il destructuring prendi più campi in un colpo solo: `chist è { nome, prezzo } = pizza`.',
+    ],
+    task: 'Prendi `nome` e `prezzo` con il destructuring e stampa "Margherita: 6 euro".',
+  },
+  '09_classi': {
+    title: 'na famiglie',
+    body: [
+      '`na famiglie Nome { … }` crea una classe. Il `costruttore` prepara l\'oggetto, `stu cos` è l\'oggetto stesso (`this`).',
+      '`nu bell Nome(…)` crea un nuovo oggetto (`new`). Con `figlio \'e` una classe eredita da un\'altra (`extends`).',
+    ],
+    task: 'Aggiungi un metodo `presentati()` che restituisce "Songo " + il nome, e stampa solo `gennaro.presentati()`.',
+  },
+  '10_errori': {
+    title: 'pruvamm e si schiatta',
+    body: [
+      '`iett nu bell Error("…")` lancia un errore (`throw`).',
+      '`pruvamm { … } e si schiatta (errore) { … }` cattura l\'errore e ti fa continuare (`try/catch`). Con `aropp { … }` aggiungi codice che gira sempre (`finally`).',
+      'Se nessuno cattura un errore, il playground te lo mostra in napoletano, con la riga.',
+    ],
+    task: 'In `dividi`, se `b` è zero lancia un `Error("Nun se divide pe zero!")`, e nello `schiatta` stampa solo `errore.message`.',
+  },
+  '11_async': {
+    title: 'mo vir e aspett',
+    body: [
+      '`mo vir facc` crea una funzione asincrona (`async`): può aspettare cose che richiedono tempo, come una richiesta di rete.',
+      '`aspett promessa` aspetta che una Promise finisca (`await`). Qui `aspetta(500)` aspetta mezzo secondo.',
+    ],
+    task: 'Dopo l\'`aspett`, stampa "Pronta!".',
+  },
+  '12_vedimm': {
+    title: 'vedimm',
+    body: [
+      '`vedimm (valore) { caso …: … }` sceglie tra tanti casi (`switch`). `rompe` esce (`break`), `predefinit` è il caso per tutto il resto (`default`).',
+      'Hai finito il tour! Ora puoi provare gli esempi, leggere la guida alla sintassi con il tasto ? o scrivere il tuo programma.',
+    ],
+    task: 'Aggiungi un `caso "dummeneca"` che stampa "Ragù!" e metti `giorno` a "dummeneca".',
+  },
+}
+
 const EN_TEXTS: Record<string, LessonText> = {
   '01_ue_munno': {
     title: 'Hello, world!',
@@ -250,10 +355,10 @@ export const lessons: Lesson[] = Object.keys(NAP_TEXTS)
     const starter = starters[`../scola/${id}.fratm`]
     const solution = starters[`../scola/${id}.soluzione.fratm`]
     const out = outputs[`../scola/${id}.out`]
-    if (starter === undefined || solution === undefined || out === undefined || !EN_TEXTS[id]) {
+    if (starter === undefined || solution === undefined || out === undefined || !IT_TEXTS[id] || !EN_TEXTS[id]) {
       throw new Error(`Lesson ${id} is missing a file`)
     }
-    return { id, text: { en: EN_TEXTS[id], nap: NAP_TEXTS[id] }, starter, solution, expected: out.replace(/\n$/, '').split('\n') }
+    return { id, text: { it: IT_TEXTS[id], en: EN_TEXTS[id], nap: NAP_TEXTS[id] }, starter, solution, expected: out.replace(/\n$/, '').split('\n') }
   })
 
 // Every lesson file has its text, and the other way round

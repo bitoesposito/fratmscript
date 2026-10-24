@@ -7,7 +7,8 @@ import { HighlightStyle, syntaxHighlighting, StreamLanguage } from '@codemirror/
 import { tags } from '@lezer/highlight'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
-import { keywordHelp } from '@/lib/keywordHelp'
+import { keywordHelp, setKeywordLanguage } from '@/lib/keywordHelp'
+import { useI18n } from '@/lib/i18n'
 
 // FratmScript language definition for StreamLanguage
 const fratmScriptLanguage = StreamLanguage.define({
@@ -335,6 +336,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const { resolvedTheme } = useTheme()
+  const { lang } = useI18n()
+  setKeywordLanguage(lang)
 
   // Determine if dark mode
   const isDark = resolvedTheme === 'dark'

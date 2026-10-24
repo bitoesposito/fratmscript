@@ -97,7 +97,7 @@ function App() {
   const [code, setCode] = useState(initial.code)
   const [selectedExample, setSelectedExample] = useState(initial.example)
   const compiler = useCompiler()
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const editorRef = useRef<EditorHandle>(null)
   const isRunning = compiler.status === 'running'
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -316,7 +316,7 @@ function App() {
               />
             </div>
             {/* Sticky examples bar */}
-            <div className="flex items-center justify-between gap-2 bg-card px-4 py-2.5 border-border border-t shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-4 py-2.5 border-border border-t shrink-0">
               <div className={cn('flex items-center gap-3 min-w-0', lesson && 'invisible')}>
                 <label className="text-muted-foreground text-xs">{t('editor.examples')}</label>
                 <NativeSelect
@@ -327,7 +327,7 @@ function App() {
                   <option value="">{t('editor.chooseExample')}</option>
                   {selectedExample === 'custom' && <option value="custom" disabled>{t('editor.custom')}</option>}
                   {exampleList.map(example => (
-                    <option key={example.id} value={example.id}>{example.title}</option>
+                    <option key={example.id} value={example.id}>{example.title[lang]}</option>
                   ))}
                 </NativeSelect>
               </div>
