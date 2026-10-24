@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
 import { GraduationCap, Play, Square } from 'lucide-react'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { LanguageToggle } from '@/components/LanguageToggle'
+import { ThemeSelect } from '@/components/ThemeSelect'
+import { LanguageSelect } from '@/components/LanguageSelect'
 import { useI18n } from '@/lib/i18n'
 
 interface HeaderProps {
@@ -45,104 +45,113 @@ function XIcon({ className }: { className?: string }) {
 export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, disabled }: HeaderProps) {
   const { t } = useI18n()
   return (
-    <header className="flex justify-between items-center gap-3 bg-card px-4 py-3 border-border border-b">
-      <div className="flex items-center gap-3 min-w-0">
-        <h1 className="font-bold text-primary text-lg sm:text-xl truncate">FratmScript 🤌🏻</h1>
-      </div>
-      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant={tourActive ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={onTour}
-                aria-pressed={tourActive}
-                aria-label={t('header.tourLabel')}
-              >
-                <GraduationCap className="size-4" />
-                <span className="hidden sm:inline">{t('header.tour')}</span>
-              </Button>
-            }
-          />
-          <TooltipPopup>{t(tourActive ? 'header.tourExit' : 'header.tourOpen')}</TooltipPopup>
-        </Tooltip>
-        <LanguageToggle />
-        <ThemeToggle />
-        <div className="hidden sm:flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <a
-                  href="https://github.com/kkratterf/fratmscript"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={t('header.github')}
-                >
-                  <GitHubIcon className="size-4" />
-                </a>
-              }
-            />
-            <TooltipPopup>{t('header.githubTip')}</TooltipPopup>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <a
-                  href="https://linkedin.com/in/kkratter"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="LinkedIn"
-                >
-                  <LinkedInIcon className="size-4" />
-                </a>
-              }
-            />
-            <TooltipPopup>{t('header.linkedinTip')}</TooltipPopup>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <a
-                  href="https://x.com/kkratter"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="X (Twitter)"
-                >
-                  <XIcon className="size-4" />
-                </a>
-              }
-            />
-            <TooltipPopup>{t('header.xTip')}</TooltipPopup>
-          </Tooltip>
+    <header className="flex flex-col gap-2 bg-card px-4 py-3 border-border border-b">
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="font-bold text-primary text-lg sm:text-xl truncate">FratmScript 🤌🏻</h1>
         </div>
-        <div className="flex items-center gap-1.5">
-          {isRunning ? (
-            <Button variant="destructive" onClick={onStop}>
-              <Square className="size-3.5 fill-current" />
-              {t('header.stop')}
-            </Button>
-          ) : (
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant={tourActive ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={onTour}
+                  aria-pressed={tourActive}
+                  aria-label={t('header.tourLabel')}
+                >
+                  <GraduationCap className="size-4" />
+                  <span className="hidden sm:inline">{t('header.tour')}</span>
+                </Button>
+              }
+            />
+            <TooltipPopup>{t(tourActive ? 'header.tourExit' : 'header.tourOpen')}</TooltipPopup>
+          </Tooltip>
+          <div className="hidden sm:flex items-center gap-2">
+            <LanguageSelect />
+            <ThemeSelect />
+          </div>
+          <div className="hidden sm:flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <Button onClick={onRun} disabled={disabled}>
-                    <Play className="size-3.5 fill-current" />
-                    {t('header.run')}
-                    <kbd className="hidden sm:inline opacity-70 ml-1 font-sans text-xs">{runShortcut}</kbd>
-                  </Button>
+                  <a
+                    href="https://github.com/kkratterf/fratmscript"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={t('header.github')}
+                  >
+                    <GitHubIcon className="size-4" />
+                  </a>
                 }
               />
-              <TooltipPopup>{t('header.runTip', { shortcut: runShortcut })}</TooltipPopup>
+              <TooltipPopup>{t('header.githubTip')}</TooltipPopup>
             </Tooltip>
-          )}
-          <Button variant="outline" onClick={onShare}>
-            {t('header.share')}
-          </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <a
+                    href="https://linkedin.com/in/kkratter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <LinkedInIcon className="size-4" />
+                  </a>
+                }
+              />
+              <TooltipPopup>{t('header.linkedinTip')}</TooltipPopup>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <a
+                    href="https://x.com/kkratter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:bg-accent p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="X (Twitter)"
+                  >
+                    <XIcon className="size-4" />
+                  </a>
+                }
+              />
+              <TooltipPopup>{t('header.xTip')}</TooltipPopup>
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {isRunning ? (
+              <Button variant="destructive" onClick={onStop}>
+                <Square className="size-3.5 fill-current" />
+                {t('header.stop')}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button onClick={onRun} disabled={disabled}>
+                      <Play className="size-3.5 fill-current" />
+                      {t('header.run')}
+                      <kbd className="hidden sm:inline opacity-70 ml-1 font-sans text-xs">{runShortcut}</kbd>
+                    </Button>
+                  }
+                />
+                <TooltipPopup>{t('header.runTip', { shortcut: runShortcut })}</TooltipPopup>
+              </Tooltip>
+            )}
+            <Button variant="outline" onClick={onShare}>
+              {t('header.share')}
+            </Button>
+          </div>
         </div>
+      </div>
+      {/* On phones the menus get their own row */}
+      <div className="sm:hidden flex gap-2 w-full">
+        <LanguageSelect />
+        <ThemeSelect />
       </div>
     </header>
   )

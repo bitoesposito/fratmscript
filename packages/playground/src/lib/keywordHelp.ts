@@ -3,6 +3,20 @@
 import { autocompletion, snippetCompletion, type Completion, type CompletionContext } from '@codemirror/autocomplete'
 import { hoverTooltip } from '@codemirror/view'
 import { KEYWORDS, KEYWORD_MAP, type KeywordInfo } from '@keywords'
+import { KEYWORD_TEXT } from '@/lib/keywordText'
+import type { Lang } from '@/lib/i18n'
+
+// The editor extensions are built once, so they read the UI language from here
+let language: Lang = 'it'
+
+export function setKeywordLanguage(lang: Lang) {
+  language = lang
+}
+
+function description(keyword: KeywordInfo): string {
+  if (language === 'it') return keyword.descrizione
+  return KEYWORD_TEXT[keyword.napoletano]?.[language] ?? keyword.descrizione
+}
 
 const WORD = /[\p{L}_$'][\p{L}\p{N}_$']*/u
 
@@ -13,7 +27,7 @@ function completionFor(keyword: KeywordInfo): Completion {
   const base: Completion = {
     label: keyword.napoletano,
     detail: keyword.javascript,
-    info: keyword.descrizione,
+    info: () => document.createTextNode(description(keyword)),
     type: keyword.categoria === 'valore' ? 'constant' : 'keyword',
   }
   return keyword.snippet ? snippetCompletion(toCodeMirrorSnippet(keyword.snippet), base) : base
@@ -58,7 +72,7 @@ const keywordHover = hoverTooltip((view, pos, side) => {
       js.textContent = info.javascript
       const desc = dom.appendChild(document.createElement('div'))
       desc.className = 'cm-keyword-hover-desc'
-      desc.textContent = info.descrizione
+      desc.textContent = description(info)
       return { dom }
     },
   }

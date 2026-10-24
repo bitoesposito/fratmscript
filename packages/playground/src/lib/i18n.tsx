@@ -1,28 +1,132 @@
-// UI language: English by default, Neapolitan on request. Only the
+// UI language: Italian by default, English or Neapolitan on request. Only the
 // playground's own copy switches; compiler and runtime error messages are
 // always Neapolitan, and FratmScript code and examples never change.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-export type Lang = 'en' | 'nap'
+export type Lang = 'it' | 'en' | 'nap'
 
-export const LANGS: Lang[] = ['en', 'nap']
+export const LANGS: Lang[] = ['it', 'en', 'nap']
 
 const LANG_KEY = 'fratm:lang'
 
-const en = {
-  'lang.name': 'English',
-  'lang.short': 'EN',
-  'lang.tooltip': 'Language: English',
-  'lang.switch': 'Language: English. Switch to Neapolitan',
+const it = {
+  'lang.name': 'Italiano',
+  'lang.label': 'Lingua',
 
-  'theme.system': 'Theme: system',
-  'theme.light': 'Theme: light',
-  'theme.dark': 'Theme: dark',
-  'theme.switch': 'Switch to {theme}',
-  'theme.name.system': 'system',
-  'theme.name.light': 'light',
-  'theme.name.dark': 'dark',
+  'theme.label': 'Tema',
+  'theme.system': 'Sistema',
+  'theme.light': 'Chiaro',
+  'theme.dark': 'Scuro',
+
+  'header.tour': 'Impara',
+  'header.tourLabel': 'Tour di FratmScript',
+  'header.tourOpen': 'Impara FratmScript passo passo',
+  'header.tourExit': 'Esci dal tour',
+  'header.github': 'Vedi su GitHub',
+  'header.githubTip': 'Lascia una stella 🤌🏻',
+  'header.linkedinTip': 'Fatto con amore da @kkratter 🤍',
+  'header.xTip': 'Seguici per le novità 👀',
+  'header.run': 'Esegui',
+  'header.runTip': 'Esegui il codice ({shortcut})',
+  'header.stop': 'Ferma',
+  'header.share': 'Condividi',
+
+  'share.copied': 'Link copiato!',
+  'share.copiedDesc': 'Invia questo link per condividere il tuo codice.',
+  'share.failed': 'Copia non riuscita',
+
+  'loading': 'Caricamento di FratmScript…',
+
+  'editor.edited': '(modificato)',
+  'editor.examples': 'Esempi:',
+  'editor.chooseExample': '-- Scegli un esempio --',
+  'editor.custom': 'Codice tuo',
+  'editor.autoRun': 'Esecuzione automatica',
+  'editor.format': 'Formatta il codice',
+  'editor.formatTip': 'Formatta il codice (Shift+Alt+F)',
+
+  'tabs.label': 'Pannelli del playground',
+  'tabs.code': 'Codice',
+  'tabs.console': 'Console',
+  'tabs.js': 'JS',
+  'tabs.errors': '{n} errori',
+  'tabs.messages': '{n} messaggi',
+
+  'output.title': 'Risultato',
+  'output.stale': 'Il codice è cambiato dopo questo risultato',
+  'output.console': 'Console',
+  'output.running': 'in esecuzione…',
+  'output.clear': 'Pulisci',
+  'output.waiting': 'In attesa di output…',
+  'output.empty': 'Nessun output in console',
+  'output.js': 'JavaScript generato',
+  'output.mapLines': 'Collega le righe',
+  'output.copyJs': 'Copia JS',
+  'output.copied': 'Copiato',
+  'output.jsPlaceholder': '// Esegui il codice per vedere il JavaScript',
+  'output.fromLine': 'Dalla riga {line}',
+  'output.line': 'Riga {line}',
+  'output.lineColumn': 'Riga {line}, colonna {column}',
+
+  'error.compile': 'Errore di compilazione',
+  'error.runtime': 'Errore in esecuzione',
+  'error.timeout': 'Tempo di esecuzione scaduto',
+  'error.load': 'Compilatore non disponibile',
+  'error.loadMessage': 'Non è stato possibile scaricare il compilatore di FratmScript. Controlla la connessione e ricarica la pagina.',
+  'error.timeoutMessage': 'Il codice è andato avanti per più di {seconds}s senza finire ed è stato fermato. C\'è un ciclo infinito?',
+
+  'notice.truncated': 'Output della console troncato dopo {limit} messaggi.',
+  'notice.asyncTimeout': 'Fermato dopo {seconds}s: c\'erano ancora timer o promise in sospeso.',
+  'notice.stopped': 'Esecuzione fermata.',
+
+  'status.loading': 'Caricamento…',
+  'status.ready': 'Compilatore pronto',
+  'status.loadFailed': 'Il compilatore non si è caricato',
+  'status.compileError': 'Errore di compilazione',
+  'status.running': 'In esecuzione…',
+  'status.timeout': 'Tempo di esecuzione scaduto',
+  'status.runtimeError': 'Errore in esecuzione',
+  'status.done': 'Fatto',
+  'status.stopped': 'Fermato',
+  'status.staleAuto': 'Codice cambiato, aggiorno…',
+  'status.staleManual': 'Codice cambiato: il risultato non è aggiornato, premi Esegui',
+  'status.compiledIn': 'Compilato in {ms}ms',
+
+  'syntax.button': 'Guida alla sintassi',
+  'syntax.title': 'Guida alla sintassi di FratmScript',
+  'syntax.description': 'Dal napoletano a JavaScript. Clicca una riga per inserirla nell\'editor.',
+  'syntax.search': 'Cerca: if, stamm, console…',
+  'syntax.searchLabel': 'Cerca nella guida alla sintassi',
+  'syntax.nothing': 'Nessun risultato per “{query}”.',
+  'syntax.description.column': 'Descrizione',
+  'syntax.insert': 'Inserisci {code}',
+
+  'lesson.label': 'Lezione',
+  'lesson.index': 'Indice delle lezioni',
+  'lesson.exit': 'Esci dal tour',
+  'lesson.done': 'Bravo! 🤌',
+  'lesson.exercise': 'Esercizio',
+  'lesson.expected': 'La console deve stampare:',
+  'lesson.reset': 'Ricomincia',
+  'lesson.resetTip': 'Torna al codice iniziale',
+  'lesson.solution': 'Soluzione',
+  'lesson.solutionTip': 'Mostra la soluzione',
+  'lesson.previous': 'Lezione precedente',
+  'lesson.next': 'Avanti',
+  'lesson.finish': 'Finito',
+}
+
+export type MessageKey = keyof typeof it
+
+const en: Record<MessageKey, string> = {
+  'lang.name': 'English',
+  'lang.label': 'Language',
+
+  'theme.label': 'Theme',
+  'theme.system': 'System',
+  'theme.light': 'Light',
+  'theme.dark': 'Dark',
 
   'header.tour': 'Learn',
   'header.tourLabel': 'FratmScript tour',
@@ -122,21 +226,14 @@ const en = {
   'lesson.finish': 'Finish',
 }
 
-export type MessageKey = keyof typeof en
-
 const nap: Record<MessageKey, string> = {
   'lang.name': 'Napulitano',
-  'lang.short': 'NAP',
-  'lang.tooltip': 'Lengua: napulitano',
-  'lang.switch': "Lengua: napulitano. Passa a l'inglese",
+  'lang.label': 'Lengua',
 
-  'theme.system': "Tema: comm'o sistema",
-  'theme.light': 'Tema: chiaro',
-  'theme.dark': 'Tema: scuro',
-  'theme.switch': 'Passa a {theme}',
-  'theme.name.system': "comm'o sistema",
-  'theme.name.light': 'chiaro',
-  'theme.name.dark': 'scuro',
+  'theme.label': 'Tema',
+  'theme.system': 'Sistema',
+  'theme.light': 'Chiaro',
+  'theme.dark': 'Scuro',
 
   'header.tour': 'Scola',
   'header.tourLabel': "'A scola 'e FratmScript",
@@ -236,7 +333,7 @@ const nap: Record<MessageKey, string> = {
   'lesson.finish': 'Fernuto',
 }
 
-const MESSAGES: Record<Lang, Record<MessageKey, string>> = { en, nap }
+const MESSAGES: Record<Lang, Record<MessageKey, string>> = { it, en, nap }
 
 export type MessageParams = Record<string, string | number>
 
@@ -254,9 +351,9 @@ export function translate(lang: Lang, key: MessageKey, params?: MessageParams): 
 function readLang(): Lang {
   try {
     const stored = localStorage.getItem(LANG_KEY)
-    return stored === 'nap' ? 'nap' : 'en'
+    return stored === 'en' || stored === 'nap' ? stored : 'it'
   } catch {
-    return 'en'
+    return 'it'
   }
 }
 
