@@ -1,0 +1,7 @@
+tien ora = 20
+
+si (ora < 12) {
+    stamm a dì("Bongiorno!")
+} sinnò {
+    stamm a dì("Bonasera!")
+}

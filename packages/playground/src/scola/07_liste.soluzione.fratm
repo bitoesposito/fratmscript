@@ -1,0 +1,5 @@
+chist è pizze = ["margherita", "marinara", "diavola"]
+
+pe ogni (chist è pizza dint pizze) {
+    stamm a dì(pizza.toUpperCase())
+}

@@ -1,0 +1,9 @@
+pe (tien i = 1; i <= 3; i++) {
+    stamm a dì(i)
+}
+
+tien pizze = 2
+mentre che (pizze > 0) {
+    stamm a dì("Ne manca", pizze)
+    pizze--
+}

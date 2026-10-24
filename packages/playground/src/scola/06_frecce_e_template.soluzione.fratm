@@ -1,0 +1,4 @@
+chist è prezzo = n => n * 6
+chist è pizze = 3
+
+stamm a dì(`${pizze} pizze costano ${prezzo(pizze)} euro`)

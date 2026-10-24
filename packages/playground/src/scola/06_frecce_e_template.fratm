@@ -1,0 +1,4 @@
+chist è doppio = n => n * 2
+chist è nome = "Totò"
+
+stamm a dì(`${nome} vo' ${doppio(2)} sfogliatelle`)

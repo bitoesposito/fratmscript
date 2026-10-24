@@ -1,0 +1,12 @@
+chist è giorno = "dummeneca"
+
+vedimm (giorno) {
+    caso "sabato":
+        stamm a dì("Pizza cu l'amici!")
+        rompe
+    caso "dummeneca":
+        stamm a dì("Ragù!")
+        rompe
+    predefinit:
+        stamm a dì("Se fatica...")
+}

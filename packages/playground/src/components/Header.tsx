@@ -1,12 +1,14 @@
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
-import { Play, Square } from 'lucide-react'
+import { GraduationCap, Play, Square } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface HeaderProps {
   onRun: () => void
   onStop: () => void
   onShare: () => void
+  onTour: () => void
+  tourActive: boolean
   isRunning: boolean
   disabled: boolean
 }
@@ -38,13 +40,30 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-export function Header({ onRun, onStop, onShare, isRunning, disabled }: HeaderProps) {
+export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, disabled }: HeaderProps) {
   return (
     <header className="flex justify-between items-center gap-3 bg-card px-4 py-3 border-border border-b">
       <div className="flex items-center gap-3 min-w-0">
         <h1 className="font-bold text-primary text-lg sm:text-xl truncate">FratmScript 🤌🏻</h1>
       </div>
       <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant={tourActive ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={onTour}
+                aria-pressed={tourActive}
+                aria-label="'A scola 'e FratmScript"
+              >
+                <GraduationCap className="size-4" />
+                <span className="hidden sm:inline">Scola</span>
+              </Button>
+            }
+          />
+          <TooltipPopup>{tourActive ? "Esci d'a scola" : "'A scola 'e FratmScript: impara passo passo"}</TooltipPopup>
+        </Tooltip>
         <ThemeToggle />
         <div className="hidden sm:flex items-center gap-1">
           <Tooltip>

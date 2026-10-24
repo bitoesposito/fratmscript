@@ -1,0 +1,10 @@
+chist è pizza = {
+    nome: "Margherita",
+    prezzo: 6,
+    ingredienti: ["pummarola", "muzzarella", "basilico"],
+}
+
+stamm a dì(pizza.nome)
+
+chist è { ingredienti } = pizza
+stamm a dì(ingredienti.join(", "))

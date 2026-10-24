@@ -18,12 +18,48 @@ import { MobileTabs, type MobileTab } from '@/components/MobileTabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { buildShareUrl, readSharedCode, loadSavedCode, saveCode } from '@/lib/share'
+import { lessons } from '@/lib/lessons'
+import { LessonPanel } from '@/components/LessonPanel'
+import type { LogValue } from '@/lib/runner'
 
 const EXAMPLE_TITLES: Record<string, string> = Object.fromEntries(
   exampleList.map(example => [example.id, `${example.id}.fratm`]),
 )
 
 const AUTO_RUN_KEY = 'fratm:autoRun'
+const LESSON_CODE_KEY = 'fratm:scola:'
+const LESSONS_DONE_KEY = 'fratm:scola:fatte'
+
+/** Lesson from the URL hash (`#scola=3`, 1-based), or null outside the tour. */
+function lessonFromHash(): number | null {
+  const value = new URLSearchParams(window.location.hash.slice(1)).get('scola')
+  if (value === null) return null
+  const n = Number.parseInt(value, 10)
+  return Number.isFinite(n) ? Math.min(Math.max(n, 1), lessons.length) - 1 : 0
+}
+
+function readStored(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStored(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Storage can be unavailable (private mode): progress lasts for this visit
+  }
+}
+
+/** A console line as text, like the browser console prints it. */
+function logLine(args: LogValue[]): string {
+  return args
+    .map(arg => (typeof arg === 'string' ? arg : arg && typeof arg === 'object' && '__fratm' in arg ? String(arg.text) : JSON.stringify(arg) ?? String(arg)))
+    .join(' ')
+}
 const AUTO_RUN_DELAY_MS = 700
 
 function readStoredFlag(key: string, fallback: boolean): boolean {
@@ -46,11 +82,16 @@ function writeStoredFlag(key: string, value: boolean) {
 function App() {
   // A share link wins over the autosaved code, which wins over the default
   const [initial] = useState(() => {
+    const lesson = lessonFromHash()
+    if (lesson !== null) {
+      const id = lessons[lesson].id
+      return { code: readStored(LESSON_CODE_KEY + id) ?? lessons[lesson].starter, example: '', lesson }
+    }
     const code = readSharedCode() ?? loadSavedCode() ?? defaultCode
-    if (code === defaultCode) return { code, example: '' }
+    if (code === defaultCode) return { code, example: '', lesson: null }
     // Unedited example code restored from autosave keeps its name in the picker
     const match = Object.entries(examples).find(([, source]) => source === code)
-    return { code, example: match ? match[0] : 'custom' }
+    return { code, example: match ? match[0] : 'custom', lesson: null }
   })
   const [code, setCode] = useState(initial.code)
   const [selectedExample, setSelectedExample] = useState(initial.example)
@@ -63,12 +104,27 @@ function App() {
   // Source of the last run, to tell whether the output is out of date
   const [lastRunCode, setLastRunCode] = useState<string | null>(null)
   const [autoRun, setAutoRun] = useState(() => readStoredFlag(AUTO_RUN_KEY, true))
+  // 'A scola: index of the open lesson, null outside the tour
+  const [lessonIndex, setLessonIndex] = useState<number | null>(initial.lesson)
+  const lesson = lessonIndex === null ? null : lessons[lessonIndex]
+  const [completed, setCompleted] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(readStored(LESSONS_DONE_KEY) ?? '[]') as string[])
+    } catch {
+      return new Set()
+    }
+  })
 
-  // Autosave, debounced so typing doesn't write on every keystroke
+  // Autosave, debounced so typing doesn't write on every keystroke.
+  // In the tour each lesson keeps its own code, so the playground code is untouched.
+  const lessonId = lesson?.id
   useEffect(() => {
-    const timer = setTimeout(() => saveCode(code), 500)
+    const timer = setTimeout(() => {
+      if (lessonId) writeStored(LESSON_CODE_KEY + lessonId, code)
+      else saveCode(code)
+    }, 500)
     return () => clearTimeout(timer)
-  }, [code])
+  }, [code, lessonId])
 
   const { runCode, stop } = compiler
   const run = useCallback((source: string) => {
@@ -126,6 +182,43 @@ function App() {
     return [{ line: error.line, column: error.column, message }]
   }), [compiler.errors])
 
+  const openLesson = useCallback((index: number) => {
+    const next = lessons[index]
+    setLessonIndex(index)
+    setSelectedExample('')
+    setCode(readStored(LESSON_CODE_KEY + next.id) ?? next.starter)
+    setMobileTab('code')
+    history.replaceState(null, '', `#scola=${index + 1}`)
+  }, [])
+
+  const exitTour = useCallback(() => {
+    setLessonIndex(null)
+    setCode(loadSavedCode() ?? defaultCode)
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [])
+
+  const handleTour = useCallback(() => {
+    if (lessonIndex !== null) {
+      exitTour()
+      return
+    }
+    // Resume at the first lesson not done yet
+    const next = lessons.findIndex(l => !completed.has(l.id))
+    openLesson(next === -1 ? 0 : next)
+  }, [completed, exitTour, lessonIndex, openLesson])
+
+  // The exercise is done when the last run of the current code printed the expected lines
+  useEffect(() => {
+    if (!lesson || compiler.status !== 'ready' || lastRunCode !== code || compiler.errors.length > 0) return
+    const printed = compiler.consoleLogs.filter(log => log.type === 'log').map(log => logLine(log.args))
+    if (printed.join('\n') !== lesson.expected.join('\n') || completed.has(lesson.id)) return
+    setCompleted(prev => {
+      const next = new Set(prev).add(lesson.id)
+      writeStored(LESSONS_DONE_KEY, JSON.stringify([...next]))
+      return next
+    })
+  }, [code, compiler.consoleLogs, compiler.errors.length, compiler.status, completed, lastRunCode, lesson])
+
   const handleShare = useCallback(() => {
     const url = buildShareUrl(code)
 
@@ -162,6 +255,8 @@ function App() {
           onRun={handleRun}
           onStop={stop}
           onShare={handleShare}
+          onTour={handleTour}
+          tourActive={lesson !== null}
           isRunning={isRunning}
           disabled={compiler.isLoading}
         />
@@ -187,10 +282,21 @@ function App() {
               isMobile && mobileTab !== 'code' && 'hidden',
             )}
           >
+            {lesson && lessonIndex !== null && (
+              <LessonPanel
+                lessons={lessons}
+                index={lessonIndex}
+                completed={completed}
+                onSelect={openLesson}
+                onExit={exitTour}
+                onReset={() => editorRef.current?.replaceAll(lesson.starter)}
+                onShowSolution={() => editorRef.current?.replaceAll(lesson.solution)}
+              />
+            )}
             {/* Sticky panel header */}
             <div className="flex justify-between items-center bg-card px-4 py-2.5 border-border border-b shrink-0">
               <span className="font-medium text-muted-foreground text-sm truncate">
-                {EXAMPLE_TITLES[selectedExample] ?? 'main.fratm'}
+                {lesson ? `scola/${lesson.id}.fratm` : EXAMPLE_TITLES[selectedExample] ?? 'main.fratm'}
                 {selectedExample === 'custom' && <span className="ml-1.5 text-xs">(edited)</span>}
               </span>
               <Badge className="px-1 font-mono" variant="outline">{compiler.version}</Badge>
@@ -209,7 +315,7 @@ function App() {
             </div>
             {/* Sticky examples bar */}
             <div className="flex items-center justify-between gap-2 bg-card px-4 py-2.5 border-border border-t shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
+              <div className={cn('flex items-center gap-3 min-w-0', lesson && 'invisible')}>
                 <label className="text-muted-foreground text-xs">Examples:</label>
                 <NativeSelect
                   value={selectedExample}

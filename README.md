@@ -367,7 +367,7 @@ just wasm
 
 ## Playground
 
-The playground is a web-based editor to try FratmScript in your browser.
+The [playground](https://kkratterf.github.io/fratmscript/) is a web-based editor to try FratmScript in your browser. Press **Scola** for *'A scola 'e FratmScript*, a tour of 12 short lessons with an exercise each, checked against the console output. Lessons live in `packages/playground/src/scola/` (starter, `.soluzione.fratm` and expected `.out`; CI runs every solution).
 
 ```bash
 # Build WASM module
