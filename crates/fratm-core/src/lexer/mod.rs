@@ -327,6 +327,13 @@ impl<'a> Lexer<'a> {
     }
 
     fn skip_whitespace_and_comments(&mut self) {
+        // A `#!` line at the very start is a shebang: skip it like a comment.
+        // `compile` re-emits it at the top of the generated JavaScript.
+        if self.position == 0 && self.source.starts_with("#!") {
+            while self.peek() != Some('\n') && self.peek().is_some() {
+                self.advance();
+            }
+        }
         loop {
             match self.peek() {
                 Some(' ') | Some('\t') | Some('\r') => {

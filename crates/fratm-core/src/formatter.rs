@@ -25,7 +25,18 @@ const INDENT: &str = "    ";
 /// Formats FratmScript source. Fails if the source does not compile.
 pub fn format(source: &str) -> Result<String, CompileError> {
     let before = compile(source, CompileOptions::default())?;
-    let formatted = Formatter::new(source).run();
+    // The shebang line is kept as written; the formatter sees only the rest.
+    let formatted = match crate::shebang(source) {
+        Some(line) => {
+            let rest = &source[line.len()..];
+            let rest = rest
+                .strip_prefix("\r\n")
+                .or_else(|| rest.strip_prefix('\n'))
+                .unwrap_or(rest);
+            format!("{}\n{}", line, Formatter::new(rest).run())
+        }
+        None => Formatter::new(source).run(),
+    };
     let after =
         compile(&formatted, CompileOptions::default()).map_err(|e| CompileError::CodeGenError {
             message: format!("fratm fmt produced code that does not compile: {}", e),
@@ -310,6 +321,15 @@ fn gap<'a>(text: &'a str, pieces: &mut Vec<Piece<'a>>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keeps_shebang_line() {
+        let source = "#!/usr/bin/env fratm lancia\nsi (overo) {\nstamm a dì(1)\n}\n";
+        assert_eq!(
+            format(source).unwrap(),
+            "#!/usr/bin/env fratm lancia\nsi (overo) {\n    stamm a dì(1)\n}\n"
+        );
+    }
 
     fn fmt(source: &str) -> String {
         format(source).unwrap()
