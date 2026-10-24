@@ -35,6 +35,10 @@ const it = {
   'share.copied': 'Link copiato!',
   'share.copiedDesc': 'Invia questo link per condividere il tuo codice.',
   'share.failed': 'Copia non riuscita',
+  'share.embed': "Copia il codice per l'embed",
+  'share.embedCopied': 'Embed copiato!',
+  'share.embedCopiedDesc': 'Incolla questo <iframe> in una pagina web o in un post.',
+  'embed.open': 'Apri nel playground',
 
   'loading': 'Caricamento di FratmScript…',
 
@@ -144,6 +148,10 @@ const en: Record<MessageKey, string> = {
   'share.copied': 'Link copied!',
   'share.copiedDesc': 'Send this link to share your code.',
   'share.failed': 'Copy failed',
+  'share.embed': 'Copy embed code',
+  'share.embedCopied': 'Embed code copied!',
+  'share.embedCopiedDesc': 'Paste this <iframe> into a web page or a blog post.',
+  'embed.open': 'Open in the playground',
 
   'loading': 'Loading FratmScript…',
 
@@ -251,6 +259,10 @@ const nap: Record<MessageKey, string> = {
   'share.copied': 'Link copiato!',
   'share.copiedDesc': "Manna stu link a chi vuò pe fà vedé 'o codice tuoio.",
   'share.failed': 'Nun se pò copià',
+  'share.embed': "Copia 'o codice pe ll'embed",
+  'share.embedCopied': 'Embed copiato!',
+  'share.embedCopiedDesc': "Azzecca stu <iframe> int'a na pagina web o int'a nu blog.",
+  'embed.open': "Arape int'o playground",
 
   'loading': 'Sto caricanno FratmScript…',
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
-import { GraduationCap, Play, Square } from 'lucide-react'
+import { CodeXml, ExternalLink, GraduationCap, Play, Square } from 'lucide-react'
 import { ThemeSelect } from '@/components/ThemeSelect'
 import { LanguageSelect } from '@/components/LanguageSelect'
 import { useI18n } from '@/lib/i18n'
@@ -9,6 +9,7 @@ interface HeaderProps {
   onRun: () => void
   onStop: () => void
   onShare: () => void
+  onEmbed: () => void
   onTour: () => void
   tourActive: boolean
   isRunning: boolean
@@ -42,7 +43,7 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, disabled }: HeaderProps) {
+export function Header({ onRun, onStop, onShare, onEmbed, onTour, tourActive, isRunning, disabled }: HeaderProps) {
   const { t } = useI18n()
   return (
     <header className="flex flex-col gap-2 bg-card px-4 py-3 border-border border-b">
@@ -145,6 +146,16 @@ export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, 
             <Button variant="outline" onClick={onShare}>
               {t('header.share')}
             </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="outline" size="icon" className="hidden sm:inline-flex" onClick={onEmbed} aria-label={t('share.embed')}>
+                    <CodeXml className="size-4" />
+                  </Button>
+                }
+              />
+              <TooltipPopup>{t('share.embed')}</TooltipPopup>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -153,6 +164,46 @@ export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, 
         <LanguageSelect />
         <ThemeSelect />
       </div>
+    </header>
+  )
+}
+
+interface EmbedHeaderProps {
+  onRun: () => void
+  onStop: () => void
+  /** Full playground URL with the current code */
+  playgroundUrl: string
+  isRunning: boolean
+  disabled: boolean
+}
+
+/** Slim header for `?embed=1`: a link to the full playground and Run. */
+export function EmbedHeader({ onRun, onStop, playgroundUrl, isRunning, disabled }: EmbedHeaderProps) {
+  const { t } = useI18n()
+  return (
+    <header className="flex justify-between items-center gap-2 bg-card px-3 py-1.5 border-border border-b">
+      <a
+        href={playgroundUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 min-w-0 font-semibold text-primary text-sm hover:underline"
+        title={t('embed.open')}
+      >
+        <span className="truncate">FratmScript 🤌🏻</span>
+        <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+        <span className="sr-only">{t('embed.open')}</span>
+      </a>
+      {isRunning ? (
+        <Button variant="destructive" size="sm" onClick={onStop}>
+          <Square className="size-3 fill-current" />
+          {t('header.stop')}
+        </Button>
+      ) : (
+        <Button size="sm" onClick={onRun} disabled={disabled}>
+          <Play className="size-3 fill-current" />
+          {t('header.run')}
+        </Button>
+      )}
     </header>
   )
 }
