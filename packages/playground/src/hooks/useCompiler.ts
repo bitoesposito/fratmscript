@@ -10,6 +10,13 @@ export type PlaygroundError =
   | { kind: 'timeout'; seconds: number }
   | { kind: 'load' }
 
+/**
+ * How long a run may take before the UI switches to "running" (Stop button,
+ * empty console). Most runs finish well within it, so the previous output is
+ * swapped for the new one in a single update instead of flashing empty.
+ */
+export const RUNNING_UI_DELAY_MS = 250
+
 interface CompilerState {
   isLoading: boolean
   isWasmLoaded: boolean
@@ -23,8 +30,11 @@ interface CompilerState {
   notice: Message | null
   /** Compile time in milliseconds of the last run */
   compileTime: number | null
+  /** Status to display: 'running' only once a run outlasts RUNNING_UI_DELAY_MS */
   status: 'loading' | 'ready' | 'compiling' | 'running' | 'error'
   statusText: Message
+  /** A run is in progress, even while the UI still shows the previous result */
+  busy: boolean
 }
 
 export function useCompiler() {
@@ -40,6 +50,7 @@ export function useCompiler() {
     compileTime: null,
     status: 'loading',
     statusText: { key: 'status.loading' },
+    busy: false,
   })
 
   const stopRef = useRef<(() => void) | null>(null)
@@ -63,8 +74,9 @@ export function useCompiler() {
   const runCode = useCallback((source: string) => {
     // Without the compiler there is nothing to run; keep the load error visible
     if (!isCompilerLoaded()) return
-    stopRef.current?.()
+    // Bump the id first so the run being replaced doesn't report "stopped"
     const runId = ++runIdRef.current
+    stopRef.current?.()
 
     const result = compile(source)
 
@@ -86,6 +98,7 @@ export function useCompiler() {
         compileTime: result.compileTime,
         status: 'error',
         statusText: { key: 'status.compileError' },
+        busy: false,
       }))
       return
     }
@@ -96,17 +109,29 @@ export function useCompiler() {
       return sourceMap ? originalPosition(sourceMap, line, column ?? 1) ?? {} : {}
     }
 
+    // The previous console, errors and status stay on screen until this run
+    // reports something or outlasts RUNNING_UI_DELAY_MS, whichever comes first.
     setState(prev => ({
       ...prev,
       jsOutput: result.code!,
       jsLineMap: sourceMap ? sourceLinePerGeneratedLine(sourceMap) : [],
-      consoleLogs: [],
-      errors: [],
-      notice: null,
       compileTime: result.compileTime,
-      status: 'running',
-      statusText: { key: 'status.running' },
+      busy: true,
     }))
+    let fresh = true
+    /** Returns an updater that drops the previous run's output, only the first time. */
+    const takeFresh = () => {
+      const reset = fresh
+      fresh = false
+      return (prev: CompilerState): CompilerState => (
+        reset ? { ...prev, consoleLogs: [], errors: [], notice: null } : prev
+      )
+    }
+    const slowTimer = setTimeout(() => {
+      if (runId !== runIdRef.current) return
+      const base = takeFresh()
+      setState(prev => ({ ...base(prev), status: 'running', statusText: { key: 'status.running' } }))
+    }, RUNNING_UI_DELAY_MS)
 
     // Console output can arrive in bursts: flush it once per frame.
     let pending: LogEntry[] = []
@@ -116,7 +141,11 @@ export function useCompiler() {
       if (runId !== runIdRef.current || pending.length === 0) return
       const batch = pending
       pending = []
-      setState(prev => ({ ...prev, consoleLogs: [...prev.consoleLogs, ...batch] }))
+      const base = takeFresh()
+      setState(prev => {
+        const next = base(prev)
+        return { ...next, consoleLogs: [...next.consoleLogs, ...batch] }
+      })
     }
 
     const { stop } = runInWorker(result.code, {
@@ -126,22 +155,27 @@ export function useCompiler() {
       },
       onTruncated: limit => {
         if (runId !== runIdRef.current) return
-        setState(prev => ({ ...prev, notice: { key: 'notice.truncated', params: { limit } } }))
+        const base = takeFresh()
+        setState(prev => ({ ...base(prev), notice: { key: 'notice.truncated', params: { limit } } }))
       },
       onError: err => {
         if (runId !== runIdRef.current) return
         const pos = toSource(err.line, err.column)
-        setState(prev => ({
-          ...prev,
-          errors: [...prev.errors, { kind: 'runtime', name: err.name, message: err.message, ...pos }],
-        }))
+        const base = takeFresh()
+        setState(prev => {
+          const next = base(prev)
+          return { ...next, errors: [...next.errors, { kind: 'runtime', name: err.name, message: err.message, ...pos }] }
+        })
       },
       onEnd: (reason: RunEnd) => {
+        clearTimeout(slowTimer)
         if (frame) cancelAnimationFrame(frame)
         flush()
         if (runId !== runIdRef.current) return
         stopRef.current = null
-        setState(prev => {
+        const base = takeFresh()
+        setState(state => {
+          const prev = base(state)
           const errors = [...prev.errors]
           let notice = prev.notice
           if (reason === 'sync-timeout') {
@@ -156,6 +190,7 @@ export function useCompiler() {
             ...prev,
             errors,
             notice,
+            busy: false,
             status: failed ? 'error' : 'ready',
             statusText: {
               key: failed

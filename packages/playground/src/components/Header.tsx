@@ -4,6 +4,7 @@ import { GraduationCap, Play, Square } from 'lucide-react'
 import { ThemeSelect } from '@/components/ThemeSelect'
 import { LanguageSelect } from '@/components/LanguageSelect'
 import { useI18n } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 
 interface HeaderProps {
   onRun: () => void
@@ -123,16 +124,13 @@ export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, 
             </Tooltip>
           </div>
           <div className="flex items-center gap-1.5">
-            {isRunning ? (
-              <Button variant="destructive" onClick={onStop}>
-                <Square className="size-3.5 fill-current" />
-                {t('header.stop')}
-              </Button>
-            ) : (
+            {/* Run and Stop share one grid cell, so swapping them never moves the header.
+                The hidden one is visibility: hidden, out of the tab order and a11y tree. */}
+            <div className="grid *:col-start-1 *:row-start-1">
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Button onClick={onRun} disabled={disabled}>
+                    <Button onClick={onRun} disabled={disabled} className={cn(isRunning && 'invisible')}>
                       <Play className="size-3.5 fill-current" />
                       {t('header.run')}
                       <kbd className="hidden sm:inline opacity-70 ml-1 font-sans text-xs">{runShortcut}</kbd>
@@ -141,7 +139,11 @@ export function Header({ onRun, onStop, onShare, onTour, tourActive, isRunning, 
                 />
                 <TooltipPopup>{t('header.runTip', { shortcut: runShortcut })}</TooltipPopup>
               </Tooltip>
-            )}
+              <Button variant="destructive" onClick={onStop} className={cn(!isRunning && 'invisible')}>
+                <Square className="size-3.5 fill-current" />
+                {t('header.stop')}
+              </Button>
+            </div>
             <Button variant="outline" onClick={onShare}>
               {t('header.share')}
             </Button>

@@ -211,7 +211,7 @@ function App() {
 
   // The exercise is done when the last run of the current code printed the expected lines
   useEffect(() => {
-    if (!lesson || compiler.status !== 'ready' || lastRunCode !== code || compiler.errors.length > 0) return
+    if (!lesson || compiler.busy || compiler.status !== 'ready' || lastRunCode !== code || compiler.errors.length > 0) return
     const printed = compiler.consoleLogs.filter(log => log.type === 'log').map(log => logLine(log.args))
     if (printed.join('\n') !== lesson.expected.join('\n') || completed.has(lesson.id)) return
     setCompleted(prev => {
@@ -219,7 +219,7 @@ function App() {
       writeStored(LESSONS_DONE_KEY, JSON.stringify([...next]))
       return next
     })
-  }, [code, compiler.consoleLogs, compiler.errors.length, compiler.status, completed, lastRunCode, lesson])
+  }, [code, compiler.busy, compiler.consoleLogs, compiler.errors.length, compiler.status, completed, lastRunCode, lesson])
 
   const handleShare = useCallback(() => {
     const url = buildShareUrl(code)
