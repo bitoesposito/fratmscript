@@ -30,6 +30,10 @@
     "./web": {
       "types": "./web.d.ts",
       "default": "./web.js"
+    },
+    "./browser": {
+      "types": "./browser.d.ts",
+      "default": "./browser.js"
     }
   },
   "files": [
@@ -39,6 +43,8 @@
     "vite.d.ts",
     "web.js",
     "web.d.ts",
+    "browser.js",
+    "browser.d.ts",
     "lib/",
     "wasm/node/package.json",
     "wasm/node/fratm_wasm.js",

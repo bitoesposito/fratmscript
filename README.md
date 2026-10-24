@@ -87,6 +87,15 @@ import fratmscript from 'fratmscript/vite';
 export default { plugins: [fratmscript()] };
 ```
 
+Or, with no build step at all, in any HTML page:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/fratmscript/browser.js"></script>
+<script type="text/fratmscript">
+  stamm a dì("Uè!")
+</script>
+```
+
 ---
 
 ## CLI Commands
