@@ -93,6 +93,8 @@ import fratmscript from 'fratmscript/vite';
 export default { plugins: [fratmscript()] };
 ```
 
+`fratm nuovo pizzeria` creates a ready-made Vite project with this config, an `index.html` and two `.fratm` modules; then `cd pizzeria && npm install && npm run dev`.
+
 Or, with no build step at all, in any HTML page:
 
 ```html
@@ -107,6 +109,7 @@ Or, with no build step at all, in any HTML page:
 ## CLI Commands
 
 ```bash
+fratm nuovo <folder>                # New Vite project (fratm nuovo --semplice: just main.fratm)
 fratm lancia <file.fratm>           # Compile and launch
 fratm build <file.fratm>            # Compile to JavaScript
 fratm build <file> --sourcemap      # With source map

@@ -5,8 +5,10 @@ use colored::*;
 use fratm_core::{compile, errors, CompileOptions};
 use std::fs;
 use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+mod nuovo;
 
 #[derive(ClapParser)]
 #[command(name = "fratm")]
@@ -48,6 +50,15 @@ enum Commands {
         #[arg(long)]
         check: bool,
     },
+    /// Create a new project (a Vite app, or just main.fratm with --semplice)
+    #[command(name = "nuovo", alias = "new")]
+    Nuovo {
+        /// Folder to create
+        dir: PathBuf,
+        /// Only a main.fratm to run with `fratm lancia`, no Vite
+        #[arg(long)]
+        semplice: bool,
+    },
     /// Interactive REPL
     Repl,
     /// Show tokens (debug)
@@ -67,6 +78,7 @@ fn main() {
         } => build_file(&file, output, sourcemap),
         Commands::Check { files } => check_files(&files),
         Commands::Fmt { files, check } => format_files(&files, check),
+        Commands::Nuovo { dir, semplice } => new_project(&dir, semplice),
         Commands::Repl => run_repl(),
         Commands::Tokens { file } => show_tokens(&file),
         Commands::Ast { file } => show_ast(&file),
@@ -276,6 +288,35 @@ fn check_files(paths: &[PathBuf]) {
         errors::success_message().green().bold(),
         paths.len()
     );
+}
+
+fn new_project(dir: &Path, semplice: bool) {
+    let template = if semplice {
+        nuovo::Template::Simple
+    } else {
+        nuovo::Template::Vite
+    };
+    let files = match nuovo::create(dir, template, fratm_core::version()) {
+        Ok(files) => files,
+        Err(e) => {
+            eprintln!("{} {}", "✗".red().bold(), e);
+            std::process::exit(1);
+        }
+    };
+    for file in &files {
+        println!("  {} {}", "+".green(), file.display());
+    }
+    println!(
+        "\n{} {}",
+        "🤌 Progetto pronto:".green().bold(),
+        dir.display()
+    );
+    let cd = format!("cd {}", dir.display());
+    if semplice {
+        println!("\n  {}\n  fratm lancia main.fratm", cd);
+    } else {
+        println!("\n  {}\n  npm install\n  npm run dev", cd);
+    }
 }
 
 fn format_files(paths: &[PathBuf], check: bool) {
