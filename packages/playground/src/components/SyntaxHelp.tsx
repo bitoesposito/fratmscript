@@ -107,6 +107,16 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
     { fratm: 'chiamm ... da', js: 'import ... from', desc: { it: 'Importa un modulo', en: 'Import module', nap: 'Chiamma nu modulo' }, insert: 'chiamm {  } da ""' },
     { fratm: 'mann for', js: 'export', desc: { it: 'Esporta', en: 'Export', nap: 'Esporta' } },
   ]},
+  // Helpers of the fratm library (crates/fratm-core/src/stdlib.rs): a click inserts the import
+  { category: { it: 'Libreria fratm', en: 'fratm library', nap: "'A libreria fratm" }, items: [
+    { fratm: 'a_caso(min, max)', js: 'Math.random()', desc: { it: 'Intero a caso tra min e max', en: 'Random integer from min to max', nap: 'Nummero a caso tra min e max' }, insert: 'chiamm { a_caso } da "fratm"\n' },
+    { fratm: 'uno_a_caso(lista)', js: 'list[random]', desc: { it: 'Elemento a caso di una lista', en: 'Random item of a list', nap: "N'elemento a caso 'e na lista" }, insert: 'chiamm { uno_a_caso } da "fratm"\n' },
+    { fratm: 'mischia(lista)', js: 'shuffle', desc: { it: 'Copia mescolata di una lista', en: 'Shuffled copy of a list', nap: 'Na copia mischiata' }, insert: 'chiamm { mischia } da "fratm"\n' },
+    { fratm: 'quanti(cosa)', js: '.length / .size', desc: { it: 'Quanti elementi', en: 'How many items', nap: "Quant'elementi ce stanno" }, insert: 'chiamm { quanti } da "fratm"\n' },
+    { fratm: 'arrotonda(n, cifre)', js: 'Math.round', desc: { it: 'Arrotonda a tot cifre', en: 'Round to n digits', nap: 'Arrotonda' }, insert: 'chiamm { arrotonda } da "fratm"\n' },
+    { fratm: 'ripeti(volte, f)', js: 'for (…) f(i)', desc: { it: 'Ripete una funzione', en: 'Call a function n times', nap: 'Chiamma na funzione tante vote' }, insert: 'chiamm { ripeti } da "fratm"\n' },
+    { fratm: 'aspetta(ms)', js: 'setTimeout Promise', desc: { it: 'Aspetta ms millisecondi (con aspett)', en: 'Wait ms milliseconds (with aspett)', nap: 'Aspetta ms millisecondi (cu aspett)' }, insert: 'chiamm { aspetta } da "fratm"\n' },
+  ]},
 ]
 
 function matches(item: SyntaxItem, query: string, lang: Lang) {

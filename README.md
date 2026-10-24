@@ -283,6 +283,24 @@ mann for facc fn() { }       // export
 mann for predefinit App      // export default
 ```
 
+### The `fratm` library
+
+Small helpers with Neapolitan names. Import the ones you use: the compiler writes their definitions into the output (no package needed), and the rest cost nothing.
+
+```fratm
+chiamm { a_caso, mischia, quanti, aspetta } da "fratm"
+```
+
+| Helper | What it does |
+|--------|--------------|
+| `a_caso(min, max)` | random integer from `min` to `max`, both included |
+| `uno_a_caso(lista)` | random item of a list |
+| `mischia(lista)` | shuffled copy of a list |
+| `quanti(cosa)` | how many items: list or string length, Set/Map size, object keys |
+| `arrotonda(n, cifre = 0)` | rounds `n` to `cifre` decimal digits |
+| `ripeti(volte, fa)` | calls `fa(0)`, `fa(1)`, … `volte` times |
+| `aspetta(ms)` | a Promise that resolves after `ms` milliseconds: `aspett aspetta(1000)` |
+
 ### Console Methods
 ```fratm
 stamm a dì(msg)              // console.log
@@ -418,6 +436,7 @@ Check the `examples/` folder for complete programs:
 12. `12_trycatch_validazione.fratm` - Try/catch and validation
 13. `13_pomodor_e_muzzarel.fratm` - Interactive tic-tac-toe in the terminal
 14. `14_sintassi_moderna.fratm` - Arrows, templates, destructuring, spread, `?.`/`??`, regex
+15. `15_libreria.fratm` - The `fratm` library: `a_caso`, `mischia`, `quanti`, `aspetta`…
 
 ---
 

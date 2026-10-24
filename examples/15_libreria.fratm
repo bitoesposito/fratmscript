@@ -1,0 +1,28 @@
+// ============================================
+// Example 15: 'A libreria fratm
+// chiamm { … } da "fratm": helpers with Neapolitan names
+// ============================================
+
+chiamm { a_caso, uno_a_caso, mischia, quanti, arrotonda, ripeti, aspetta } da "fratm"
+
+chist è pizze = ["margherita", "marinara", "diavola", "capricciosa"]
+
+stamm a dì("Ncopp'o menù ce stanno", quanti(pizze), "pizze")
+stamm a dì("Stasera me magno na", uno_a_caso(pizze))
+stamm a dì("Ordine d'a cucina:", mischia(pizze).join(", "))
+
+// Tombola: tre nummeri a caso da 1 a 90
+ripeti(3, giro => {
+    stamm a dì(`Estrazione ${giro + 1}: ${a_caso(1, 90)}`)
+})
+
+chist è conto = 4 * 6.5 / 3
+stamm a dì("A testa:", arrotonda(conto, 2), "euro")
+
+mo vir facc cucina() {
+    stamm a dì("'A pizza sta int'o furno…")
+    aspett aspetta(300)
+    stamm a dì("Pronta! 🍕")
+}
+
+cucina()

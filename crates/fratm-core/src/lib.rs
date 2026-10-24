@@ -85,6 +85,7 @@ pub mod lexer;
 pub mod parser;
 pub mod runtime;
 pub mod sourcemap;
+pub mod stdlib;
 
 use codegen::CodeGen;
 use errors::CompileError;
@@ -1021,5 +1022,42 @@ na famiglie Pizzaiolo figlio 'e Persona {
             "for (let i = 0, j = 3; (i < j); i++, j--) {\n}\n"
         );
         assert!(compile("chist è a = 1, b", Default::default()).is_err());
+    }
+
+    #[test]
+    fn test_fratm_library_is_inlined() {
+        let code = js("chiamm { a_caso, quanti } da \"fratm\"\nstamm a dì(quanti([a_caso(1, 6)]))");
+        assert!(!code.contains("import"), "{}", code);
+        assert_eq!(
+            code.lines().collect::<Vec<_>>(),
+            [
+                format!("const a_caso = {};", stdlib::helper("a_caso").unwrap()).as_str(),
+                format!("const quanti = {};", stdlib::helper("quanti").unwrap()).as_str(),
+                "console.log(quanti([a_caso(1, 6)]));",
+            ]
+        );
+        // Other modules are still imported
+        assert_eq!(
+            js("chiamm { a } da \"./a.js\""),
+            "import { a } from \"./a.js\";\n"
+        );
+    }
+
+    #[test]
+    fn test_fratm_library_rejects_unknown_helpers() {
+        let error =
+            compile("chiamm { a_caso, a_cas } da \"fratm\"", Default::default()).unwrap_err();
+        let message = error.to_string();
+        assert!(
+            message.contains("'a_cas' nun sta int'a libreria \"fratm\". Ce stanno: a_caso,"),
+            "{}",
+            message
+        );
+        // Importing a helper twice is a redeclaration, like any other name
+        assert!(compile(
+            "chiamm { aspetta, aspetta } da \"fratm\"",
+            Default::default()
+        )
+        .is_err());
     }
 }
