@@ -178,6 +178,10 @@ function App() {
     requestAnimationFrame(() => editorRef.current?.insertText(text))
   }, [])
 
+  const handleHighlight = useCallback((range: { from: number; to: number } | null) => {
+    editorRef.current?.highlightRange(range)
+  }, [])
+
   const handleErrorClick = useCallback((line: number, column?: number) => {
     setMobileTab('code')
     // Wait a frame so the editor is visible before scrolling to the line
@@ -404,6 +408,8 @@ function App() {
                 cursorLine={cursorLine}
                 show={isMobile && mobileTab !== 'code' ? mobileTab : 'all'}
                 stale={isStale && !isRunning}
+                source={code}
+                onHighlight={handleHighlight}
               />
             </div>
           </div>

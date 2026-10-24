@@ -380,6 +380,8 @@ just wasm
 
 The [playground](https://kkratterf.github.io/fratmscript/) is a web-based editor to try FratmScript in your browser. Press **Impara** (Learn, Scola) for *'A scola 'e FratmScript*, a tour of 12 short lessons with an exercise each, checked against the console output. Lessons live in `packages/playground/src/scola/` (starter, `.soluzione.fratm` and expected `.out`; CI runs every solution).
 
+Next to the generated JavaScript, the **Token** and **Tree** tabs show how the compiler reads your code; hover an item to highlight it in the editor.
+
 **Share** copies a link with the code in the URL. The `</>` button next to it copies an `<iframe>` that embeds the playground (`?embed=1`: editor, output and Run only, nothing is saved in the visitor's browser), for docs and blog posts.
 
 ```bash
