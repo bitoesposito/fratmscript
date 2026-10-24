@@ -1,0 +1,17 @@
+name: "💡 Idea: na cosa nova"
+description: A feature for the language, the playground or the tools.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing
+      description: What you want to do that FratmScript does not let you do today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How it could work. For syntax, show a FratmScript snippet and the JavaScript it should become.
+    validations:
+      required: true

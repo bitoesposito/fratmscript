@@ -6,7 +6,13 @@
 
 **JavaScript ma comme si deve** (JavaScript, the way it should be)
 
+[![CI](https://github.com/kkratterf/fratmscript/actions/workflows/ci.yml/badge.svg)](https://github.com/kkratterf/fratmscript/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kkratterf/fratmscript)](https://github.com/kkratterf/fratmscript/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](#license)
+
 A transpiler that converts Neapolitan code to JavaScript. Written in Rust.
+
+### 👉 [Prova 'o playground](https://kkratterf.github.io/fratmscript/) (try it in the browser, with a 12-lesson tour)
 
 ```fratm
 chist è nome = "Gennaro"
@@ -408,11 +414,11 @@ Check the `examples/` folder for complete programs:
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+Contributions are welcome, from a new example program to a compiler fix.
+
+- **Found a bug or have an idea?** [Open an issue](https://github.com/kkratterf/fratmscript/issues/new/choose): there are forms for bugs, features and new dialect words.
+- **Want to start small?** Look for issues labelled [`good first issue`](https://github.com/kkratterf/fratmscript/labels/good%20first%20issue). A new program in `examples/` is always a good first PR (CI compiles every one of them).
+- **Before a PR**, read [`AGENTS.md`](AGENTS.md): it lists the checks to run, the commit format and the rules for new language constructs. It is written for AI agents and humans alike.
 
 ---
 
