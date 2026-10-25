@@ -323,6 +323,24 @@ mod tests {
     }
 
     #[test]
+    fn test_unclosed_bracket_at_end_of_file_is_an_error() {
+        // These used to recurse until the stack overflowed: at the end of the
+        // input the parser handed back the opening bracket again.
+        for (source, column) in [("(", 2), ("[", 2), ("f(", 3), ("x = [", 6), ("a.b(1)(", 8)] {
+            let err = compile(source, Default::default()).unwrap_err();
+            assert!(
+                matches!(err, CompileError::ParseError { .. }),
+                "{source}: {err:?}"
+            );
+            assert_eq!(
+                (err.line(), err.column()),
+                (Some(1), Some(column)),
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn test_simple_compile() {
         let result = compile("chist è x = 42", Default::default()).unwrap();
         assert!(result.code.contains("const x = 42"));
