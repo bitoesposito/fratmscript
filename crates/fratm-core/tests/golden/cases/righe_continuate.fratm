@@ -1,0 +1,65 @@
+// Expressions that go on over several lines
+chist è prezzo = 8
+chist è tasse = 2
+chist è totale = prezzo +
+    tasse
+stamm a dì(totale)
+
+chist è cond = overo
+chist è x = cond
+    ? "sì"
+    : "no"
+stamm a dì(x)
+
+chist è persone = [{ nome: "Ciro", età: 30 }, { nome: "Totò", età: 12 }]
+chist è nomi = persone
+    .filter(p => p.età > 18)
+    .map(p => p.nome)
+stamm a dì(nomi)
+
+chist è ok = prezzo > 5 &&
+    tasse < 3
+chist è ok2 = prezzo > 5
+    && tasse < 3
+    || sfòls
+stamm a dì(ok, ok2)
+
+chist è somma = (
+    1 +
+    2
+    + 3
+)
+stamm a dì(somma)
+
+chist è doppio = x =>
+    x * 2
+stamm a dì(doppio(4))
+
+si (prezzo > 1 e
+    tasse > 1) {
+    stamm a dì("entrambi")
+}
+
+// e as a name at the end of a line is still a name
+chist è e = 1
+stamm a dì(e)
+tien y = 1
+y +=
+    2
+stamm a dì(y)
+vedimm (y) {
+    caso 3:
+        stamm a dì("tre")
+        rompe
+    predefinit:
+        stamm a dì("altro")
+}
+chist è valore = nisciun
+    ?? "riserva"
+stamm a dì(valore)
+chist è lunghezze = persone
+    .map(p => {
+        piglie p.nome.length
+    })
+    .filter(n => n > 3)
+stamm a dì(lunghezze)

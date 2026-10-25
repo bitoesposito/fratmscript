@@ -17,10 +17,11 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 2. **One statement per line**, or separate statements with `;`. Semicolons are optional, and a
    line that starts with `[` or `(` always starts a new statement (no JavaScript ASI trap; do
    not put a defensive `;` at the start of a line).
-3. **An expression cannot continue on the next line** after a binary operator, after `?` or `:`,
-   or on a line that starts with `.method()`. Keep each expression on one line, or split it with
-   intermediate `chist è` variables. Array literals, object literals, call arguments and `{ }`
-   blocks may span several lines.
+3. **A line ends the statement unless the expression clearly goes on**: a line may end with a
+   binary operator, `=`, `?`, `:` or `=>`, or the next line may start with `.method()`, `?.`,
+   `?`, `:`, `&&`, `||`, `??` or a comparison; inside `( )` and `[ ]` line breaks never matter.
+   `e`/`o` (the words) at the end of a line do not continue it: use `&&`/`||` there, or put
+   `e`/`o` at the start of an expression inside parentheses.
 4. **Braces are required** after `si`, `sinnò`, `pe`, `mentre che`: `si (x) { ... }`.
 5. `chist è` (const) cannot be reassigned; declaring the same name twice in a scope is a compile
    error. Use `tien` (let) for values that change.

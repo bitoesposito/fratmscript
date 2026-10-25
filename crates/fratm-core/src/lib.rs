@@ -1327,4 +1327,31 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert!(compile("chist è o = { damme a(x) { } }", Default::default()).is_err());
         assert!(compile("chist è o = { miette a() { } }", Default::default()).is_err());
     }
+
+    #[test]
+    fn test_expressions_continue_on_the_next_line() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(js("tien x = a +\n    b"), "let x = (a + b);\n");
+        assert_eq!(js("tien x = c\n    ? 1\n    : 2"), "let x = (c ? 1 : 2);\n");
+        assert_eq!(
+            js("tien x = xs\n    .map(f)\n    ?.at(0)"),
+            "let x = xs.map(f)?.at(0);\n"
+        );
+        assert_eq!(
+            js("tien x = a\n    && b\n    ?? c"),
+            "let x = ((a && b) ?? c);\n"
+        );
+        assert_eq!(js("tien x = (\n    a\n    + b\n)"), "let x = (a + b);\n");
+        assert_eq!(js("tien f = x =>\n    x"), "let f = (x) => x;\n");
+        // A name at the end of a line still ends the statement, even `e`/`o`
+        assert_eq!(
+            js("tien e = 1\nstamm a dì(e)"),
+            "let e = 1;\nconsole.log(e);\n"
+        );
+        // Inside ( ) newlines never matter, but a { } block inside is lines again
+        assert_eq!(
+            js("f(facc () {\n    g()\n    h()\n})"),
+            "f(function () {\n  g();\n  h();\n});\n"
+        );
+    }
 }
