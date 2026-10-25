@@ -84,7 +84,13 @@ pub struct Lexer<'a> {
     token_column: usize,
     /// Kind of the last token emitted, used to disambiguate `'e`
     prev_kind: Option<TokenKind>,
+    /// How many template interpolations enclose the current position
+    template_depth: usize,
 }
+
+/// Templates nested deeper than this are an error rather than a stack
+/// overflow (each `${` recurses into the lexer).
+const MAX_TEMPLATE_DEPTH: usize = 50;
 
 impl<'a> Lexer<'a> {
     /// Creates a new lexer for the specified source code.
@@ -111,6 +117,7 @@ impl<'a> Lexer<'a> {
             token_line: 1,
             token_column: 1,
             prev_kind: None,
+            template_depth: 0,
         }
     }
 
@@ -589,14 +596,22 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 Some('$') if self.peek_next() == Some('{') => {
+                    if self.template_depth >= MAX_TEMPLATE_DEPTH {
+                        return self.make_token(TokenKind::Invalid(
+                            "Templates nested too deeply".to_string(),
+                        ));
+                    }
                     self.advance();
                     self.advance();
                     quasis.push(std::mem::take(&mut text));
+                    self.template_depth += 1;
                     let tokens = self.scan_interpolation();
+                    self.template_depth -= 1;
                     (self.token_start, self.token_line, self.token_column) = (start, line, column);
                     match tokens {
                         Ok(tokens) => expressions.push(tokens),
-                        Err(()) => {
+                        Err(Some(nested)) => return nested,
+                        Err(None) => {
                             return self.make_token(TokenKind::Invalid(
                                 "Unterminated template".to_string(),
                             ))
@@ -611,8 +626,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// Lexes the tokens of a `${ … }` up to its closing brace.
-    fn scan_interpolation(&mut self) -> Result<Vec<Token>, ()> {
+    /// Lexes the tokens of a `${ … }` up to its closing brace. Fails with
+    /// `None` at the end of the input, or with a too deeply nested template.
+    fn scan_interpolation(&mut self) -> Result<Vec<Token>, Option<Token>> {
         // An interpolation starts like an expression: `${/re/.source}`
         self.prev_kind = Some(TokenKind::LeftBrace);
         let mut tokens = Vec::new();
@@ -620,7 +636,10 @@ impl<'a> Lexer<'a> {
         loop {
             let token = self.next_token();
             match token.kind {
-                TokenKind::Eof => return Err(()),
+                TokenKind::Eof => return Err(None),
+                TokenKind::Invalid(ref message) if message.contains("nested too deeply") => {
+                    return Err(Some(token))
+                }
                 TokenKind::LeftBrace => depth += 1,
                 TokenKind::RightBrace if depth == 0 => return Ok(tokens),
                 TokenKind::RightBrace => depth -= 1,

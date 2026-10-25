@@ -376,6 +376,43 @@ mod tests {
     }
 
     #[test]
+    fn test_deep_nesting_is_an_error_not_a_crash() {
+        // Debug builds use far more stack per level than release ones, so
+        // give the test thread room; release fits ~100 brackets in 1 MB.
+        let run = || {
+            let many = 100_000;
+            for source in [
+                format!("x = {}1{}", "(".repeat(many), ")".repeat(many)),
+                format!("x = {}", "[".repeat(many)),
+                format!("x = {}1", "!".repeat(many)),
+                "si (a) {\n".repeat(many),
+                format!("x = {}1", "a => ".repeat(many)),
+                format!("x = {}1{}", "`${".repeat(many), "}`".repeat(many)),
+                format!("x = {}1{}", "f(".repeat(many), ")".repeat(many)),
+                format!("x = {}1{}", "a[".repeat(many), "]".repeat(many)),
+                format!("x = {}1", "a ? b : ".repeat(many)),
+                format!("x = {}1", "2 ** ".repeat(many)),
+            ] {
+                let err = compile(&source, Default::default()).unwrap_err();
+                assert!(
+                    err.to_string().contains("Troppa roba una dint'a n'ata!"),
+                    "{}: {err}",
+                    &source[..12]
+                );
+            }
+            // Deep but reasonable code still compiles
+            let source = format!("x = {}1{}", "(".repeat(90), ")".repeat(90));
+            assert_eq!(js(&source), "x = 1;\n");
+        };
+        std::thread::Builder::new()
+            .stack_size(256 * 1024 * 1024)
+            .spawn(run)
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
     fn test_simple_compile() {
         let result = compile("chist è x = 42", Default::default()).unwrap();
         assert!(result.code.contains("const x = 42"));
