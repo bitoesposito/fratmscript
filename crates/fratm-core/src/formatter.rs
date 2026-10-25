@@ -7,6 +7,8 @@
 //!
 //! - every line is re-indented with four spaces per open block, bracket or
 //!   parenthesis (switch `caso` bodies one level deeper than their label);
+//!   a line that continues an expression (after `+`, before `.map()`, …)
+//!   goes one level deeper than the line that started it;
 //! - runs of spaces collapse to one, with none inside `( )` and `[ ]`,
 //!   none before `,` `;` and none around `.`, and one after `,` and `;`;
 //! - trailing whitespace goes, at most one blank line is kept and the file
@@ -17,7 +19,7 @@
 //! JavaScript as the input, otherwise formatting fails and nothing changes.
 
 use crate::errors::CompileError;
-use crate::lexer::{Lexer, Token, TokenKind};
+use crate::lexer::{continues_after, continues_before, Lexer, Token, TokenKind};
 use crate::{compile, CompileOptions};
 
 const INDENT: &str = "    ";
@@ -63,6 +65,10 @@ struct Frame {
     switch: bool,
     /// For `(`: whether it follows `vedimm`, so the next `{` opens a switch
     after_vedimm: bool,
+    /// `(` or `[`: lines inside are continuations already
+    paren: bool,
+    /// `stmt_level` outside the frame, restored when it closes
+    outer_stmt: usize,
 }
 
 struct Formatter<'a> {
@@ -75,6 +81,12 @@ struct Formatter<'a> {
     prev: Option<TokenKind>,
     /// Whether the `)` just closed followed `vedimm`
     closed_vedimm: bool,
+    /// Base level of the `(` just closed, for a `{` that follows it
+    closed_base: usize,
+    /// Last token written, on this line or an earlier one
+    last: Option<Token>,
+    /// Level of the last line that did not continue an expression
+    stmt_level: usize,
     newlines: usize,
     space: bool,
 }
@@ -88,6 +100,9 @@ impl<'a> Formatter<'a> {
             level: 0,
             prev: None,
             closed_vedimm: false,
+            closed_base: 0,
+            last: None,
+            stmt_level: 0,
             newlines: 0,
             space: false,
         }
@@ -180,7 +195,22 @@ impl<'a> Formatter<'a> {
     fn token(&mut self, token: &Token) {
         let kind = &token.kind;
         if self.start_line_if_needed() {
-            self.level = self.line_level(kind);
+            let in_paren = self.frames.last().is_some_and(|f| f.paren);
+            let in_switch = self.frames.last().is_some_and(|f| f.switch);
+            // In a switch, `caso x:` ends a label, not an expression
+            let after = self
+                .last
+                .as_ref()
+                .is_some_and(|t| continues_after(t) && !(in_switch && t.kind == TokenKind::Colon));
+            let continues = !in_paren && !is_closer(kind) && (after || continues_before(token));
+            if continues {
+                self.level = self.stmt_level + 1;
+            } else {
+                self.level = self.line_level(kind);
+                if !is_closer(kind) {
+                    self.stmt_level = self.level;
+                }
+            }
             self.write_indent();
         } else if let Some(prev) = &self.prev {
             if wants_space(prev, kind, self.space) {
@@ -195,32 +225,52 @@ impl<'a> Formatter<'a> {
 
         match kind {
             TokenKind::LeftBrace => {
-                let switch = self.prev == Some(TokenKind::RightParen) && self.closed_vedimm;
-                self.push_frame(switch, false);
+                let after_paren = self.prev == Some(TokenKind::RightParen);
+                let switch = after_paren && self.closed_vedimm;
+                // `si (a e\n    b) {`: the block belongs to the line of `si`
+                let base = if after_paren {
+                    self.closed_base.min(self.level)
+                } else {
+                    self.level
+                };
+                self.push_frame(base, switch, false, false);
             }
             TokenKind::LeftParen => {
                 let after_vedimm =
                     matches!(&self.prev, Some(TokenKind::Identifier(name)) if name == "vedimm");
-                self.push_frame(false, after_vedimm);
+                self.push_frame(self.level, false, after_vedimm, true);
             }
-            TokenKind::LeftBracket => self.push_frame(false, false),
+            TokenKind::LeftBracket => self.push_frame(self.level, false, false, true),
             TokenKind::RightParen => {
-                self.closed_vedimm = self.frames.pop().is_some_and(|f| f.after_vedimm);
+                let frame = self.pop_frame();
+                self.closed_vedimm = frame.as_ref().is_some_and(|f| f.after_vedimm);
+                self.closed_base = frame.map_or(self.level, |f| f.base);
             }
             TokenKind::RightBrace | TokenKind::RightBracket => {
-                self.frames.pop();
+                self.pop_frame();
             }
             _ => {}
         }
         self.prev = Some(kind.clone());
+        self.last = Some(token.clone());
     }
 
-    fn push_frame(&mut self, switch: bool, after_vedimm: bool) {
+    fn push_frame(&mut self, base: usize, switch: bool, after_vedimm: bool, paren: bool) {
         self.frames.push(Frame {
-            base: self.level,
+            base,
             switch,
             after_vedimm,
+            paren,
+            outer_stmt: self.stmt_level,
         });
+    }
+
+    fn pop_frame(&mut self) -> Option<Frame> {
+        let frame = self.frames.pop();
+        if let Some(f) = &frame {
+            self.stmt_level = f.outer_stmt;
+        }
+        frame
     }
 }
 
@@ -395,5 +445,18 @@ mod tests {
         assert_eq!(fmt(&once), once);
         assert!(format("tien = 1").is_err());
         assert_eq!(fmt(""), "");
+    }
+
+    #[test]
+    fn test_indents_continuation_lines() {
+        assert_eq!(
+            fmt("chist è x = xs\n.map(v => {\npiglie v\n})\n.filter(f)\nstamm a dì(x +\n1)\n"),
+            "chist è x = xs\n    .map(v => {\n        piglie v\n    })\n    .filter(f)\nstamm a dì(x +\n    1)\n"
+        );
+        // The block of a condition split over two lines belongs to `si`
+        assert_eq!(
+            fmt("si (a e\nb) {\nf()\n}\n"),
+            "si (a e\n    b) {\n    f()\n}\n"
+        );
     }
 }

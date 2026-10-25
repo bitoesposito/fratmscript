@@ -142,7 +142,7 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        tokens
+        join_continuation_lines(tokens)
     }
 
     /// Reads and returns the next token from the source.
@@ -861,6 +861,133 @@ impl<'a> Lexer<'a> {
         } else {
             self.make_token(TokenKind::Identifier(literal.to_string()))
         }
+    }
+}
+
+/// Drops the line breaks that cannot end a statement, so that an expression
+/// can go on over several lines: inside `( )` and `[ ]`, after an operator
+/// that needs a right operand (`+`, `&&`, `=`, `?`, `=>`, …) and before a line
+/// that starts with `.method()`, `?`, `:` or a binary operator.
+fn join_continuation_lines(tokens: Vec<Token>) -> Vec<Token> {
+    let mut out: Vec<Token> = Vec::with_capacity(tokens.len());
+    // Open brackets; a `{` inside `( )` starts a block where lines matter again
+    let mut open: Vec<TokenKind> = Vec::new();
+    for (i, token) in tokens.iter().enumerate() {
+        match token.kind {
+            TokenKind::LeftParen | TokenKind::LeftBracket | TokenKind::LeftBrace => {
+                open.push(token.kind.clone())
+            }
+            TokenKind::RightParen | TokenKind::RightBracket | TokenKind::RightBrace => {
+                open.pop();
+            }
+            TokenKind::Newline => {
+                let in_parens = matches!(
+                    open.last(),
+                    Some(TokenKind::LeftParen | TokenKind::LeftBracket)
+                );
+                let after = out
+                    .iter()
+                    .rev()
+                    .find(|t| t.kind != TokenKind::Newline)
+                    .is_some_and(continues_after);
+                let before = tokens[i + 1..]
+                    .iter()
+                    .find(|t| t.kind != TokenKind::Newline)
+                    .is_some_and(continues_before);
+                if in_parens || after || before {
+                    continue;
+                }
+            }
+            _ => {}
+        }
+        out.push(token.clone());
+    }
+    out
+}
+
+/// Whether a line ending with `token` goes on to the next line.
+pub fn continues_after(token: &Token) -> bool {
+    use TokenKind::*;
+    match &token.kind {
+        // `e` / `o` / `pure` are also names: only the symbols continue
+        And | Or => token.literal == "&&" || token.literal == "||",
+        Plus
+        | Minus
+        | Star
+        | Slash
+        | Percent
+        | StarStar
+        | Amp
+        | Pipe
+        | Caret
+        | LessLess
+        | GreaterGreater
+        | GreaterGreaterGreater
+        | EqualEqual
+        | EqualEqualEqual
+        | BangEqual
+        | BangEqualEqual
+        | Less
+        | Greater
+        | LessEqual
+        | GreaterEqual
+        | QuestionQuestion
+        | DintA
+        | Equal
+        | PlusEqual
+        | MinusEqual
+        | StarEqual
+        | SlashEqual
+        | PercentEqual
+        | StarStarEqual
+        | QuestionQuestionEqual
+        | OrEqual
+        | AndEqual
+        | AmpEqual
+        | PipeEqual
+        | CaretEqual
+        | LessLessEqual
+        | GreaterGreaterEqual
+        | GreaterGreaterGreaterEqual
+        | Arrow
+        | Question
+        | Colon
+        | QuestionDot
+        | Dot => true,
+        _ => false,
+    }
+}
+
+/// Whether a line starting with `token` continues the previous one: no
+/// statement can start with these.
+pub fn continues_before(token: &Token) -> bool {
+    use TokenKind::*;
+    match &token.kind {
+        And | Or => token.literal == "&&" || token.literal == "||",
+        Dot
+        | QuestionDot
+        | Question
+        | Colon
+        | QuestionQuestion
+        | Percent
+        | StarStar
+        | Amp
+        | Pipe
+        | Caret
+        | LessLess
+        | GreaterGreater
+        | GreaterGreaterGreater
+        | EqualEqual
+        | EqualEqualEqual
+        | BangEqual
+        | BangEqualEqual
+        | Less
+        | Greater
+        | LessEqual
+        | GreaterEqual
+        | DintA
+        | Arrow => true,
+        _ => false,
     }
 }
 

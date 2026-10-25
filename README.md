@@ -237,6 +237,19 @@ rompe                         // break
 salta                         // continue
 ```
 
+### Long expressions
+```fratm
+chist è totale = prezzo +            // a line ending with an operator goes on
+    tasse
+chist è nomi = persone
+    .filter(p => p.età > 18)         // so does a line starting with .method()
+    .map(p => p.nome)
+chist è x = cond
+    ? "sì"
+    : "no"
+```
+Inside `( )` and `[ ]` line breaks never matter.
+
 ### Values
 ```fratm
 `Uè ${nome}!`                // template literal (multi-line, nested ${ })
