@@ -185,6 +185,8 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
   const canMap = jsLineMap.some(line => line !== null)
   const showConsole = show !== 'js'
   const showJs = show !== 'console'
+  // A failed compile has no JavaScript to show: say so instead of "run the code"
+  const hasCompileError = errors.some(error => error.kind === 'compile')
   return (
     <div
       className={cn('flex flex-col h-full transition-opacity duration-200', stale && 'opacity-60')}
@@ -310,7 +312,7 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
             <MappedJs code={jsOutput} lineMap={jsLineMap} cursorLine={cursorLine} onLineClick={onErrorClick} />
           ) : (
             <pre className="bg-card/50 p-3 border border-border rounded-md font-mono text-foreground/90 text-sm break-words leading-relaxed whitespace-pre-wrap">
-              {jsOutput || <span className="text-muted-foreground">{t('output.jsPlaceholder')}</span>}
+              {jsOutput || <span className="text-muted-foreground">{t(hasCompileError ? 'output.jsUnavailable' : 'output.jsPlaceholder')}</span>}
             </pre>
           )}
         </section>

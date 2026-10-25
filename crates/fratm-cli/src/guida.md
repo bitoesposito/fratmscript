@@ -14,7 +14,9 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
    `return`, `if`, `else`, `for`, `while`, `new`, `class`, `this`, `true`, `false`, `null`,
    `try`, `catch`, `throw`, `async`, `await`, `import`, `export`. Use the dialect words in the
    table below. (`typeof` and `instanceof` are accepted as aliases.)
-2. **One statement per line**, or separate statements with `;`. Semicolons are optional.
+2. **One statement per line**, or separate statements with `;`. Semicolons are optional, and a
+   line that starts with `[` or `(` always starts a new statement (no JavaScript ASI trap; do
+   not put a defensive `;` at the start of a line).
 3. **An expression cannot continue on the next line** after a binary operator, after `?` or `:`,
    or on a line that starts with `.method()`. Keep each expression on one line, or split it with
    intermediate `chist è` variables. Array literals, object literals, call arguments and `{ }`
@@ -39,6 +41,7 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 | `mentre che` | `while` |
 | `primm fa { } mentre che (c)` | `do { } while (c)` |
 | `pe` (also `pe ogni`) | `for` |
+| `pe aspett` | `for await` |
 | `dint` / `'ncopp` | `of` / `in` (only inside a `pe` header) |
 | `rompe` / `salta` | `break` / `continue` |
 | `overo` / `sfòls` | `true` / `false` |
@@ -200,6 +203,7 @@ na famiglie Persona {
 na famiglie Pizzaiolo figlio 'e Persona {
     #forno = "a legna"
     pizze = 0
+    fisso aperte = 0
 
     costruttore(nome) {
         'o pate(nome)
@@ -359,8 +363,9 @@ fratm mcp                               MCP server on stdio (see below)
 ```
 
 For programs and agents: `check`, `build` and `lancia` take `--json` and print one JSON object
-(`ok`, `errors` with `message`, `line`, `column`, `suggestion`; `build` adds `code`; `lancia`
-adds `stdout`, `stderr`, `exitCode` and `runtimeError`). Use `-` as the file name to read the
+with `ok` and errors as `{ message, line, column, suggestion }`: `build` gives `errors` and
+`code`; `lancia` gives `errors`, `stdout`, `stderr`, `exitCode` and `runtimeError`; `check`
+gives `files`, one `{ file, ok, errors }` per file. Use `-` as the file name to read the
 program from stdin, and `lancia --timeout <seconds>` to stop programs that do not end.
 
 ```text
