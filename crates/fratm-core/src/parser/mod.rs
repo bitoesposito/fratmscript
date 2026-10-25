@@ -1568,6 +1568,18 @@ impl Parser {
             return Ok(Expression::Identifier { name, span });
         }
 
+        // `import.meta` and `new.target` are not member accesses on a name
+        if let Some(meta) = self.meta_property_start() {
+            let start = self.advance().span;
+            self.advance();
+            let property = self.expect_identifier()?;
+            return Ok(Expression::MetaProperty {
+                meta: meta.to_string(),
+                property,
+                span: self.span_from(start.start),
+            });
+        }
+
         let token = self.advance();
         let span = token.span;
 
@@ -1797,6 +1809,15 @@ impl Parser {
     }
     fn check_identifier_at(&self, offset: usize, name: &str) -> bool {
         matches!(self.tokens.get(self.current + offset).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)
+    }
+    /// `import` in `import.meta` or `new` in `new.target`.
+    fn meta_property_start(&self) -> Option<&'static str> {
+        let (meta, property) = match &self.peek().kind {
+            TokenKind::Identifier(n) if n == "import" => ("import", "meta"),
+            TokenKind::Identifier(n) if n == "new" => ("new", "target"),
+            _ => return None,
+        };
+        (self.check_next(&TokenKind::Dot) && self.check_identifier_at(2, property)).then_some(meta)
     }
     fn check_next_identifier(&self, name: &str) -> bool {
         matches!(self.tokens.get(self.current + 1).map(|t| &t.kind), Some(TokenKind::Identifier(n)) if n == name)

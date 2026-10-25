@@ -554,6 +554,11 @@ impl CodeGen {
             Expression::Undefined { .. } => self.emit("undefined"),
             Expression::This { .. } => self.emit("this"),
             Expression::Super { .. } => self.emit("super"),
+            Expression::MetaProperty { meta, property, .. } => {
+                self.emit(meta);
+                self.emit(".");
+                self.emit(property);
+            }
             Expression::Array { elements, .. } => {
                 self.emit("[");
                 for (i, elem) in elements.iter().enumerate() {

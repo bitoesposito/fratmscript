@@ -1060,4 +1060,31 @@ na famiglie Pizzaiolo figlio 'e Persona {
         )
         .is_err());
     }
+
+    #[test]
+    fn test_meta_properties_are_not_renamed() {
+        // `import` and `new` alone are escaped names; their meta properties are not
+        assert_eq!(
+            compile("stamm a dì(import.meta.url)", Default::default())
+                .unwrap()
+                .code,
+            "console.log(import.meta.url);\n"
+        );
+        let result = compile("facc F() { piglie new.target }", Default::default()).unwrap();
+        assert!(
+            result.code.contains("return new.target;"),
+            "{}",
+            result.code
+        );
+        let result = compile(
+            "tien new = { target: 1 }\nstamm a dì(new)",
+            Default::default(),
+        )
+        .unwrap();
+        assert!(
+            result.code.contains("let $new = { target: 1 };"),
+            "{}",
+            result.code
+        );
+    }
 }

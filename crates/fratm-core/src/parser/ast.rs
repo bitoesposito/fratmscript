@@ -311,6 +311,12 @@ pub enum Expression {
         operand: Box<Expression>,
         span: Span,
     },
+    /// `import.meta`, `new.target`
+    MetaProperty {
+        meta: String,
+        property: String,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -324,6 +330,7 @@ impl Expression {
             Expression::Undefined { span } => *span,
             Expression::This { span } => *span,
             Expression::Super { span } => *span,
+            Expression::MetaProperty { span, .. } => *span,
             Expression::Array { span, .. } => *span,
             Expression::Regex { span, .. } => *span,
             Expression::Sequence { span, .. } => *span,
