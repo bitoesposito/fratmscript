@@ -338,6 +338,15 @@ pub enum Expression {
         operand: Box<Expression>,
         span: Span,
     },
+    /// `facc (a) { }`, `facc nomme() { }`, `mo vir facc () { }`, `facc* () { }`
+    Function {
+        name: Option<String>,
+        params: Vec<Pattern>,
+        body: Vec<Statement>,
+        is_async: bool,
+        is_generator: bool,
+        span: Span,
+    },
     /// `chiamm("./m")`: dynamic import
     Import {
         source: Box<Expression>,
@@ -365,6 +374,7 @@ impl Expression {
             Expression::Super { span } => *span,
             Expression::MetaProperty { span, .. } => *span,
             Expression::Import { span, .. } => *span,
+            Expression::Function { span, .. } => *span,
             Expression::Array { span, .. } => *span,
             Expression::Regex { span, .. } => *span,
             Expression::Sequence { span, .. } => *span,

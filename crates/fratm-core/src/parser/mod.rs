@@ -1594,6 +1594,31 @@ impl Parser {
         false
     }
 
+    fn parse_function_expression(&mut self, is_async: bool) -> Result<Expression, ParseError> {
+        let start = self.current_span();
+        if is_async {
+            self.advance();
+            self.advance();
+        }
+        self.expect(&TokenKind::Facc)?;
+        let is_generator = self.match_token(&TokenKind::Star);
+        let name = if self.check(&TokenKind::LeftParen) {
+            None
+        } else {
+            Some(self.expect_identifier()?)
+        };
+        let params = self.parse_parameters()?;
+        let body = self.parse_function_body(is_generator)?;
+        Ok(Expression::Function {
+            name,
+            params,
+            body,
+            is_async,
+            is_generator,
+            span: self.span_from(start.start),
+        })
+    }
+
     fn parse_arrow(&mut self, start: Span, is_async: bool) -> Result<Expression, ParseError> {
         let params = if self.check(&TokenKind::LeftParen) {
             self.parse_parameters()?
@@ -1728,6 +1753,13 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        // Function expressions: `facc (a) { }`, `mo vir facc nomme() { }`
+        let is_async = self.check(&TokenKind::Mo)
+            && self.check_next(&TokenKind::Vir)
+            && self.check_at(2, &TokenKind::Facc);
+        if is_async || self.check(&TokenKind::Facc) {
+            return self.parse_function_expression(is_async);
+        }
         // Arrow functions: `x => …`, `(a, b) => …`, `mo vir (x) => …`
         if self.check(&TokenKind::Mo) && self.check_next(&TokenKind::Vir) {
             let start = self.current_span();

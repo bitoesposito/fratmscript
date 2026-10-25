@@ -160,6 +160,7 @@ mo vir facc caricaDati() {   // async
     piglie dati
 }
 
+chist è triplo = facc (x) { piglie x * 3 }   // function expression (also named, mo vir, facc*)
 chist è doppio = x => x * 2           // arrow functions
 chist è somma = (a, b) => a + b
 chist è carica = mo vir (url) => aspett fetch(url)

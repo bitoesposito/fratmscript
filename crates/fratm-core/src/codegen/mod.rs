@@ -533,7 +533,14 @@ impl CodeGen {
             Statement::Expression { expression, span } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
-                self.gen_expression(expression);
+                // A statement starting with `function` would be a declaration
+                if matches!(expression, Expression::Function { .. }) {
+                    self.emit("(");
+                    self.gen_expression(expression);
+                    self.emit(")");
+                } else {
+                    self.gen_expression(expression);
+                }
                 self.emit(";");
             }
 
@@ -621,6 +628,37 @@ impl CodeGen {
             Expression::Undefined { .. } => self.emit("undefined"),
             Expression::This { .. } => self.emit("this"),
             Expression::Super { .. } => self.emit("super"),
+            Expression::Function {
+                name,
+                params,
+                body,
+                is_async,
+                is_generator,
+                ..
+            } => {
+                if *is_async {
+                    self.emit("async ");
+                }
+                self.emit(if *is_generator {
+                    "function*"
+                } else {
+                    "function"
+                });
+                self.emit(" ");
+                if let Some(name) = name {
+                    self.emit(&js_name(name));
+                }
+                self.gen_params(params);
+                self.emit(" {\n");
+                self.indent += 1;
+                for s in body {
+                    self.gen_statement(s);
+                    self.emit("\n");
+                }
+                self.indent -= 1;
+                self.write_indent();
+                self.emit("}");
+            }
             Expression::Import { source, .. } => {
                 self.emit("import(");
                 self.gen_expression(source);
@@ -1074,6 +1112,7 @@ impl CodeGen {
                 | Expression::Await { .. }
                 | Expression::TypeOf { .. }
                 | Expression::Delete { .. }
+                | Expression::Function { .. }
         );
         if prefix {
             self.emit("(");

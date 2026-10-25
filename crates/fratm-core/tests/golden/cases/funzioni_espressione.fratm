@@ -1,0 +1,23 @@
+// Function expressions: anonymous, named, async, generator, IIFE
+chist è doppio = facc (x) { piglie x * 2 }
+chist è fattoriale = facc fatt(n) {
+    si (n <= 1) { piglie 1 }
+    piglie n * fatt(n - 1)
+}
+stamm a dì(doppio(21), fattoriale(5), fattoriale.name)
+chist è carica = mo vir facc () { piglie 7 }
+carica().then(v => stamm a dì("caricato", v))
+chist è conta = facc* () {
+    caccia 1
+    caccia 2
+}
+stamm a dì([...conta()])
+chist è pizza = {
+    nome: "margherita",
+    descrivi: facc () { piglie "Pizza " + stu cos.nome }
+}
+stamm a dì(pizza.descrivi())
+stamm a dì((facc () { piglie "IIFE" })())
+[1, 2, 3].forEach(facc (n) { stamm a dì(n) })
+facc fatt() { piglie "declaration still works" }
+stamm a dì(fatt())
