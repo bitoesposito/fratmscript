@@ -68,7 +68,7 @@ export const examples: Record<string, string> = Object.fromEntries(
   exampleList.map(example => [example.id, example.code]),
 )
 
-export const defaultCode = `// Try FratmScript!
+export const defaultCode = `// Uè! Prova FratmScript
 
 chist è nome = "Gennaro"
 
