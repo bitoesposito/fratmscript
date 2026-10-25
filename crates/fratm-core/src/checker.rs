@@ -469,6 +469,19 @@ impl Checker {
                 self.expression(object);
                 self.expression(property);
             }
+            // The name of a function expression is visible only inside it
+            Expression::Function {
+                name,
+                params,
+                body,
+                span,
+                ..
+            } => self.scoped(|c| {
+                if let Some(name) = name {
+                    c.declare(name, Binding::Function, *span);
+                }
+                c.function(params, body);
+            }),
             Expression::ArrowFunction { params, body, .. } => match body {
                 ArrowBody::Block(body) => self.function(params, body),
                 ArrowBody::Expression(e) => self.scoped(|c| {

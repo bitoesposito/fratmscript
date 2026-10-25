@@ -1220,4 +1220,36 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert!(compile("tien x = 1.5n", Default::default()).is_err());
         assert!(compile("tien x = 012n", Default::default()).is_err());
     }
+
+    #[test]
+    fn test_function_expressions() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("chist è f = facc (a) { piglie a }"),
+            "const f = function (a) {\n  return a;\n};\n"
+        );
+        assert_eq!(
+            js("chist è f = mo vir facc* nomme() { }"),
+            "const f = async function* nomme() {\n};\n"
+        );
+        // Called right away, or as a statement: parenthesized, never a declaration
+        assert_eq!(js("(facc () { })()"), "(function () {\n})();\n");
+        assert_eq!(js("(facc g() { })"), "(function g() {\n});\n");
+        // A statement that starts with `facc` is still a declaration
+        assert_eq!(js("facc g() { }"), "function g() {\n}\n");
+    }
+
+    #[test]
+    fn test_function_expression_name_is_local() {
+        // The name does not clash with the variable it is assigned to
+        assert!(compile("chist è f = facc f() { piglie f }", Default::default()).is_ok());
+        // ... and is not visible outside: declaring it again is fine
+        assert!(compile(
+            "chist è a = facc g() { }\nchist è g = 1",
+            Default::default()
+        )
+        .is_ok());
+        // `caccia` needs a generator, as in declarations
+        assert!(compile("chist è f = facc () { caccia 1 }", Default::default()).is_err());
+    }
 }

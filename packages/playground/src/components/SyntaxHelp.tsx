@@ -41,6 +41,7 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
   { category: { it: 'Funzioni', en: 'Functions', nap: 'Funzioni' }, items: [
     { fratm: 'facc', js: 'function', desc: { it: 'Funzione', en: 'Function declaration', nap: 'Funzione' } },
     { fratm: 'piglie', js: 'return', desc: { it: 'Restituisce un valore', en: 'Return statement', nap: "Dà 'o valore e esce d'a funzione" } },
+    { fratm: 'facc (x) { … }', js: 'function (x) { … }', desc: { it: 'Funzione come valore', en: 'Function expression', nap: 'Funzione comme valore' }, insert: 'facc () {  }' },
     { fratm: 'mo vir facc', js: 'async function', desc: { it: 'Funzione asincrona', en: 'Async function', nap: 'Funzione asincrona' } },
     { fratm: 'facc* f() { caccia 1 }', js: 'function* f() { yield 1 }', desc: { it: 'Generatore', en: 'Generator', nap: 'Generatore' } },
     { fratm: 'caccia* altri()', js: 'yield* altri()', desc: { it: 'Delega a un altro generatore', en: 'Delegate to another generator', nap: "Passa a n'ato generatore" } },

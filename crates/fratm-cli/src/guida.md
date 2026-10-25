@@ -105,6 +105,11 @@ chist è quadrati = [1, 2, 3].map((n) => {
     piglie n * n
 })
 stamm a dì(somma(2, 3), doppio(4), saluta(), quadrati)
+
+// function expressions (anonymous or named, also mo vir facc and facc*)
+chist è triplo = facc (x) { piglie x * 3 }
+chist è fatt = facc f(n) { piglie n <= 1 ? 1 : n * f(n - 1) }
+stamm a dì(triplo(2), fatt(5))
 ```
 
 ## Control flow
