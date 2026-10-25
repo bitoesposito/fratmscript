@@ -21,6 +21,14 @@ release:
 test:
   cargo test
 
+# Time the compiler stages on the examples (release build).
+bench:
+  cargo bench -p fratm-core --bench compile
+
+# Feed the compiler many mutated programs, looking for panics (release build).
+fuzz iterations="500000" seed="1":
+  FRATM_FUZZ_ITERATIONS={{iterations}} FRATM_FUZZ_SEED={{seed}} cargo test --release -p fratm-core --test robustness
+
 # Launch a FratmScript file with debug CLI (`cargo run`).
 lancia file:
   cargo run -p fratm-cli -- lancia {{file}}

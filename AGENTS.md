@@ -51,6 +51,8 @@ VS Code extension (needs the npm package's WASM build first): `cd packages/vscod
 
 `just` lists every shortcut (`just test`, `just lancia <file>`, `just examples-build`, ...).
 
+Compiler robustness: `crates/fratm-core/tests/robustness.rs` mutates every example and golden case and checks that `compile` and `format` never panic (20 000 mutations in `cargo test`). After touching the lexer, parser or codegen, run it longer with `just fuzz` (500 000 mutations, release build; pick another `seed` to explore). `just bench` times each compiler stage; compare before and after a change that could slow it down.
+
 ### The playground WASM (`public/pkg`)
 
 - `public/pkg` is generated and git-ignored. CI and the Pages deploy build it from the current sources with `wasm-pack`.
