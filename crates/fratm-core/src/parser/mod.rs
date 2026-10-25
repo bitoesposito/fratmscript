@@ -129,7 +129,7 @@ impl Parser {
             self.parse_debugger()?
         } else if self.check(&TokenKind::Iett) {
             self.parse_throw()?
-        } else if self.check(&TokenKind::Chiamm) {
+        } else if self.check(&TokenKind::Chiamm) && !self.check_next(&TokenKind::LeftParen) {
             self.parse_import()?
         } else {
             self.parse_expression_statement()?
@@ -897,28 +897,94 @@ impl Parser {
     fn parse_import(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Chiamm)?;
-        self.expect(&TokenKind::LeftBrace)?;
+        let mut default = None;
+        let mut namespace = None;
         let mut specifiers = Vec::new();
-        if !self.check(&TokenKind::RightBrace) {
-            loop {
-                let imported = self.expect_identifier()?;
-                specifiers.push(ImportSpecifier {
-                    imported: imported.clone(),
-                    local: imported,
-                });
+        // `chiamm "./stile.css"`: no bindings, no `da`
+        if let TokenKind::String(source) = &self.peek().kind {
+            let source = source.clone();
+            self.advance();
+            return Ok(Statement::Import {
+                default,
+                namespace,
+                specifiers,
+                source,
+                span: self.span_from(start.start),
+            });
+        }
+        if !self.check(&TokenKind::LeftBrace) && !self.check(&TokenKind::Star) {
+            default = Some(self.expect_identifier()?);
+            if !self.match_token(&TokenKind::Comma) {
+                return self.finish_import(start, default, namespace, specifiers);
+            }
+        }
+        if self.match_token(&TokenKind::Star) {
+            self.expect_comme()?;
+            namespace = Some(self.expect_identifier()?);
+        } else {
+            self.expect(&TokenKind::LeftBrace)?;
+            self.skip_newlines();
+            while !self.check(&TokenKind::RightBrace) {
+                let imported = self.expect_module_name()?;
+                let local = if self.check_comme() {
+                    self.advance();
+                    self.expect_identifier()?
+                } else {
+                    imported.clone()
+                };
+                specifiers.push(ImportSpecifier { imported, local });
+                self.skip_newlines();
                 if !self.match_token(&TokenKind::Comma) {
                     break;
                 }
+                self.skip_newlines();
             }
+            self.expect(&TokenKind::RightBrace)?;
         }
-        self.expect(&TokenKind::RightBrace)?;
+        self.finish_import(start, default, namespace, specifiers)
+    }
+
+    fn finish_import(
+        &mut self,
+        start: Span,
+        default: Option<String>,
+        namespace: Option<String>,
+        specifiers: Vec<ImportSpecifier>,
+    ) -> Result<Statement, ParseError> {
         self.expect(&TokenKind::Da)?;
         let source = self.expect_string()?;
         Ok(Statement::Import {
+            default,
+            namespace,
             specifiers,
             source,
             span: self.span_from(start.start),
         })
+    }
+
+    /// `comme` (or `as`) between a module name and its alias.
+    fn check_comme(&self) -> bool {
+        matches!(&self.peek().kind, TokenKind::Identifier(n) if n == "comme" || n == "as")
+    }
+    fn expect_comme(&mut self) -> Result<(), ParseError> {
+        if self.check_comme() {
+            self.advance();
+            Ok(())
+        } else {
+            Err(ParseError::new(
+                format!("Expected 'comme', but found '{}'", self.peek().kind),
+                self.peek().span,
+            ))
+        }
+    }
+
+    /// A name on the module side of an import or export: any word, with
+    /// `predefinit` meaning the default export.
+    fn expect_module_name(&mut self) -> Result<String, ParseError> {
+        if self.match_token(&TokenKind::Predefinit) {
+            return Ok("default".to_string());
+        }
+        self.expect_property_name()
     }
 
     fn parse_export(&mut self) -> Result<Statement, ParseError> {
@@ -931,6 +997,51 @@ impl Parser {
             Ok(Statement::Export {
                 declaration: None,
                 default_value: Some(value),
+                span: self.span_from(start.start),
+            })
+        } else if self.match_token(&TokenKind::Star) {
+            let exported = if self.check_comme() {
+                self.advance();
+                Some(self.expect_module_name()?)
+            } else {
+                None
+            };
+            self.expect(&TokenKind::Da)?;
+            let source = self.expect_string()?;
+            self.expect_statement_end()?;
+            Ok(Statement::ExportAll {
+                exported,
+                source,
+                span: self.span_from(start.start),
+            })
+        } else if self.match_token(&TokenKind::LeftBrace) {
+            let mut specifiers = Vec::new();
+            self.skip_newlines();
+            while !self.check(&TokenKind::RightBrace) {
+                let local = self.expect_module_name()?;
+                let exported = if self.check_comme() {
+                    self.advance();
+                    self.expect_module_name()?
+                } else {
+                    local.clone()
+                };
+                specifiers.push(ExportSpecifier { local, exported });
+                self.skip_newlines();
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+                self.skip_newlines();
+            }
+            self.expect(&TokenKind::RightBrace)?;
+            let source = if self.match_token(&TokenKind::Da) {
+                Some(self.expect_string()?)
+            } else {
+                None
+            };
+            self.expect_statement_end()?;
+            Ok(Statement::ExportNamed {
+                specifiers,
+                source,
                 span: self.span_from(start.start),
             })
         } else {
@@ -1614,6 +1725,18 @@ impl Parser {
             TokenKind::Sfols => Ok(Expression::Boolean { value: false, span }),
             TokenKind::Nisciun => Ok(Expression::Null { span }),
             TokenKind::Boh => Ok(Expression::Undefined { span }),
+            // `chiamm("./m")`: dynamic import
+            TokenKind::Chiamm => {
+                self.expect(&TokenKind::LeftParen)?;
+                self.skip_newlines();
+                let source = self.parse_expression()?;
+                self.skip_newlines();
+                self.expect(&TokenKind::RightParen)?;
+                Ok(Expression::Import {
+                    source: Box::new(source),
+                    span: self.span_from(span.start),
+                })
+            }
             TokenKind::Stu => {
                 self.expect(&TokenKind::Cos)?;
                 Ok(Expression::This {

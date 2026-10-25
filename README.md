@@ -278,10 +278,21 @@ iett nu bell Error("message")
 
 ### Modules
 ```fratm
-chiamm { x } da "module"     // import
-mann for facc fn() { }       // export
-mann for predefinit App      // export default
+chiamm { x, y comme z } da "module"   // import { x, y as z }
+chiamm React da "react"               // default import
+chiamm React, { useState } da "react"
+chiamm * comme fs da "node:fs"        // import * as fs
+chiamm "./stile.css"                  // import for side effects only
+chist è m = aspett chiamm("./m.js")   // dynamic import()
+
+mann for facc fn() { }                // export
+mann for predefinit App               // export default
+mann for { a, b comme c }             // export { a, b as c }
+mann for { a } da "./altro.js"        // re-export
+mann for * da "./altro.js"            // export * (also * comme ns)
 ```
+
+`comme` (or `as`) is a keyword only between a module name and its alias, and `predefinit` there means `default`: `chiamm { predefinit comme App } da "./app.js"`.
 
 ### The `fratm` library
 
@@ -357,6 +368,7 @@ fermete                      // debugger
 | `chiamm` | `import` | "call" |
 | `da` | `from` | "from" |
 | `mann for` | `export` | "send out" |
+| `comme` | `as` (imports/exports) | "like" |
 | `e` / `pure` | `&&` | "and" / "also" |
 | `o` | `\|\|` | "or" |
 | `no` / `manco` / `!` | `!` | "no" / "not even" |

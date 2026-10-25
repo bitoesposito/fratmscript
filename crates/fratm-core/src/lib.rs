@@ -1087,4 +1087,77 @@ na famiglie Pizzaiolo figlio 'e Persona {
             result.code
         );
     }
+
+    #[test]
+    fn test_export_list_is_not_a_block() {
+        // Regression for #115: this used to print `export {\n  a;\n}`
+        let js = compile("chist è a = 1\nmann for { a }", Default::default())
+            .unwrap()
+            .code;
+        assert_eq!(js, "const a = 1;\nexport { a };\n");
+    }
+
+    #[test]
+    fn test_import_forms() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("chiamm React da \"react\""),
+            "import React from \"react\";\n"
+        );
+        assert_eq!(
+            js("chiamm React, { useState comme stato } da \"react\""),
+            "import React, { useState as stato } from \"react\";\n"
+        );
+        assert_eq!(
+            js("chiamm * comme fs da \"node:fs\""),
+            "import * as fs from \"node:fs\";\n"
+        );
+        assert_eq!(
+            js("chiamm { predefinit comme D, for } da \"m\""),
+            "import { default as D, for as $for } from \"m\";\n"
+        );
+        assert_eq!(js("chiamm \"./stile.css\""), "import \"./stile.css\";\n");
+        // `as` works like `comme`, and `comme` is still a name elsewhere
+        assert_eq!(
+            js("chiamm { a as b } da \"m\"\ntien comme = b"),
+            "import { a as b } from \"m\";\nlet comme = b;\n"
+        );
+    }
+
+    #[test]
+    fn test_export_forms() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("tien a = 1\nmann for { a comme b, a comme predefinit }"),
+            "let a = 1;\nexport { a as b, a as default };\n"
+        );
+        assert_eq!(
+            js("mann for { a, b comme c } da \"./m\""),
+            "export { a, b as c } from \"./m\";\n"
+        );
+        assert_eq!(js("mann for * da \"./m\""), "export * from \"./m\";\n");
+        assert_eq!(
+            js("mann for * comme m da \"./m\""),
+            "export * as m from \"./m\";\n"
+        );
+    }
+
+    #[test]
+    fn test_dynamic_import() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("mo vir facc f() { piglie aspett chiamm(\"./m\") }"),
+            "async function f() {\n  return await import(\"./m\");\n}\n"
+        );
+        assert_eq!(js("chiamm(\"./m\")"), "import(\"./m\");\n");
+    }
+
+    #[test]
+    fn test_module_import_errors() {
+        let err = |s: &str| compile(s, Default::default()).unwrap_err().to_string();
+        assert!(err("chiamm * da \"m\"").contains("Ccà ce vo' 'comme'"));
+        assert!(err("chiamm dado da \"fratm\"").contains("se chiamma pe nomme"));
+        // Default and namespace imports declare names like any other
+        assert!(err("chiamm a da \"x\"\nchiamm * comme a da \"y\"").contains("già esiste"));
+    }
 }
