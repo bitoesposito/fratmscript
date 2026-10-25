@@ -195,6 +195,17 @@ pub fn napoletanize_error(message: &str) -> String {
             names
         );
     }
+    if let Some((jump, label)) = message
+        .strip_prefix('\'')
+        .and_then(|rest| rest.split_once("': no enclosing label '"))
+    {
+        let label = label.trim_end_matches('\'');
+        return if jump.starts_with("salta") {
+            format!("'{jump}': nun ce sta nisciuno ciclo cu l'etichetta '{label}:' attuorno")
+        } else {
+            format!("'{jump}': nun ce sta nisciuna etichetta '{label}:' attuorno")
+        };
+    }
     if let Some(keyword) = message.strip_suffix("' is not allowed here") {
         let hint = match keyword.trim_start_matches('\'') {
             "piglie" => "'piglie' se po' usà sulo dint'a na funzione: facc nomme() { piglie … }",

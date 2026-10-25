@@ -34,6 +34,7 @@ pub fn check(program: &Program) -> Result<(), SemanticError> {
             allows_await: true,
             ..Context::default()
         },
+        labels: Vec::new(),
     };
     checker.statements(&program.statements);
     match checker.scopes.pop().and_then(|s| s.error) {
@@ -45,6 +46,9 @@ pub fn check(program: &Program) -> Result<(), SemanticError> {
 struct Checker {
     scopes: Vec<Scope>,
     context: Context,
+    /// Labels around the statement being checked, and whether each one names
+    /// a loop (only those work with `salta`). Each function starts with none.
+    labels: Vec<(String, bool)>,
 }
 
 /// Where the statement being checked sits, for `piglie`, `aspett`, `rompe`
@@ -140,8 +144,10 @@ impl Checker {
 
     fn with_context(&mut self, context: Context, f: impl FnOnce(&mut Self)) {
         let outer = std::mem::replace(&mut self.context, context);
+        let outer_labels = std::mem::take(&mut self.labels);
         f(self);
         self.context = outer;
+        self.labels = outer_labels;
     }
 
     /// Checks a loop body, where `rompe` and `salta` are allowed.
@@ -149,6 +155,14 @@ impl Checker {
         self.context.loops += 1;
         self.block(body);
         self.context.loops -= 1;
+    }
+
+    /// `rompe x` / `salta x` without a label `x:` around them (on a loop, for `salta`).
+    fn unknown_label(&mut self, keyword: &str, label: &str, span: Span) {
+        self.fail(SemanticError {
+            message: format!("'{} {}': no enclosing label '{}'", keyword, label, label),
+            span,
+        });
     }
 
     fn misplaced(&mut self, keyword: &str, span: Span) {
@@ -357,15 +371,47 @@ impl Checker {
                 });
                 self.context.switches -= 1;
             }
-            Statement::Break { span } => {
+            Statement::Break { label: None, span } => {
                 if self.context.loops == 0 && self.context.switches == 0 {
                     self.misplaced("rompe", *span);
                 }
             }
-            Statement::Continue { span } => {
+            Statement::Continue { label: None, span } => {
                 if self.context.loops == 0 {
                     self.misplaced("salta", *span);
                 }
+            }
+            Statement::Break {
+                label: Some(label),
+                span,
+            } => {
+                if !self.labels.iter().any(|(name, _)| name == label) {
+                    self.unknown_label("rompe", label, *span);
+                }
+            }
+            Statement::Continue {
+                label: Some(label),
+                span,
+            } => {
+                if !self
+                    .labels
+                    .iter()
+                    .any(|(name, on_loop)| name == label && *on_loop)
+                {
+                    self.unknown_label("salta", label, *span);
+                }
+            }
+            Statement::Labeled { label, body, .. } => {
+                let on_loop = matches!(
+                    **body,
+                    Statement::While { .. }
+                        | Statement::DoWhile { .. }
+                        | Statement::For { .. }
+                        | Statement::ForEach { .. }
+                );
+                self.labels.push((label.clone(), on_loop));
+                self.statement(body);
+                self.labels.pop();
             }
             Statement::Debugger { .. } => {}
             Statement::TryCatch {
@@ -454,6 +500,10 @@ impl Checker {
     /// open function scopes.
     fn expression(&mut self, expression: &Expression) {
         match expression {
+            Expression::TaggedTemplate { tag, quasi, .. } => {
+                self.expression(tag);
+                self.expression(quasi);
+            }
             Expression::Identifier { .. }
             | Expression::Number { .. }
             | Expression::BigInt { .. }

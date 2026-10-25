@@ -81,6 +81,12 @@ impl Parser {
         if self.check(&TokenKind::Facc) {
             return self.parse_function();
         }
+        // `fore:` before a statement is a label
+        let named = matches!(self.peek().kind, TokenKind::Identifier(_))
+            || contextual_name(self.peek()).is_some();
+        if named && self.check_next(&TokenKind::Colon) {
+            return self.parse_labeled();
+        }
         if self.check(&TokenKind::Si) {
             return self.parse_if();
         }
@@ -679,7 +685,9 @@ impl Parser {
     fn parse_break(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Rompe)?;
+        let label = self.parse_jump_label()?;
         Ok(Statement::Break {
+            label,
             span: self.span_from(start.start),
         })
     }
@@ -687,7 +695,34 @@ impl Parser {
     fn parse_continue(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
         self.expect(&TokenKind::Salta)?;
+        let label = self.parse_jump_label()?;
         Ok(Statement::Continue {
+            label,
+            span: self.span_from(start.start),
+        })
+    }
+
+    /// The optional label after `rompe` / `salta`, on the same line.
+    fn parse_jump_label(&mut self) -> Result<Option<String>, ParseError> {
+        let named = matches!(self.peek().kind, TokenKind::Identifier(_))
+            || contextual_name(self.peek()).is_some();
+        if named {
+            Ok(Some(self.expect_identifier()?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// `fore: pe (…) { … }`
+    fn parse_labeled(&mut self) -> Result<Statement, ParseError> {
+        let start = self.current_span();
+        let label = self.expect_identifier()?;
+        self.expect(&TokenKind::Colon)?;
+        self.skip_newlines();
+        let body = self.parse_statement()?;
+        Ok(Statement::Labeled {
+            label,
+            body: Box::new(body),
             span: self.span_from(start.start),
         })
     }
@@ -1584,6 +1619,15 @@ impl Parser {
                     property: Box::new(property),
                     computed: true,
                     optional,
+                    span,
+                };
+            } else if !optional && matches!(self.peek().kind, TokenKind::Template { .. }) {
+                // A template right after an expression is a tag call: html`…`
+                let quasi = self.parse_primary()?;
+                let span = self.span_from(expr.span().start);
+                expr = Expression::TaggedTemplate {
+                    tag: Box::new(expr),
+                    quasi: Box::new(quasi),
                     span,
                 };
             } else if optional || self.match_token(&TokenKind::Dot) {

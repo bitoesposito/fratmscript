@@ -295,13 +295,29 @@ impl CodeGen {
                 self.write_indent();
                 self.emit("}");
             }
-            Statement::Break { .. } => {
+            Statement::Break { label, .. } => {
                 self.write_indent();
-                self.emit("break;");
+                self.emit("break");
+                if let Some(label) = label {
+                    self.emit(" ");
+                    self.emit(&js_name(label));
+                }
+                self.emit(";");
             }
-            Statement::Continue { .. } => {
+            Statement::Continue { label, .. } => {
                 self.write_indent();
-                self.emit("continue;");
+                self.emit("continue");
+                if let Some(label) = label {
+                    self.emit(" ");
+                    self.emit(&js_name(label));
+                }
+                self.emit(";");
+            }
+            Statement::Labeled { label, body, .. } => {
+                self.write_indent();
+                self.emit(&js_name(label));
+                self.emit(":\n");
+                self.gen_statement(body);
             }
             Statement::Debugger { .. } => {
                 self.write_indent();
@@ -606,6 +622,10 @@ impl CodeGen {
                 self.indent -= 1;
                 self.write_indent();
                 self.emit("}");
+            }
+            Expression::TaggedTemplate { tag, quasi, .. } => {
+                self.gen_callee(tag);
+                self.gen_expression(quasi);
             }
             Expression::Import { source, .. } => {
                 self.emit("import(");

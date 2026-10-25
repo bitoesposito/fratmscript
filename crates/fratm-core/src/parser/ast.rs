@@ -70,10 +70,20 @@ pub enum Statement {
         cases: Vec<SwitchCase>,
         span: Span,
     },
+    /// `rompe`, `rompe fore`
     Break {
+        label: Option<String>,
         span: Span,
     },
+    /// `salta`, `salta fore`
     Continue {
+        label: Option<String>,
+        span: Span,
+    },
+    /// `fore: pe (…) { … }`
+    Labeled {
+        label: String,
+        body: Box<Statement>,
         span: Span,
     },
     /// debugger statement - "fermete"
@@ -359,6 +369,12 @@ pub enum Expression {
         is_generator: bool,
         span: Span,
     },
+    /// `` html`<b>${x}</b>` ``: `quasi` is always a `Template`
+    TaggedTemplate {
+        tag: Box<Expression>,
+        quasi: Box<Expression>,
+        span: Span,
+    },
     /// `chiamm("./m")`: dynamic import
     Import {
         source: Box<Expression>,
@@ -386,6 +402,7 @@ impl Expression {
             Expression::Super { span } => *span,
             Expression::MetaProperty { span, .. } => *span,
             Expression::Import { span, .. } => *span,
+            Expression::TaggedTemplate { span, .. } => *span,
             Expression::Function { span, .. } => *span,
             Expression::Class { span, .. } => *span,
             Expression::Array { span, .. } => *span,

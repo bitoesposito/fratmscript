@@ -1354,4 +1354,50 @@ na famiglie Pizzaiolo figlio 'e Persona {
             "f(function () {\n  g();\n  h();\n});\n"
         );
     }
+
+    #[test]
+    fn test_labeled_break_and_continue() {
+        let source = "fore: pe (tien i = 0; i < 3; i++) {\n  pe (tien j = 0; j < 3; j++) {\n    si (j == 1) { salta fore }\n    rompe fore\n  }\n}\nblocco: {\n  rompe blocco\n}";
+        let code = compile(source, Default::default()).unwrap().code;
+        assert!(code.contains("fore:\nfor (let i = 0;"), "{code}");
+        assert!(code.contains("continue fore;"), "{code}");
+        assert!(code.contains("break fore;"), "{code}");
+        assert!(code.contains("blocco:\n{"), "{code}");
+        assert!(code.contains("break blocco;"), "{code}");
+    }
+
+    #[test]
+    fn test_break_label_must_be_on_the_same_line() {
+        let source = "mentre che (overo) {\n  rompe\n  fore\n}";
+        let code = compile(source, Default::default()).unwrap().code;
+        assert!(code.contains("break;\n"), "{code}");
+        assert!(code.contains("fore;"), "{code}");
+    }
+
+    #[test]
+    fn test_tagged_templates() {
+        let source =
+            "stamm a dì(String.raw`a\\n${1}`)\nstamm a dì(html`<p>${x}</p>`)\nstamm a dì(f()`x`)";
+        let code = compile(source, Default::default()).unwrap().code;
+        assert!(code.contains("String.raw`a\\n${1}`"), "{code}");
+        assert!(code.contains("html`<p>${x}</p>`"), "{code}");
+        assert!(code.contains("f()`x`"), "{code}");
+    }
+
+    #[test]
+    fn test_jump_labels_must_exist() {
+        let error = |source: &str| compile(source, Default::default()).unwrap_err().to_string();
+        assert!(
+            error("pe (;;) { rompe fore }").contains("nun ce sta nisciuna etichetta 'fore:'"),
+            "{}",
+            error("pe (;;) { rompe fore }")
+        );
+        // `salta` needs a label on a loop, not on a block
+        assert!(error("blocco: { pe (;;) { salta blocco } }")
+            .contains("nisciuno ciclo cu l'etichetta 'blocco:'"));
+        // Labels do not reach into functions
+        assert!(error("fore: pe (;;) { facc f() { rompe fore } }").contains("'rompe fore'"));
+        // `rompe` with a label works outside loops, on a labelled block
+        assert!(compile("blocco: { rompe blocco }", Default::default()).is_ok());
+    }
 }

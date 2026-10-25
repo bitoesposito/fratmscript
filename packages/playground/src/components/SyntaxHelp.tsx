@@ -66,6 +66,7 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
     { fratm: 'pe aspett (… dint …)', js: 'for await (… of …)', desc: { it: 'Iterazione asincrona', en: 'Async iteration', nap: "Passa 'e elementi aspettanno" }, insert: 'pe aspett (chist è x dint xs) { }' },
     { fratm: 'rompe', js: 'break', desc: { it: 'Esce dal ciclo', en: 'Break loop', nap: "Esce d'o ciclo" } },
     { fratm: 'salta', js: 'continue', desc: { it: 'Passa al giro successivo', en: 'Continue loop', nap: "Zompa a 'o giro appriesso" } },
+    { fratm: 'fore: pe (…) { rompe fore }', js: 'outer: for (…) { break outer }', desc: { it: 'Etichetta: esce dal ciclo esterno', en: 'Label: break an outer loop', nap: "Etichetta: esce d'o ciclo 'e fore" }, insert: 'fore: pe (tien i = 0; i < 3; i++) {\n  pe (tien j = 0; j < 3; j++) {\n    rompe fore\n  }\n}' },
   ]},
   { category: { it: 'Classi', en: 'Classes', nap: 'Classi' }, items: [
     { fratm: 'na famiglie', js: 'class', desc: { it: 'Classe', en: 'Class declaration', nap: 'Classe' } },
@@ -84,6 +85,7 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
     { fratm: 'nisciun', js: 'null', desc: { it: 'Valore nullo', en: 'Null value', nap: 'Niente' } },
     { fratm: 'boh', js: 'undefined', desc: { it: 'Valore non definito', en: 'Undefined value', nap: 'Nun definito' } },
     { fratm: '`Uè ${nome}!`', js: '`Uè ${nome}!`', desc: { it: 'Template literal', en: 'Template literal', nap: 'Template' } },
+    { fratm: 'String.raw`a\\n`', js: 'String.raw`a\\n`', desc: { it: 'Template con funzione (tagged)', en: 'Tagged template', nap: "Template cu 'a funzione" } },
     { fratm: '/ab+/gi', js: '/ab+/gi', desc: { it: 'Espressione regolare', en: 'Regex literal', nap: 'Espressione regolare' } },
   ]},
   { category: { it: 'Operatori', en: 'Operators', nap: 'Operatori' }, items: [
