@@ -9,25 +9,27 @@
     <link rel="apple-touch-icon" href="favicon.png" />
 
     <!-- Primary Meta Tags -->
-    <title>FratmScript - JavaScript ma comme si deve 🤌🏻</title>
+    <title>FratmScript: JavaScript in napoletano, ma comme si deve 🤌🏻</title>
     <meta name="title" content="FratmScript - JavaScript ma comme si deve 🤌" />
-    <meta name="description" content="A fun Neapolitan dialect programming language that compiles to JavaScript. Write code like a true Napoletano!" />
+    <meta name="description" content="FratmScript è JavaScript con le parole chiave in napoletano, compilato da Rust. Scrivi codice nel playground: guida, tour in 12 lezioni ed esempi." />
     <meta name="author" content="@kkratter" />
-    <meta name="keywords" content="programming language, javascript, transpiler, neapolitan, italian, compiler, wasm, rust" />
+    <meta name="keywords" content="linguaggio di programmazione, napoletano, javascript, transpiler, compilatore, programming language, neapolitan, italian, rust, wasm" />
+    <link rel="canonical" href="https://kkratterf.github.io/fratmscript/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://kkratterf.github.io/fratmscript/" />
     <meta property="og:title" content="FratmScript - JavaScript ma comme si deve 🤌" />
-    <meta property="og:description" content="A fun Neapolitan dialect programming language that compiles to JavaScript. Write code like a true Napoletano!" />
+    <meta property="og:description" content="FratmScript è JavaScript con le parole chiave in napoletano, compilato da Rust. Scrivi codice nel playground: guida, tour in 12 lezioni ed esempi." />
     <meta property="og:image" content="https://kkratterf.github.io/fratmscript/og-image.png" />
-    <meta property="og:site_name" content="fratmscript" />
+    <meta property="og:site_name" content="FratmScript" />
+    <meta property="og:locale" content="it_IT" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://kkratterf.github.io/fratmscript/" />
     <meta name="twitter:title" content="FratmScript - JavaScript ma comme si deve 🤌" />
-    <meta name="twitter:description" content="A fun Neapolitan dialect programming language that compiles to JavaScript. Write code like a true Napoletano!" />
+    <meta name="twitter:description" content="FratmScript è JavaScript con le parole chiave in napoletano, compilato da Rust. Scrivi codice nel playground: guida, tour in 12 lezioni ed esempi." />
     <meta name="twitter:image" content="https://kkratterf.github.io/fratmscript/og-image.png" />
     <meta name="twitter:creator" content="@kkratter" />
 
@@ -36,6 +38,33 @@
     <link rel="alternate" type="text/plain" title="FratmScript reference for LLMs" href="llms-full.txt" />
     <link rel="alternate" type="application/json" title="FratmScript keywords" href="keywords.json" />
 
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "FratmScript",
+            "url": "https://kkratterf.github.io/fratmscript/",
+            "inLanguage": "it"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "FratmScript",
+            "alternateName": "FratmScript playground",
+            "description": "Linguaggio di programmazione con le parole chiave in napoletano che compila in JavaScript. Compilatore in Rust, CLI, playground nel browser ed estensione VS Code.",
+            "url": "https://kkratterf.github.io/fratmscript/",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web, Linux, macOS, Windows",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "license": "https://opensource.org/licenses/MIT",
+            "sameAs": ["https://github.com/kkratterf/fratmscript"]
+          }
+        ]
+      }
+    </script>
+
     <!-- Theme Color -->
     <meta name="theme-color" content="#0a0a0a" />
   </head>
@@ -43,9 +72,10 @@
     <div id="root">
       <!-- Replaced by the app; kept for crawlers and AI agents that do not run JavaScript -->
       <main style="position: absolute; left: -10000px">
-        <h1>FratmScript playground</h1>
-        <p>FratmScript is JavaScript with Neapolitan keywords, compiled to JavaScript by a Rust compiler. This page is an editor that runs in the browser.</p>
-        <p>For AI agents: read <a href="llms.txt">llms.txt</a>, the full reference <a href="llms-full.txt">llms-full.txt</a> and the keyword map <a href="keywords.json">keywords.json</a>. Source: <a href="https://github.com/kkratterf/fratmscript">github.com/kkratterf/fratmscript</a>.</p>
+        <h1>FratmScript: JavaScript in napoletano</h1>
+        <p>FratmScript è JavaScript con le parole chiave in napoletano (<code>chist è</code> per const, <code>facc</code> per function, <code>stamm a dì</code> per console.log), compilato in JavaScript da un compilatore scritto in Rust. Questa pagina è un editor che gira nel browser.</p>
+        <p>Leggi la <a href="guida/">guida a FratmScript</a> (in English: <a href="en/guide/">FratmScript guide</a>) oppure il codice su <a href="https://github.com/kkratterf/fratmscript">github.com/kkratterf/fratmscript</a>.</p>
+        <p>For AI agents: read <a href="llms.txt">llms.txt</a>, the full reference <a href="llms-full.txt">llms-full.txt</a> and the keyword map <a href="keywords.json">keywords.json</a>.</p>
       </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>
