@@ -65,6 +65,13 @@ pub fn napoletanize_error(message: &str) -> String {
         return gomorra.to_string();
     }
     let found = found_token(message);
+    if let Some(name) = message.strip_prefix("Reserved name '") {
+        let name = name.trim_end_matches('\'');
+        return format!(
+            "'{name}' nun se pò usà: è 'o nomme ca FratmScript dà a '{}' int'o JavaScript",
+            &name[1..]
+        );
+    }
     if let Some(c) = message.strip_prefix("Unknown character '") {
         return format!(
             "Stu carattere '{}' nun 'o canosco: FratmScript nun 'o usa!",
@@ -437,7 +444,9 @@ pub fn get_suggestion(error: &CompileError) -> Option<String> {
                 .to_string(),
         ),
         CompileError::LexerError { message, .. } => {
-            if message.contains("string") {
+            if message.starts_with("Reserved name") {
+                Some("💡 Cagna nomme: pe' esempio senza '$' davanti".to_string())
+            } else if message.contains("string") {
                 Some("💡 'E stringhe s'aprono e se chiudono cu \" o '".to_string())
             } else {
                 None

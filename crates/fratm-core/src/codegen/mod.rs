@@ -1412,10 +1412,15 @@ const JS_RESERVED: &[&str] = &[
     "yield",
 ];
 
-/// Escapes a FratmScript name that is reserved in JS. `$` cannot appear in
-/// FratmScript identifiers, so `$for` never clashes with a user name.
+/// Whether `name` is reserved in JS, so that `js_name` writes it as `$name`.
+pub fn is_js_reserved(name: &str) -> bool {
+    JS_RESERVED.contains(&name)
+}
+
+/// Escapes a FratmScript name that is reserved in JS. The lexer rejects
+/// `$` followed by a reserved word, so `$for` never clashes with a user name.
 pub fn js_name(name: &str) -> std::borrow::Cow<'_, str> {
-    if JS_RESERVED.contains(&name) {
+    if is_js_reserved(name) {
         format!("${}", name).into()
     } else {
         name.into()

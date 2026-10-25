@@ -1167,6 +1167,14 @@ impl<'a> Lexer<'a> {
 
         let literal = &self.source[self.token_start..self.position];
 
+        // `$for` is how the name `for` is written in the JavaScript output
+        if literal
+            .strip_prefix('$')
+            .is_some_and(crate::codegen::is_js_reserved)
+        {
+            return self.make_token(TokenKind::Invalid(format!("Reserved name '{literal}'")));
+        }
+
         // `dint'a` (the `in` operator): one word with an apostrophe
         if literal == "dint" {
             let rest = &self.source[self.position..];
@@ -1340,11 +1348,11 @@ fn parse_radix(digits: &str, radix: u32) -> Option<f64> {
 }
 
 fn is_ident_start(c: char) -> bool {
-    c.is_alphabetic() || c == '_'
+    c.is_alphabetic() || c == '_' || c == '$'
 }
 
 fn is_ident_continue(c: char) -> bool {
-    c.is_alphanumeric() || c == '_'
+    c.is_alphanumeric() || c == '_' || c == '$'
 }
 
 #[cfg(test)]
@@ -1361,6 +1369,22 @@ mod tests {
         assert!(matches!(tokens[2].kind, TokenKind::Tien));
         assert!(matches!(tokens[3].kind, TokenKind::Facc));
         assert!(matches!(tokens[4].kind, TokenKind::Piglie));
+    }
+
+    #[test]
+    fn test_dollar_in_names() {
+        let tokens = Lexer::new("$ $el a$b _$").tokenize();
+        let names: Vec<&str> = tokens
+            .iter()
+            .filter_map(|t| match &t.kind {
+                TokenKind::Identifier(name) => Some(name.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(names, ["$", "$el", "a$b", "_$"]);
+        // `$for` is the output spelling of `for`: no user name may take it
+        let tokens = Lexer::new("$for").tokenize();
+        assert!(matches!(&tokens[0].kind, TokenKind::Invalid(m) if m == "Reserved name '$for'"));
     }
 
     #[test]
