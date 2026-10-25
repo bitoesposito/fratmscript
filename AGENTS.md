@@ -16,6 +16,8 @@ FratmScript is a Neapolitan-flavoured language that transpiles to JavaScript.
 | `packages/playground/public/pkg` | WASM build of `fratm-wasm` (generated, git-ignored) |
 | `packages/fratmscript` | npm package: WASM compiler, JS API and Vite plugin (`wasm/` is generated, git-ignored) |
 | `packages/vscode-extension` | VS Code extension (grammar, snippets, LSP) |
+| `packages/agent-plugin` | Claude Code plugin for AI agents: the `fratmscript` skill and the `fratm mcp` server (marketplace in `.claude-plugin/marketplace.json`) |
+| `crates/fratm-cli/src/guida.md` | Language reference for AI agents: `fratm guida`, the MCP server and the site's `llms-full.txt` |
 | `examples/*.fratm` | Example programs; CI compiles every one of them |
 
 ## Language of the project
@@ -106,7 +108,7 @@ Agent platforms that assign their own branch names (e.g. `claude/...`) are fine;
 
 - SemVer, tags `vX.Y.Z` (older `@0.1.0`-style tags are kept as they are).
 - Minor release = a version milestone, cut when all `P0` issues of that version label are closed and `main` is green. Patch release when a user-facing fix lands.
-- First a version-bump PR (`chore(release): vX.Y.Z`) that updates `[workspace.package] version` in `Cargo.toml` and `version` in `packages/playground/package.json`, `packages/fratmscript/package.json` and `packages/vscode-extension/package.json` (the release workflow checks all of them).
+- First a version-bump PR (`chore(release): vX.Y.Z`) that updates `[workspace.package] version` in `Cargo.toml` and `version` in `packages/playground/package.json`, `packages/fratmscript/package.json`, `packages/vscode-extension/package.json` and `packages/agent-plugin/.claude-plugin/plugin.json` (the release workflow checks all of them).
 - The release is created by the manual `release.yml` workflow (`workflow_dispatch`), which tags, builds the binaries and WASM package, and generates notes.
 - **No `CHANGELOG.md`.** The changelog lives only in GitHub Release notes.
 

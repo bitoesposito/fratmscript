@@ -58,6 +58,14 @@ jobs:
             exit 1
           fi
 
+      - name: Check the agent plugin has the same version
+        run: |
+          plugin_version=$(node -p "require('./packages/agent-plugin/.claude-plugin/plugin.json').version")
+          if [ "$plugin_version" != "$VERSION" ]; then
+            echo "::error::packages/agent-plugin/.claude-plugin/plugin.json has version $plugin_version, but the release asks for $VERSION"
+            exit 1
+          fi
+
       - name: Check the VS Code extension has the same version
         run: |
           ext_version=$(node -p "require('./packages/vscode-extension/package.json').version")

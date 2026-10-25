@@ -31,11 +31,23 @@
     <meta name="twitter:image" content="https://kkratterf.github.io/fratmscript/og-image.png" />
     <meta name="twitter:creator" content="@kkratter" />
 
+    <!-- For AI agents: language reference and keyword map -->
+    <link rel="alternate" type="text/plain" title="llms.txt" href="llms.txt" />
+    <link rel="alternate" type="text/plain" title="FratmScript reference for LLMs" href="llms-full.txt" />
+    <link rel="alternate" type="application/json" title="FratmScript keywords" href="keywords.json" />
+
     <!-- Theme Color -->
     <meta name="theme-color" content="#0a0a0a" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Replaced by the app; kept for crawlers and AI agents that do not run JavaScript -->
+      <main style="position: absolute; left: -10000px">
+        <h1>FratmScript playground</h1>
+        <p>FratmScript is JavaScript with Neapolitan keywords, compiled to JavaScript by a Rust compiler. This page is an editor that runs in the browser.</p>
+        <p>For AI agents: read <a href="llms.txt">llms.txt</a>, the full reference <a href="llms-full.txt">llms-full.txt</a> and the keyword map <a href="keywords.json">keywords.json</a>. Source: <a href="https://github.com/kkratterf/fratmscript">github.com/kkratterf/fratmscript</a>.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
