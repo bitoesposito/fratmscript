@@ -1157,7 +1157,8 @@ impl Parser {
             while self.check(&TokenKind::Newline) {
                 self.advance();
             }
-            if self.check(&TokenKind::RightBrace) {
+            // At the end of the file the brace is missing, not an expression
+            if self.check(&TokenKind::RightBrace) || self.is_at_end() {
                 break;
             }
             statements.push(self.parse_statement()?);
@@ -2162,7 +2163,7 @@ impl Parser {
                 })
             }
             _ => Err(ParseError::new(
-                format!("What is '{}' here? Expected an expression!", token.kind),
+                format!("Expected an expression, but found '{}'", token.kind),
                 span,
             )),
         }
@@ -2260,12 +2261,58 @@ impl Parser {
     fn expect(&mut self, kind: &TokenKind) -> Result<&Token, ParseError> {
         if self.check(kind) {
             Ok(self.advance())
+        } else if self.missing_comma_before(kind) {
+            Err(ParseError::new(
+                format!(
+                    "Expected ',' or '{}' between the elements, but found '{}'",
+                    kind,
+                    self.peek().kind
+                ),
+                self.peek().span,
+            ))
         } else {
             Err(ParseError::new(
                 format!("Expected '{}', but found '{}'", kind, self.peek().kind),
                 self.peek().span,
             ))
         }
+    }
+
+    /// `f(1 2)`, `[a b]`, `{ a: 1 b: 2 }`: a value right after another value,
+    /// where a list wanted its closing bracket. The real mistake is the missing
+    /// comma, not an unclosed bracket.
+    fn missing_comma_before(&self, closing: &TokenKind) -> bool {
+        let closes_list = matches!(
+            closing,
+            TokenKind::RightParen | TokenKind::RightBracket | TokenKind::RightBrace
+        );
+        let ends_value = |kind: &TokenKind| {
+            matches!(
+                kind,
+                TokenKind::Identifier(_)
+                    | TokenKind::String(_)
+                    | TokenKind::Number(_)
+                    | TokenKind::BigInt(_)
+                    | TokenKind::Template { .. }
+                    | TokenKind::RightParen
+                    | TokenKind::RightBracket
+                    | TokenKind::RightBrace
+            )
+        };
+        let starts_value = |kind: &TokenKind| {
+            matches!(
+                kind,
+                TokenKind::Identifier(_)
+                    | TokenKind::String(_)
+                    | TokenKind::Number(_)
+                    | TokenKind::BigInt(_)
+                    | TokenKind::Template { .. }
+            )
+        };
+        closes_list
+            && self.current > 0
+            && ends_value(&self.previous().kind)
+            && starts_value(&self.peek().kind)
     }
     fn expect_identifier(&mut self) -> Result<String, ParseError> {
         let token = self.advance();
