@@ -609,7 +609,8 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert!(js("na famiglie C { fisso() { } }").contains("  fisso() {"));
         assert_eq!(js("tien damme = 1"), "let damme = 1;\n");
         // Private names are members only
-        assert!(js("tien a = b.#c").contains("b.#c"));
+        // Any object of the class, not only `stu cos`
+        assert!(js("na famiglie A {\n#c = 1\nm(b) { piglie b.#c }\n}").contains("b.#c"));
         assert!(compile("tien a = #c", Default::default()).is_err());
         assert!(compile("tien o = { #c: 1 }", Default::default()).is_err());
         // Getters take no parameter, setters exactly one
