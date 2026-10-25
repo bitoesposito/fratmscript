@@ -25,7 +25,8 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 4. **Braces are required** after `si`, `sinnò`, `pe`, `mentre che`: `si (x) { ... }`.
 5. `chist è` (const) cannot be reassigned; declaring the same name twice in a scope is a compile
    error. Use `tien` (let) for values that change.
-6. Not supported yet: labels, tagged templates.
+6. Labels and tagged templates work as in JavaScript: `fore: pe (...) { rompe fore }`,
+   `` String.raw`a\nb` ``.
 7. Compiler and runtime error messages are in Neapolitan, with line and column. See "Reading
    errors" below; most errors also carry a hint that starts with 💡.
 
@@ -142,6 +143,17 @@ pe (tien i = 0; i < 3; i++) {
         salta
     }
     stamm a dì(i)
+}
+
+fore: pe (tien i = 0; i < 3; i++) {
+    pe (tien j = 0; j < 3; j++) {
+        si (j == 2) {
+            salta fore
+        }
+        si (i == 2) {
+            rompe fore
+        }
+    }
 }
 
 pe ogni (chist è frutto dint ["mela", "pera"]) {

@@ -235,6 +235,7 @@ pe ogni (tien k 'ncopp obj) { }    // for...in
 pe aspett (chist è r dint stream) { }  // for await...of
 rompe                         // break
 salta                         // continue
+fore: pe (…) { rompe fore }   // labelled break/continue
 ```
 
 ### Long expressions
@@ -253,6 +254,7 @@ Inside `( )` and `[ ]` line breaks never matter.
 ### Values
 ```fratm
 `Uè ${nome}!`                // template literal (multi-line, nested ${ })
+String.raw`a\nb`             // tagged template
 /ab+/gi                      // regex literal
 overo / sfòls                // true/false
 nisciun                      // null

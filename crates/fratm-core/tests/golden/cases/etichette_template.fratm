@@ -1,0 +1,21 @@
+// Etichette: rompe e salta ponno scegliere quale ciclo
+fore: pe (tien i = 0; i < 3; i++) {
+    pe (tien j = 0; j < 3; j++) {
+        si (j == 1) { salta fore }
+        si (i == 2) { rompe fore }
+        stamm a dì(i, j)
+    }
+}
+
+blocco: {
+    stamm a dì("primma")
+    rompe blocco
+}
+
+// Template cu 'a funzione davanti
+facc evidenzia(parti, ...valori) {
+    piglie parti.reduce((acc, parte, k) => acc + "[" + valori[k - 1] + "]" + parte)
+}
+chist è nomme = "Totò"
+stamm a dì(evidenzia`Uè ${nomme}, tieni ${3} messaggi`)
+stamm a dì(String.raw`a\nb`)

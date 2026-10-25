@@ -294,6 +294,7 @@ impl Checker {
                 });
             }
             Statement::Break { .. } | Statement::Continue { .. } | Statement::Debugger { .. } => {}
+            Statement::Labeled { body, .. } => self.statement(body),
             Statement::TryCatch {
                 try_body,
                 catch_param,
@@ -380,6 +381,10 @@ impl Checker {
     /// open function scopes.
     fn expression(&mut self, expression: &Expression) {
         match expression {
+            Expression::TaggedTemplate { tag, quasi, .. } => {
+                self.expression(tag);
+                self.expression(quasi);
+            }
             Expression::Identifier { .. }
             | Expression::Number { .. }
             | Expression::BigInt { .. }
