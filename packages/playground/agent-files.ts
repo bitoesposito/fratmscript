@@ -8,19 +8,19 @@ import path from 'node:path'
 import type { Plugin } from 'vite'
 import { KEYWORDS } from '../vscode-extension/src/server/keywords'
 
-const SITE = 'https://kkratterf.github.io/fratmscript/'
-const REPO = 'https://github.com/kkratterf/fratmscript'
+export const SITE = 'https://kkratterf.github.io/fratmscript/'
+export const REPO = 'https://github.com/kkratterf/fratmscript'
 const root = path.resolve(__dirname, '../..')
-const guidaDir = path.join(__dirname, 'src/guida')
+export const guidaDir = path.join(__dirname, 'src/guida')
 
-interface GuideSection {
+export interface GuideSection {
   id: string
   title: Record<string, string>
   body: Record<string, string[]>
   snippets: string[]
 }
 
-function version(): string {
+export function version(): string {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8')).version
 }
 
@@ -128,6 +128,7 @@ Only the keywords change: operators, literals and every JavaScript built-in stay
 ## Optional
 
 - [Playground](${SITE}): editor in the browser, with a guide (${SITE}#guida) and a 12-lesson tour
+- [Guide as web pages](${SITE}en/guide/): one page per topic, also in Italian (${SITE}guida/)
 - [Example programs](${REPO}/tree/main/examples)
 - [npm package](${REPO}/tree/main/packages/fratmscript): \`compile(source)\` in JavaScript, Vite plugin, \`<script type="text/fratmscript">\`
 `

@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import agentFiles from './agent-files'
+import sitePages from './site-pages'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), agentFiles()],
+  plugins: [react(), tailwindcss(), agentFiles(), sitePages()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
