@@ -8,7 +8,10 @@ interface LoadingOverlayProps {
 export function LoadingOverlay({ isVisible }: LoadingOverlayProps) {
   const { t } = useI18n()
   return (
+    // Faded out, not removed: hide it from screen readers once loaded
     <div
+      role="status"
+      aria-hidden={!isVisible}
       className={cn(
         "fixed inset-0 bg-background/95 flex flex-col items-center justify-center gap-4 z-50 transition-opacity",
         isVisible ? "opacity-100" : "opacity-0 pointer-events-none"

@@ -41,7 +41,7 @@ export function InspectView({ inspection, view, onHighlight }: InspectViewProps)
 function TokenList({ tokens, onHighlight }: { tokens: InspectToken[]; onHighlight: InspectViewProps['onHighlight'] }) {
   const { t } = useI18n()
   if (tokens.length === 0) {
-    return <p className="bg-card/50 p-3 border border-border rounded-md text-muted-foreground/50 text-sm text-center">{t('output.noTokens')}</p>
+    return <p className="bg-card/50 p-3 border border-border rounded-md text-muted-foreground text-sm text-center">{t('output.noTokens')}</p>
   }
   return (
     <ol className="flex flex-wrap gap-1.5 bg-card/50 p-3 border border-border rounded-md font-mono text-xs">

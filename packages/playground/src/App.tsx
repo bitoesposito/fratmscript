@@ -282,18 +282,17 @@ function App() {
           />
         )}
 
-        {isMobile && (
-          <MobileTabs
-            value={mobileTab}
-            onChange={setMobileTab}
-            errorCount={compiler.errors.length}
-            logCount={compiler.consoleLogs.length}
-          />
-        )}
-
         {/* Main content area - fills remaining space. Side by side on
             desktop; on phones one full-height tab at a time. */}
-        <div className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-hidden">
+        <main className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-hidden">
+          {isMobile && (
+            <MobileTabs
+              value={mobileTab}
+              onChange={setMobileTab}
+              errorCount={compiler.errors.length}
+              logCount={compiler.consoleLogs.length}
+            />
+          )}
           {/* Editor Panel (kept mounted when hidden so the editor keeps its state) */}
           <div
             id="panel-code"
@@ -337,8 +336,9 @@ function App() {
             {/* Sticky examples bar */}
             <div className={cn('flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-4 py-2.5 border-border border-t shrink-0', embed && 'hidden')}>
               <div className={cn('flex items-center gap-3 min-w-0', lesson && 'invisible')}>
-                <label className="text-muted-foreground text-xs">{t('editor.examples')}</label>
+                <label htmlFor="example-picker" className="text-muted-foreground text-xs">{t('editor.examples')}</label>
                 <NativeSelect
+                  id="example-picker"
                   value={selectedExample}
                   onChange={handleExampleChange}
                   className="w-44 sm:w-52"
@@ -413,7 +413,7 @@ function App() {
               />
             </div>
           </div>
-        </div>
+        </main>
 
         {/* Sticky StatusBar */}
         {!embed && <StatusBar

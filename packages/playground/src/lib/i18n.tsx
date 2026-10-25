@@ -20,7 +20,7 @@ const it = {
   'theme.dark': 'Scuro',
 
   'header.tour': 'Impara',
-  'header.tourLabel': 'Tour di FratmScript',
+  'header.tourLabel': 'Impara FratmScript',
   'header.tourOpen': 'Impara FratmScript passo passo',
   'header.tourExit': 'Esci dal tour',
   'header.github': 'Vedi su GitHub',
@@ -47,6 +47,8 @@ const it = {
   'editor.chooseExample': '-- Scegli un esempio --',
   'editor.custom': 'Codice tuo',
   'editor.autoRun': 'Esecuzione automatica',
+  'editor.label': 'Codice FratmScript',
+  'editor.keyboardHint': "Tab inserisce un rientro. Premi Esc e poi Tab per uscire dall'editor.",
   'editor.format': 'Formatta il codice',
   'editor.formatTip': 'Formatta il codice (Shift+Alt+F)',
 
@@ -139,7 +141,7 @@ const en: Record<MessageKey, string> = {
   'theme.dark': 'Dark',
 
   'header.tour': 'Learn',
-  'header.tourLabel': 'FratmScript tour',
+  'header.tourLabel': 'Learn FratmScript',
   'header.tourOpen': 'Learn FratmScript step by step',
   'header.tourExit': 'Leave the tour',
   'header.github': 'View on GitHub',
@@ -166,6 +168,8 @@ const en: Record<MessageKey, string> = {
   'editor.chooseExample': '-- Choose an example --',
   'editor.custom': 'Custom code',
   'editor.autoRun': 'Auto-run',
+  'editor.label': 'FratmScript code',
+  'editor.keyboardHint': 'Tab indents. Press Escape, then Tab, to leave the editor.',
   'editor.format': 'Format code',
   'editor.formatTip': 'Format code (Shift+Alt+F)',
 
@@ -283,6 +287,8 @@ const nap: Record<MessageKey, string> = {
   'editor.chooseExample': "-- Sciglie n'esempio --",
   'editor.custom': 'Codice tuoio',
   'editor.autoRun': 'Parte sulo',
+  'editor.label': "Codice FratmScript",
+  'editor.keyboardHint': "Tab mette 'o rientro. Pigia Esc e po' Tab pe ascì 'a l'editor.",
   'editor.format': "Arrecetta 'o codice",
   'editor.formatTip': "Arrecetta 'o codice (Shift+Alt+F)",
 
