@@ -77,7 +77,8 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 No accents needed: `sinno`, `sfols`, `stamm a di`, `chist e` work too. Short words such as `e`,
 `o`, `no`, `da`, `caso` are only keywords where their construct starts, so they also work as
 names (`e si schiatta (e)`). Names reserved in JavaScript are renamed in the output (`tien for`
-becomes `let $for`).
+becomes `let $for`). `$` works in names as in JavaScript (`$`, `$el`), except `$` followed by a
+reserved word, which is that renamed spelling.
 
 ## Variables and values
 

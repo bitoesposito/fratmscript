@@ -1,0 +1,5 @@
+// `$` int'e nomme, comme in JavaScript
+chist è $ = (sel) => `truvato ${sel}`
+tien $prezzo = 5
+chist è carrello = { $totale: $prezzo * 2 }
+stamm a dì($("#pizza"), $prezzo, carrello.$totale)

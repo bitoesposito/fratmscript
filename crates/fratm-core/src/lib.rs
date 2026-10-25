@@ -967,6 +967,31 @@ na famiglie Pizzaiolo figlio 'e Persona {
     }
 
     #[test]
+    fn test_dollar_in_names() {
+        assert_eq!(js("chist è $ = window.$"), "const $ = window.$;\n");
+        assert_eq!(js("tien $el = a$b._$"), "let $el = a$b._$;\n");
+        assert_eq!(js("stamm a dì(`${$el}`)"), "console.log(`${$el}`);\n");
+        assert_eq!(
+            js("tien for = 1\ntien $fore = 2"),
+            "let $for = 1;\nlet $fore = 2;\n"
+        );
+    }
+
+    #[test]
+    fn test_dollar_names_of_reserved_words_are_errors() {
+        let source = "tien $for = 1";
+        let error = compile(source, CompileOptions::default()).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Riga 1, colonna 6: '$for' nun se pò usà: è 'o nomme ca FratmScript dà a 'for' int'o JavaScript"
+        );
+        assert_eq!(
+            errors::suggest(&error, source).as_deref(),
+            Some("💡 Cagna nomme: pe' esempio senza '$' davanti")
+        );
+    }
+
+    #[test]
     fn test_js_reserved_names_are_escaped_but_properties_are_not() {
         assert_eq!(
             js("tien for = 1\nstamm a dì(for)"),
