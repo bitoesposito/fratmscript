@@ -193,6 +193,11 @@ pub enum Expression {
         value: f64,
         span: Span,
     },
+    /// `10n`, digits as written
+    BigInt {
+        digits: String,
+        span: Span,
+    },
     String {
         value: String,
         span: Span,
@@ -351,6 +356,7 @@ impl Expression {
         match self {
             Expression::Identifier { span, .. } => *span,
             Expression::Number { span, .. } => *span,
+            Expression::BigInt { span, .. } => *span,
             Expression::String { span, .. } => *span,
             Expression::Boolean { span, .. } => *span,
             Expression::Null { span } => *span,
@@ -505,7 +511,14 @@ pub enum BinaryOp {
     And,
     Or,
     InstanceOf,
+    In,
     Nullish,
+    BitAnd,
+    BitOr,
+    BitXor,
+    ShiftLeft,
+    ShiftRight,
+    UnsignedShiftRight,
 }
 
 impl BinaryOp {
@@ -528,6 +541,13 @@ impl BinaryOp {
             BinaryOp::And => "&&",
             BinaryOp::Or => "||",
             BinaryOp::InstanceOf => "instanceof",
+            BinaryOp::In => "in",
+            BinaryOp::BitAnd => "&",
+            BinaryOp::BitOr => "|",
+            BinaryOp::BitXor => "^",
+            BinaryOp::ShiftLeft => "<<",
+            BinaryOp::ShiftRight => ">>",
+            BinaryOp::UnsignedShiftRight => ">>>",
             BinaryOp::Nullish => "??",
         }
     }
@@ -545,6 +565,12 @@ pub enum AssignOp {
     Nullish,
     Or,
     And,
+    BitAnd,
+    BitOr,
+    BitXor,
+    ShiftLeft,
+    ShiftRight,
+    UnsignedShiftRight,
 }
 
 impl AssignOp {
@@ -560,6 +586,12 @@ impl AssignOp {
             AssignOp::Nullish => "??=",
             AssignOp::Or => "||=",
             AssignOp::And => "&&=",
+            AssignOp::BitAnd => "&=",
+            AssignOp::BitOr => "|=",
+            AssignOp::BitXor => "^=",
+            AssignOp::ShiftLeft => "<<=",
+            AssignOp::ShiftRight => ">>=",
+            AssignOp::UnsignedShiftRight => ">>>=",
         }
     }
 }
@@ -582,14 +614,20 @@ impl UpdateOp {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum UnaryOp {
     Negate,
+    Plus,
     Not,
+    BitNot,
+    Void,
 }
 
 impl UnaryOp {
     pub fn to_js(&self) -> &'static str {
         match self {
             UnaryOp::Negate => "-",
+            UnaryOp::Plus => "+",
             UnaryOp::Not => "!",
+            UnaryOp::BitNot => "~",
+            UnaryOp::Void => "void ",
         }
     }
 }

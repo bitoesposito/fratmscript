@@ -1178,4 +1178,46 @@ na famiglie Pizzaiolo figlio 'e Persona {
         // Default and namespace imports declare names like any other
         assert!(err("chiamm a da \"x\"\nchiamm * comme a da \"y\"").contains("già esiste"));
     }
+
+    #[test]
+    fn test_in_operator_dint_a() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(js("tien x = \"a\" dint'a o"), "let x = (\"a\" in o);\n");
+        // `in` binds tighter than `==` and looser than `+`, as in JS
+        assert_eq!(
+            js("tien x = \"a\" + 1 dint'a o == overo"),
+            "let x = (((\"a\" + 1) in o) == true);\n"
+        );
+        let class = js("na famiglie A { #x\nfisso ha(o) { piglie #x dint'a o } }");
+        assert!(class.contains("return (#x in o);"), "{}", class);
+        // `dint` alone is still a name and the for...of word
+        assert_eq!(js("tien dint = 1"), "let dint = 1;\n");
+    }
+
+    #[test]
+    fn test_bitwise_and_shift_operators() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("tien x = a | b ^ c & d"),
+            "let x = (a | (b ^ (c & d)));\n"
+        );
+        assert_eq!(js("tien x = a & b == c"), "let x = (a & (b == c));\n");
+        assert_eq!(js("tien x = a << 1 + 2"), "let x = (a << (1 + 2));\n");
+        assert_eq!(js("tien x = a >>> 2 < b"), "let x = ((a >>> 2) < b);\n");
+        assert_eq!(js("x >>>= 1"), "x >>>= 1;\n");
+        assert_eq!(js("x ^= ~y"), "x ^= ~y;\n");
+    }
+
+    #[test]
+    fn test_unary_plus_void_and_bigint() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(js("tien x = +\"3\""), "let x = +\"3\";\n");
+        assert_eq!(js("tien x = + +y"), "let x = +(+y);\n");
+        assert_eq!(js("tien x = void 0"), "let x = void 0;\n");
+        // `void` with nothing after it is a (renamed) name
+        assert_eq!(js("tien void = 1"), "let $void = 1;\n");
+        assert_eq!(js("tien x = 1_000n + 0xFFn"), "let x = (1_000n + 0xFFn);\n");
+        assert!(compile("tien x = 1.5n", Default::default()).is_err());
+        assert!(compile("tien x = 012n", Default::default()).is_err());
+    }
 }

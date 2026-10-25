@@ -207,6 +207,8 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::Or)
                     }
                 }
+                '|' if self.match_char('=') => self.make_token(TokenKind::PipeEqual),
+                '|' => self.make_token(TokenKind::Pipe),
                 '&' if self.match_char('&') => {
                     if self.match_char('=') {
                         self.make_token(TokenKind::AndEqual)
@@ -214,6 +216,11 @@ impl<'a> Lexer<'a> {
                         self.make_token(TokenKind::And)
                     }
                 }
+                '&' if self.match_char('=') => self.make_token(TokenKind::AmpEqual),
+                '&' => self.make_token(TokenKind::Amp),
+                '^' if self.match_char('=') => self.make_token(TokenKind::CaretEqual),
+                '^' => self.make_token(TokenKind::Caret),
+                '~' => self.make_token(TokenKind::Tilde),
 
                 '+' => {
                     if self.match_char('+') {
@@ -288,14 +295,32 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 '<' => {
-                    if self.match_char('=') {
+                    if self.match_char('<') {
+                        if self.match_char('=') {
+                            self.make_token(TokenKind::LessLessEqual)
+                        } else {
+                            self.make_token(TokenKind::LessLess)
+                        }
+                    } else if self.match_char('=') {
                         self.make_token(TokenKind::LessEqual)
                     } else {
                         self.make_token(TokenKind::Less)
                     }
                 }
                 '>' => {
-                    if self.match_char('=') {
+                    if self.match_char('>') {
+                        if self.match_char('>') {
+                            if self.match_char('=') {
+                                self.make_token(TokenKind::GreaterGreaterGreaterEqual)
+                            } else {
+                                self.make_token(TokenKind::GreaterGreaterGreater)
+                            }
+                        } else if self.match_char('=') {
+                            self.make_token(TokenKind::GreaterGreaterEqual)
+                        } else {
+                            self.make_token(TokenKind::GreaterGreater)
+                        }
+                    } else if self.match_char('=') {
                         self.make_token(TokenKind::GreaterEqual)
                     } else {
                         self.make_token(TokenKind::Greater)
@@ -615,6 +640,7 @@ impl<'a> Lexer<'a> {
                 TokenKind::Identifier(_)
                     | TokenKind::PrivateName(_)
                     | TokenKind::Number(_)
+                    | TokenKind::BigInt(_)
                     | TokenKind::String(_)
                     | TokenKind::Template { .. }
                     | TokenKind::Regex { .. }
@@ -745,6 +771,28 @@ impl<'a> Lexer<'a> {
             ok
         };
 
+        // `10n`: a BigInt, only for integers (no `.5n`, `1e3n` or legacy octal)
+        let integer = !self.source[self.token_start..self.position].contains(['.', 'e', 'E'])
+            || radix.is_some();
+        if valid
+            && integer
+            && self.peek() == Some('n')
+            && !self
+                .source
+                .get(self.position + 1..)
+                .and_then(|rest| rest.chars().next())
+                .map(is_ident_continue)
+                .unwrap_or(false)
+        {
+            let literal = self.source[self.token_start..self.position].to_string();
+            self.advance(); // n
+            let octal_like = radix.is_none() && literal.len() > 1 && literal.starts_with('0');
+            if separators_ok(&literal, radix.unwrap_or(10)) && !octal_like {
+                return self.make_token(TokenKind::BigInt(literal));
+            }
+            return self.make_token(TokenKind::Invalid(format!("Invalid number: {}n", literal)));
+        }
+
         // An identifier character glued to a number (`3abc`, `0x1G`, `1e`) is an error, as in JS.
         let glued = self.peek().map(is_ident_continue).unwrap_or(false);
         while self.peek().map(is_ident_continue).unwrap_or(false) {
@@ -793,6 +841,20 @@ impl<'a> Lexer<'a> {
         }
 
         let literal = &self.source[self.token_start..self.position];
+
+        // `dint'a` (the `in` operator): one word with an apostrophe
+        if literal == "dint" {
+            let rest = &self.source[self.position..];
+            let glued = rest
+                .strip_prefix("'a")
+                .map(|after| !after.chars().next().map(is_ident_continue).unwrap_or(false))
+                .unwrap_or(false);
+            if glued {
+                self.advance();
+                self.advance();
+                return self.make_token(TokenKind::DintA);
+            }
+        }
 
         if let Some(keyword) = lookup_keyword(literal) {
             self.make_token(keyword)

@@ -1125,6 +1125,12 @@ impl Parser {
             TokenKind::QuestionQuestionEqual => AssignOp::Nullish,
             TokenKind::OrEqual => AssignOp::Or,
             TokenKind::AndEqual => AssignOp::And,
+            TokenKind::AmpEqual => AssignOp::BitAnd,
+            TokenKind::PipeEqual => AssignOp::BitOr,
+            TokenKind::CaretEqual => AssignOp::BitXor,
+            TokenKind::LessLessEqual => AssignOp::ShiftLeft,
+            TokenKind::GreaterGreaterEqual => AssignOp::ShiftRight,
+            TokenKind::GreaterGreaterGreaterEqual => AssignOp::UnsignedShiftRight,
             _ => return Ok(expr),
         };
         let op_span = self.advance().span;
@@ -1224,10 +1230,10 @@ impl Parser {
     }
 
     fn parse_and(&mut self) -> Result<Expression, ParseError> {
-        let mut expr = self.parse_equality()?;
+        let mut expr = self.parse_bit_or()?;
         // Supports both "e" and "pure" (both mean AND)
         while self.match_token(&TokenKind::And) || self.match_token(&TokenKind::Pure) {
-            let right = self.parse_equality()?;
+            let right = self.parse_bit_or()?;
             let span = self.span_from(expr.span().start);
             expr = Expression::Binary {
                 left: Box::new(expr),
@@ -1237,6 +1243,44 @@ impl Parser {
             };
         }
         Ok(expr)
+    }
+
+    /// `|`, `^`, `&`: between the logical operators and equality, as in JS.
+    fn parse_bit_or(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_bit_xor()?;
+        while self.match_token(&TokenKind::Pipe) {
+            let right = self.parse_bit_xor()?;
+            expr = self.binary(expr, BinaryOp::BitOr, right);
+        }
+        Ok(expr)
+    }
+
+    fn parse_bit_xor(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_bit_and()?;
+        while self.match_token(&TokenKind::Caret) {
+            let right = self.parse_bit_and()?;
+            expr = self.binary(expr, BinaryOp::BitXor, right);
+        }
+        Ok(expr)
+    }
+
+    fn parse_bit_and(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_equality()?;
+        while self.match_token(&TokenKind::Amp) {
+            let right = self.parse_equality()?;
+            expr = self.binary(expr, BinaryOp::BitAnd, right);
+        }
+        Ok(expr)
+    }
+
+    fn binary(&self, left: Expression, operator: BinaryOp, right: Expression) -> Expression {
+        let span = self.span_from(left.span().start);
+        Expression::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+            span,
+        }
     }
 
     fn parse_equality(&mut self) -> Result<Expression, ParseError> {
@@ -1266,7 +1310,7 @@ impl Parser {
     }
 
     fn parse_comparison(&mut self) -> Result<Expression, ParseError> {
-        let mut expr = self.parse_term()?;
+        let mut expr = self.parse_shift()?;
         loop {
             let op = if self.match_token(&TokenKind::Less) {
                 BinaryOp::LessThan
@@ -1282,10 +1326,12 @@ impl Parser {
                 self.advance();
                 self.advance();
                 BinaryOp::InstanceOf
+            } else if self.match_token(&TokenKind::DintA) {
+                BinaryOp::In
             } else {
                 break;
             };
-            let right = self.parse_term()?;
+            let right = self.parse_shift()?;
             let span = self.span_from(expr.span().start);
             expr = Expression::Binary {
                 left: Box::new(expr),
@@ -1293,6 +1339,24 @@ impl Parser {
                 right: Box::new(right),
                 span,
             };
+        }
+        Ok(expr)
+    }
+
+    fn parse_shift(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_term()?;
+        loop {
+            let op = if self.match_token(&TokenKind::LessLess) {
+                BinaryOp::ShiftLeft
+            } else if self.match_token(&TokenKind::GreaterGreater) {
+                BinaryOp::ShiftRight
+            } else if self.match_token(&TokenKind::GreaterGreaterGreater) {
+                BinaryOp::UnsignedShiftRight
+            } else {
+                break;
+            };
+            let right = self.parse_term()?;
+            expr = self.binary(expr, op, right);
         }
         Ok(expr)
     }
@@ -1359,12 +1423,22 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expression, ParseError> {
-        // Numeric negation: -x
-        if self.match_token(&TokenKind::Minus) {
-            let start = self.previous().span;
+        // Numeric negation and conversion: -x, +x; bitwise not: ~x;
+        // `void x` (`void` alone is a name)
+        let operator = match &self.peek().kind {
+            TokenKind::Minus => Some(UnaryOp::Negate),
+            TokenKind::Plus => Some(UnaryOp::Plus),
+            TokenKind::Tilde => Some(UnaryOp::BitNot),
+            TokenKind::Identifier(n) if n == "void" && self.next_starts_operand() => {
+                Some(UnaryOp::Void)
+            }
+            _ => None,
+        };
+        if let Some(operator) = operator {
+            let start = self.advance().span;
             let operand = self.parse_unary()?;
             return Ok(Expression::Unary {
-                operator: UnaryOp::Negate,
+                operator,
                 operand: Box::new(operand),
                 span: self.span_from(start.start),
             });
@@ -1679,6 +1753,15 @@ impl Parser {
             return Ok(Expression::Identifier { name, span });
         }
 
+        // `#saldo dint'a o`: the only place a private name stands alone
+        if let TokenKind::PrivateName(name) = &self.peek().kind {
+            if self.check_next(&TokenKind::DintA) {
+                let name = name.clone();
+                let span = self.advance().span;
+                return Ok(Expression::Identifier { name, span });
+            }
+        }
+
         // `import.meta` and `new.target` are not member accesses on a name
         if let Some(meta) = self.meta_property_start() {
             let start = self.advance().span;
@@ -1696,6 +1779,10 @@ impl Parser {
 
         match &token.kind {
             TokenKind::Number(n) => Ok(Expression::Number { value: *n, span }),
+            TokenKind::BigInt(digits) => Ok(Expression::BigInt {
+                digits: digits.clone(),
+                span,
+            }),
             TokenKind::Regex { pattern, flags } => Ok(Expression::Regex {
                 pattern: pattern.clone(),
                 flags: flags.clone(),
@@ -2137,6 +2224,10 @@ fn starts_operand(token: &Token) -> bool {
                 | TokenKind::Not
                 | TokenKind::Manco
                 | TokenKind::Minus
+                | TokenKind::Plus
+                | TokenKind::Tilde
+                | TokenKind::BigInt(_)
+                | TokenKind::PrivateName(_)
                 | TokenKind::Aspett
                 | TokenKind::CheE
         )

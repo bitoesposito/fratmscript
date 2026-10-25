@@ -22,10 +22,8 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 4. **Braces are required** after `si`, `sinnò`, `pe`, `mentre che`: `si (x) { ... }`.
 5. `chist è` (const) cannot be reassigned; declaring the same name twice in a scope is a compile
    error. Use `tien` (let) for values that change.
-6. Not supported yet: the `in` operator (use `Object.hasOwn(obj, "k")`), unary `+` (use
-   `Number(x)`), bitwise operators, `void`, BigInt literals, labels, tagged templates, class
-   expressions, getters/setters in object literals, default and namespace imports
-   (`import x from`, `import * as`): only named imports `chiamm { a, b } da "m"`.
+6. Not supported yet: labels, tagged templates, class expressions, getters/setters in object
+   literals.
 7. Compiler and runtime error messages are in Neapolitan, with line and column. See "Reading
    errors" below; most errors also carry a hint that starts with 💡.
 
@@ -60,12 +58,15 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 | `fisso` | `static` |
 | `damme` / `miette` | `get` / `set` (class members) |
 | `chiamm { a } da "m"` | `import { a } from "m"` |
+| `chiamm X da "m"` / `chiamm * comme ns da "m"` | `import X from "m"` / `import * as ns from "m"` |
+| `comme` (also `as`) | `as` (in imports and exports) |
 | `mann for` / `mann for predefinit` | `export` / `export default` |
 | `e` (also `pure`, `&&`) | `&&` |
 | `o` (also `\|\|`) | `\|\|` |
 | `no` (also `manco`, `!`) | `!` |
 | `chè è x` | `typeof x` |
 | `x è uno T` | `x instanceof T` |
+| `"k" dint'a o` | `"k" in o` |
 | `leva` | `delete` |
 | `fermete` | `debugger` |
 
@@ -263,17 +264,28 @@ Top-level `aspett` works too, because the output is an ES module.
 
 ```fratm
 chiamm { readFileSync } da "node:fs"
-chiamm { join } da "node:path"
+chiamm * comme path da "node:path"
+chiamm os da "node:os"
+chiamm { a_caso comme dado } da "fratm"
 
 mann for facc leggi(nome) {
-    piglie readFileSync(join(".", nome), "utf8")
+    piglie readFileSync(path.join(".", nome), "utf8")
 }
 
-mann for chist è VERSIONE = "1.0"
+chist è VERSIONE = "1.0"
+mann for { VERSIONE, leggi comme read }
 mann for predefinit leggi
+
+// dynamic import: chiamm("…") gives a Promise
+chist è url = aspett chiamm("node:url")
+stamm a dì(os.platform(), dado(1, 6), chè è url.pathToFileURL)
 ```
 
-Only named imports exist today. `fratm lancia` compiles one file: to import another `.fratm` file, build each file with `fratm build` and import the `.js`, or use the Vite plugin.
+Also: `chiamm "./stile.css"` (side effects only), `mann for { a } da "./m.js"` and
+`mann for * da "./m.js"` (re-exports), `chiamm { predefinit comme App } da "./app.js"`
+(`predefinit` means `default` on the module side). `fratm lancia` compiles one file: to import
+another `.fratm` file, build each file with `fratm build` and import the `.js`, or use the Vite
+plugin.
 
 ## The `fratm` library
 
