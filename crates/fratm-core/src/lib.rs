@@ -1437,4 +1437,25 @@ na famiglie Pizzaiolo figlio 'e Persona {
         // `rompe` with a label works outside loops, on a labelled block
         assert!(compile("blocco: { rompe blocco }", Default::default()).is_ok());
     }
+
+    #[test]
+    fn test_destructuring_assignment() {
+        let js = |source: &str| compile(source, Default::default()).unwrap().code;
+        assert!(js("tien a, b\n[a, b] = [b, a]").contains("[a, b] = [b, a];"));
+        assert!(
+            js("tien x, o = {}\n({ x, y: o.y, ...r } = p)").contains("({ x, y: o.y, ...r } = p);")
+        );
+        assert!(js("tien a, r\n[a = 1, ...r] = xs").contains("[a = 1, ...r] = xs;"));
+        assert!(js("tien a, b\n[[a], { b }] = xs").contains("[[a], { b }] = xs;"));
+        for bad in [
+            "[1, 2] = xs",
+            "[a + 1] = xs",
+            "[...a, b] = xs",
+            "[a, b] += xs",
+            "({ f() {} } = o)",
+        ] {
+            let error = compile(bad, Default::default()).unwrap_err().to_string();
+            assert!(error.contains("Ccà nun se pò assegnà"), "{bad}: {error}");
+        }
+    }
 }
