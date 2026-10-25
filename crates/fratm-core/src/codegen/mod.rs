@@ -558,6 +558,10 @@ impl CodeGen {
                 self.add_mapping(span.line, span.column);
                 self.emit(&js_name(name));
             }
+            Expression::BigInt { digits, .. } => {
+                self.emit(digits);
+                self.emit("n");
+            }
             Expression::Number { value, .. } => {
                 if *value == value.floor() && value.abs() < 1e15 {
                     self.emit(&(*value as i64).to_string());
@@ -715,7 +719,7 @@ impl CodeGen {
                 operator, operand, ..
             } => {
                 self.emit(operator.to_js());
-                // `- -x` and `- --x` must not become `--x` / `---x`
+                // `- -x`, `- --x`, `+ +x` must not become `--x`, `---x`, `++x`
                 let starts_with_minus = matches!(
                     **operand,
                     Expression::Unary {
@@ -727,7 +731,20 @@ impl CodeGen {
                         ..
                     }
                 );
-                if matches!(operator, UnaryOp::Negate) && starts_with_minus {
+                let starts_with_plus = matches!(
+                    **operand,
+                    Expression::Unary {
+                        operator: UnaryOp::Plus,
+                        ..
+                    } | Expression::Update {
+                        operator: UpdateOp::Increment,
+                        prefix: true,
+                        ..
+                    }
+                );
+                if matches!(operator, UnaryOp::Negate) && starts_with_minus
+                    || matches!(operator, UnaryOp::Plus) && starts_with_plus
+                {
                     self.emit("(");
                     self.gen_expression(operand);
                     self.emit(")");

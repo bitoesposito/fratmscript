@@ -1,0 +1,29 @@
+// dint'a (in), bitwise operators, shifts, void, unary plus and BigInt
+chist è o = { nome: "pizza" }
+stamm a dì("nome" dint'a o, "prezzo" dint'a o)
+stamm a dì(5 & 3, 5 | 3, 5 ^ 3, ~5, 1 << 4, -16 >> 2, -16 >>> 28)
+stamm a dì(1 | 2 == 2, 1 + 2 << 1, 3 & 1 dint'a [0, 1])
+tien f = 6
+f &= 3
+f |= 8
+f ^= 1
+f <<= 2
+f >>= 1
+f >>>= 1
+stamm a dì(f)
+stamm a dì(void 0, chè è void 0)
+tien grande = 9007199254740993n
+stamm a dì(grande + 1_000n, 0xFFn, chè è 10n)
+stamm a dì(+"42", - -3, + +"1", ~~3.7)
+tien void = 1
+stamm a dì(void)
+na famiglie Conto {
+    #saldo = 0
+    fisso è_conto(x) { piglie #saldo dint'a x }
+}
+stamm a dì(Conto.è_conto(nu bell Conto()), Conto.è_conto({}))
+// dint and 'ncopp still work in loops
+pe ogni (chist è k 'ncopp o) { stamm a dì(k) }
+pe ogni (chist è x dint [1]) { stamm a dì(x) }
+chist è dint = 3
+stamm a dì(dint)

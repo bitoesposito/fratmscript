@@ -228,6 +228,10 @@ x += 1  x -= 1  x *= 2       // also /=, %=, **=, ??=, ||=, &&=
 i++  i--  ++i  --i           // increment / decrement
 a ?? b                       // nullish coalescing
 a?.b  a?.[k]  f?.()          // optional chaining
+"nome" dint'a pizza          // "nome" in pizza (also #privato dint'a x in classes)
+a & b  a | b  a ^ b  ~a      // bitwise, also << >> >>> and &= |= ^= <<= >>= >>>=
++x  void 0                   // unary plus, void
+10n  0xFFn                   // BigInt literals
 ```
 
 ### Classes
@@ -372,6 +376,7 @@ fermete                      // debugger
 | `e` / `pure` | `&&` | "and" / "also" |
 | `o` | `\|\|` | "or" |
 | `no` / `manco` / `!` | `!` | "no" / "not even" |
+| `dint'a` | `in` (operator) | "inside" |
 | `leva` | `delete` | "remove" |
 | `fermete` | `debugger` | "stop" |
 

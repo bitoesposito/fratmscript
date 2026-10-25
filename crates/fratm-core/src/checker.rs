@@ -377,6 +377,7 @@ impl Checker {
         match expression {
             Expression::Identifier { .. }
             | Expression::Number { .. }
+            | Expression::BigInt { .. }
             | Expression::String { .. }
             | Expression::Boolean { .. }
             | Expression::Null { .. }

@@ -224,6 +224,11 @@
           "match": "(\\+\\+|--)"
         },
         {
+          "comment": "Bitwise operators and shifts",
+          "name": "keyword.operator.bitwise.fratm",
+          "match": "(>>>=?|>>=?|<<=?|&=|\\|=|\\^=|&|\\||\\^|~)"
+        },
+        {
           "comment": "Comparison operators",
           "name": "keyword.operator.comparison.fratm",
           "match": "(===|!==|==|!=|<=|>=|<|>)"
