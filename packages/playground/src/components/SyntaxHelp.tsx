@@ -51,6 +51,7 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
     { fratm: '[...a]  { ...o }  f(...xs)', js: '[...a]  { ...o }  f(...xs)', desc: { it: 'Spread', en: 'Spread', nap: "Spanne 'e elementi" }, insert: '...' },
     { fratm: 'chist è { a, b: x, ...r } = o', js: 'const { a, b: x, ...r } = o', desc: { it: 'Destructuring di oggetti', en: 'Object destructuring', nap: "Destructuring 'e n'oggetto" } },
     { fratm: 'tien [primo, ...ato] = xs', js: 'let [primo, ...ato] = xs', desc: { it: 'Destructuring di array', en: 'Array destructuring', nap: "Destructuring 'e na lista" } },
+    { fratm: '[a, b] = [b, a]', js: '[a, b] = [b, a]', desc: { it: 'Scambia due variabili', en: 'Swap two variables', nap: 'Scagna doje variabbele' } },
     { fratm: '{ nome, [k]: v, saluta() { } }', js: '{ nome, [k]: v, saluta() { } }', desc: { it: 'Oggetti: forma breve, chiavi calcolate, metodi', en: 'Object shorthand, computed keys, methods', nap: 'Oggetti: nomme curte, chiave calcolate, metodi' }, insert: '{ }' },
     { fratm: 'aspett', js: 'await', desc: { it: 'Attende una promise', en: 'Await expression', nap: 'Aspetta na promise' } },
   ]},

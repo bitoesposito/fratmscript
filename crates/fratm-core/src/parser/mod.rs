@@ -1226,7 +1226,11 @@ impl Parser {
             _ => return Ok(expr),
         };
         let op_span = self.advance().span;
-        check_assignment_target(&expr, op_span)?;
+        if operator == AssignOp::Assign {
+            check_destructuring_target(&expr, op_span)?;
+        } else {
+            check_assignment_target(&expr, op_span)?;
+        }
         let value = self.parse_assignment()?;
         let span = self.span_from(expr.span().start);
         Ok(Expression::Assignment {
@@ -2491,6 +2495,49 @@ fn starts_operand(token: &Token) -> bool {
                 | TokenKind::Aspett
                 | TokenKind::CheE
         )
+}
+
+/// `=` also takes array and object patterns, as in JS: `[a, b] = [b, a]`,
+/// `({ x, y: o.y } = punto)`, `[a = 1, ...resto] = lista`.
+fn check_destructuring_target(target: &Expression, op_span: Span) -> Result<(), ParseError> {
+    match target {
+        Expression::Array { elements, .. } => {
+            for (i, element) in elements.iter().enumerate() {
+                match element {
+                    Expression::Spread { argument, .. } if i + 1 == elements.len() => {
+                        check_destructuring_target(argument, op_span)?
+                    }
+                    // `[a = 1] = …`: the default was already parsed as an assignment
+                    Expression::Assignment {
+                        operator: AssignOp::Assign,
+                        ..
+                    } => {}
+                    _ => check_destructuring_target(element, op_span)?,
+                }
+            }
+            Ok(())
+        }
+        Expression::Object { properties, .. } => {
+            for (i, property) in properties.iter().enumerate() {
+                match property {
+                    Property::Shorthand { .. } => {}
+                    Property::KeyValue { value, .. } => match value {
+                        Expression::Assignment {
+                            operator: AssignOp::Assign,
+                            ..
+                        } => {}
+                        _ => check_destructuring_target(value, op_span)?,
+                    },
+                    Property::Spread(argument) if i + 1 == properties.len() => {
+                        check_assignment_target(argument, op_span)?
+                    }
+                    _ => return Err(ParseError::new("Invalid assignment target", op_span)),
+                }
+            }
+            Ok(())
+        }
+        _ => check_assignment_target(target, op_span),
+    }
 }
 
 /// Only names and properties can be assigned or updated (`x = 1`, `a.b += 1`, `i++`).

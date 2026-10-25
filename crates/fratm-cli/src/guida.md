@@ -189,6 +189,9 @@ chist è pizza = {
 }
 chist è { prezzo, forno = "a legna", ...altro } = pizza
 chist è [primo, ...ato] = pizza.ingredienti
+tien a = 1
+tien b = 2
+[a, b] = [b, a]                     // swap; objects: ({ x, y } = punto)
 chist è copia = { ...pizza, prezzo: 7 }
 chist è tutti = [...ato, "basilico"]
 stamm a dì(pizza.descrivi(), prezzo, forno, primo, copia.prezzo, tutti)

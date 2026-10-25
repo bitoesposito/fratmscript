@@ -203,6 +203,8 @@ mo vir facc* stream() { }        // async generator
 chist è { nome, età: anni = 0, ...altro } = persona
 tien [primo, , terzo, ...ato] = lista
 facc saluta({ nome }) { }      // also in arrow and catch parameters
+[a, b] = [b, a]                // assignment to existing variables
+({ x, y: punto.y } = origine)  // objects need ( ) at the start of a line, as in JS
 ```
 
 ### Objects

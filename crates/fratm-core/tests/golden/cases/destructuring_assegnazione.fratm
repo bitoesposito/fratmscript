@@ -1,0 +1,29 @@
+// Destructuring pure ncopp' a variabbele ca già esistono
+tien a = 1
+tien b = 2
+[a, b] = [b, a]
+stamm a dì(a, b)
+
+// Fibonacci: [b, c] = [c, b + c]
+tien x = 0
+tien y = 1
+pe (tien i = 0; i < 10; i++) {
+    [x, y] = [y, x + y]
+}
+stamm a dì(x)
+
+chist è punto = { x: 3, y: 4, z: 5 }
+chist è copia = {}
+tien ato
+({ x: copia.x, y: copia.y, ...ato } = punto)
+stamm a dì(copia, ato)
+
+tien primo
+tien resto
+[primo = "nisciuno", ...resto] = [undefined, 2, 3]
+stamm a dì(primo, resto)
+
+tien p
+tien q
+[[p], { q }] = [[1], { q: 2 }]
+stamm a dì(p, q)
