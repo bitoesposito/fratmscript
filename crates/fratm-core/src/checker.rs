@@ -1,11 +1,13 @@
 //! Semantic checks over the AST, run after parsing.
 //!
-//! Today this reports names declared twice in the same scope and
-//! `piglie`, `aspett`, `rompe` and `salta` outside the construct they need,
-//! which JS would only reject when the generated code is loaded, plus
-//! imports of helpers the `fratm` library does not have.
+//! Today this reports names declared twice in the same scope, `piglie`,
+//! `aspett`, `rompe`, `salta` and `'o pate` outside the construct they need,
+//! `#private` names a class does not declare, `leva` on a plain name and
+//! exports of names that do not exist: all things JS would only reject when
+//! the generated code is loaded. It also rejects imports of helpers the
+//! `fratm` library does not have.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::lexer::Span;
 use crate::parser::*;
@@ -35,8 +37,19 @@ pub fn check(program: &Program) -> Result<(), SemanticError> {
             ..Context::default()
         },
         labels: Vec::new(),
+        private_names: Vec::new(),
+        exports: Vec::new(),
     };
     checker.statements(&program.statements);
+    // Exports may name declarations further down, so check them last
+    for (name, span) in std::mem::take(&mut checker.exports) {
+        if !checker.scopes[0].names.contains_key(&name) {
+            checker.fail(SemanticError {
+                message: format!("'{}' is exported but not declared", name),
+                span,
+            });
+        }
+    }
     match checker.scopes.pop().and_then(|s| s.error) {
         Some(err) => Err(err),
         None => Ok(()),
@@ -49,10 +62,15 @@ struct Checker {
     /// Labels around the statement being checked, and whether each one names
     /// a loop (only those work with `salta`). Each function starts with none.
     labels: Vec<(String, bool)>,
+    /// The `#private` names of each class around the current position
+    private_names: Vec<HashSet<String>>,
+    /// Top-level `mann for { … }` names, checked once everything is declared
+    exports: Vec<(String, Span)>,
 }
 
-/// Where the statement being checked sits, for `piglie`, `aspett`, `rompe`
-/// and `salta`. Each function starts a fresh context.
+/// Where the statement being checked sits, for `piglie`, `aspett`, `rompe`,
+/// `salta` and `'o pate`. Each function starts a fresh context; arrows keep
+/// the `'o pate` of the method around them.
 #[derive(Clone, Copy, Default)]
 struct Context {
     in_function: bool,
@@ -60,6 +78,28 @@ struct Context {
     allows_await: bool,
     loops: usize,
     switches: usize,
+    /// Inside a method, where `'o pate.metodo()` works
+    super_property: bool,
+    /// Inside the constructor of a class with a parent: `'o pate(…)`
+    super_call: bool,
+}
+
+impl Context {
+    fn function(is_async: bool) -> Self {
+        Context {
+            in_function: true,
+            allows_await: is_async,
+            ..Context::default()
+        }
+    }
+
+    fn method(is_async: bool, super_call: bool) -> Self {
+        Context {
+            super_property: true,
+            super_call,
+            ..Context::function(is_async)
+        }
+    }
 }
 
 #[derive(Default)]
@@ -123,7 +163,11 @@ impl Checker {
     }
 
     fn function(&mut self, params: &[Pattern], body: &[Statement], is_async: bool) {
-        self.in_function(is_async, |c| {
+        self.function_with(Context::function(is_async), params, body);
+    }
+
+    fn function_with(&mut self, context: Context, params: &[Pattern], body: &[Statement]) {
+        self.with_context(context, |c| {
             c.scoped(|c| {
                 c.params(params);
                 c.statements(body);
@@ -131,15 +175,13 @@ impl Checker {
         });
     }
 
-    /// Runs `f` with the context of a new function body.
-    fn in_function(&mut self, is_async: bool, f: impl FnOnce(&mut Self)) {
-        let context = Context {
-            in_function: true,
-            allows_await: is_async,
-            loops: 0,
-            switches: 0,
-        };
-        self.with_context(context, f);
+    /// The context of an arrow body: a new function that keeps `'o pate`.
+    fn arrow_context(&self, is_async: bool) -> Context {
+        Context {
+            super_property: self.context.super_property,
+            super_call: self.context.super_call,
+            ..Context::function(is_async)
+        }
     }
 
     fn with_context(&mut self, context: Context, f: impl FnOnce(&mut Self)) {
@@ -172,25 +214,72 @@ impl Checker {
         });
     }
 
-    fn class_members(&mut self, members: &[ClassMember]) {
+    fn class_members(&mut self, members: &[ClassMember], has_parent: bool) {
+        let names = self.declare_private_names(members);
+        self.private_names.push(names);
+        // Field values and static blocks are not functions, but `'o pate.x`
+        // works in them
+        let member_context = Context {
+            super_property: true,
+            ..Context::default()
+        };
         for member in members {
             match member {
                 ClassMember::Method(m) => {
                     self.property_key(&m.key);
-                    self.function(&m.params, &m.body, m.is_async);
+                    let constructor = !m.is_static
+                        && matches!(&m.key, PropertyKey::Name(n) if n == "costruttore");
+                    let context = Context::method(m.is_async, constructor && has_parent);
+                    self.function_with(context, &m.params, &m.body);
                 }
                 ClassMember::Field { key, value, .. } => {
                     self.property_key(key);
                     if let Some(value) = value {
-                        self.expression(value);
+                        self.with_context(member_context, |c| c.expression(value));
                     }
                 }
                 // Not a function: `piglie` and `aspett` are not allowed in it
                 ClassMember::StaticBlock { body, .. } => {
-                    self.with_context(Context::default(), |c| c.block(body))
+                    self.with_context(member_context, |c| c.block(body))
                 }
             }
         }
+        self.private_names.pop();
+    }
+
+    /// The `#private` names of a class body. Each is declared once, except
+    /// for a getter and a setter of the same name.
+    fn declare_private_names(&mut self, members: &[ClassMember]) -> HashSet<String> {
+        let mut names = HashSet::new();
+        let mut accessors: HashMap<&str, MethodKind> = HashMap::new();
+        for member in members {
+            let (key, kind, span) = match member {
+                ClassMember::Method(m) => (&m.key, Some(m.kind), m.span),
+                ClassMember::Field { key, span, .. } => (key, None, *span),
+                ClassMember::StaticBlock { .. } => continue,
+            };
+            let PropertyKey::Name(name) = key else {
+                continue;
+            };
+            if !name.starts_with('#') {
+                continue;
+            }
+            let pair = matches!(
+                (kind, accessors.get(name.as_str())),
+                (Some(MethodKind::Getter), Some(MethodKind::Setter))
+                    | (Some(MethodKind::Setter), Some(MethodKind::Getter))
+            );
+            if !names.insert(name.clone()) && !pair {
+                self.fail(SemanticError {
+                    message: format!("'{}' is declared twice in the class", name),
+                    span,
+                });
+            }
+            if let Some(kind @ (MethodKind::Getter | MethodKind::Setter)) = kind {
+                accessors.insert(name, kind);
+            }
+        }
+        names
     }
 
     fn params(&mut self, params: &[Pattern]) {
@@ -255,6 +344,19 @@ impl Checker {
     }
 
     fn statement(&mut self, statement: &Statement) {
+        // Modules import and export only at the top level
+        let module_keyword = match statement {
+            Statement::Import { .. } => Some("chiamm"),
+            Statement::Export { .. }
+            | Statement::ExportNamed { .. }
+            | Statement::ExportAll { .. } => Some("mann for"),
+            _ => None,
+        };
+        if let Some(keyword) = module_keyword {
+            if self.scopes.len() > 1 {
+                self.misplaced(keyword, statement_span(statement));
+            }
+        }
         match statement {
             Statement::VariableDecl { declarations, .. } => {
                 for d in declarations {
@@ -278,12 +380,12 @@ impl Checker {
             }
             Statement::ClassDecl {
                 name,
+                super_class,
                 members,
                 span,
-                ..
             } => {
                 self.declare(name, Binding::Lexical, *span);
-                self.class_members(members);
+                self.class_members(members, super_class.is_some());
             }
             Statement::Return { value, span } => {
                 if !self.context.in_function {
@@ -484,6 +586,15 @@ impl Checker {
                     self.expression(value);
                 }
             }
+            Statement::ExportNamed {
+                specifiers,
+                source: None,
+                span,
+            } => {
+                for s in specifiers {
+                    self.exports.push((s.local.clone(), *span));
+                }
+            }
             Statement::ExportNamed { .. } | Statement::ExportAll { .. } => {}
             Statement::Expression { expression, .. } => self.expression(expression),
             Statement::Block { statements, .. } => self.block(statements),
@@ -504,6 +615,21 @@ impl Checker {
                 self.expression(tag);
                 self.expression(quasi);
             }
+            // `#saldo` read through `stu cos.#saldo` or in `#saldo dint'a o`
+            Expression::Identifier { name, span } if name.starts_with('#') => {
+                if !self.private_names.iter().any(|names| names.contains(name)) {
+                    self.fail(SemanticError {
+                        message: format!("'{}' is not declared in the class", name),
+                        span: *span,
+                    });
+                }
+            }
+            Expression::Super { span } => self.misplaced("'o pate", *span),
+            Expression::Delete { operand, span }
+                if matches!(**operand, Expression::Identifier { .. }) =>
+            {
+                self.misplaced("leva", *span)
+            }
             Expression::Identifier { .. }
             | Expression::Number { .. }
             | Expression::BigInt { .. }
@@ -512,7 +638,6 @@ impl Checker {
             | Expression::Null { .. }
             | Expression::Undefined { .. }
             | Expression::This { .. }
-            | Expression::Super { .. }
             | Expression::MetaProperty { .. }
             | Expression::Regex { .. } => {}
             Expression::Array { elements: list, .. }
@@ -551,7 +676,7 @@ impl Checker {
                             ..
                         } => {
                             self.property_key(key);
-                            self.function(params, body, *is_async);
+                            self.function_with(Context::method(*is_async, false), params, body);
                         }
                         Property::Spread(e) => self.expression(e),
                     }
@@ -596,7 +721,14 @@ impl Checker {
             | Expression::New {
                 callee, arguments, ..
             } => {
-                self.expression(callee);
+                match (&**callee, expression) {
+                    (Expression::Super { span }, Expression::Call { .. }) => {
+                        if !self.context.super_call {
+                            self.misplaced("'o pate()", *span);
+                        }
+                    }
+                    _ => self.expression(callee),
+                }
                 for a in arguments {
                     self.expression(a);
                 }
@@ -604,20 +736,27 @@ impl Checker {
             Expression::Member {
                 object, property, ..
             } => {
-                self.expression(object);
+                match &**object {
+                    Expression::Super { span } => {
+                        if !self.context.super_property {
+                            self.misplaced("'o pate", *span);
+                        }
+                    }
+                    _ => self.expression(object),
+                }
                 self.expression(property);
             }
             // The name of a class expression is visible only inside it
             Expression::Class {
                 name,
+                super_class,
                 members,
                 span,
-                ..
             } => self.scoped(|c| {
                 if let Some(name) = name {
                     c.declare(name, Binding::Lexical, *span);
                 }
-                c.class_members(members);
+                c.class_members(members, super_class.is_some());
             }),
             // The name of a function expression is visible only inside it
             Expression::Function {
@@ -639,8 +778,10 @@ impl Checker {
                 is_async,
                 ..
             } => match body {
-                ArrowBody::Block(body) => self.function(params, body, *is_async),
-                ArrowBody::Expression(e) => self.in_function(*is_async, |c| {
+                ArrowBody::Block(body) => {
+                    self.function_with(self.arrow_context(*is_async), params, body)
+                }
+                ArrowBody::Expression(e) => self.with_context(self.arrow_context(*is_async), |c| {
                     c.scoped(|c| {
                         c.params(params);
                         c.expression(e);
@@ -658,6 +799,16 @@ impl Checker {
                 self.expression(alternate);
             }
         }
+    }
+}
+
+fn statement_span(statement: &Statement) -> Span {
+    match statement {
+        Statement::Import { span, .. }
+        | Statement::Export { span, .. }
+        | Statement::ExportNamed { span, .. }
+        | Statement::ExportAll { span, .. } => *span,
+        _ => Span::default(),
     }
 }
 
@@ -809,5 +960,83 @@ mod tests {
         assert_eq!(misplaced("A = na famiglie { m() { piglie 1 } }"), None);
         // A static block is not a function body
         assert!(misplaced("na famiglie A { fisso { piglie 1 } }").is_some());
+    }
+
+    /// The Neapolitan message of the semantic error for `source`, if any.
+    fn semantic_error(source: &str) -> Option<String> {
+        misplaced(source).map(|(_, _, message)| message)
+    }
+
+    #[test]
+    fn test_private_names_must_be_declared_by_the_class() {
+        let err = semantic_error("na famiglie A { m() { piglie stu cos.#x } }").unwrap();
+        assert!(
+            err.contains("'#x' nun sta dichiarato dint'a sta famiglie"),
+            "{err}"
+        );
+        assert!(semantic_error("x = stu cos.#y").is_some());
+        assert!(semantic_error("na famiglie A { #x = 1\n#x = 2 }").is_some());
+        // Declared after use, in an arrow, in an outer class, as accessors
+        assert_eq!(
+            semantic_error("na famiglie A { m() { piglie () => stu cos.#x }\n#x = 1 }"),
+            None
+        );
+        assert_eq!(
+            semantic_error("na famiglie A { #x = 1\nm() { piglie na famiglie { n() { piglie stu cos.#x } } } }"),
+            None
+        );
+        assert_eq!(
+            semantic_error("na famiglie A { damme #x() { piglie 1 }\nmiette #x(v) { } }"),
+            None
+        );
+        assert_eq!(
+            semantic_error("na famiglie A { #x = 1\nha(o) { piglie #x dint'a o } }"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_o_pate_only_in_methods_and_derived_constructors() {
+        assert!(semantic_error("facc f() { 'o pate.m() }").is_some());
+        assert!(semantic_error("na famiglie A { facc costruttore() { 'o pate() } }").is_some());
+        assert!(semantic_error("na famiglie A figlio 'e B { m() { 'o pate() } }").is_some());
+        assert!(semantic_error("na famiglie A { m() { facc g() { 'o pate.m() } } }").is_some());
+        assert_eq!(
+            semantic_error("na famiglie A { m() { 'o pate.m() } }"),
+            None
+        );
+        assert_eq!(
+            semantic_error("na famiglie A figlio 'e B { facc costruttore() { 'o pate() } }"),
+            None
+        );
+        assert_eq!(
+            semantic_error(
+                "na famiglie A figlio 'e B { facc costruttore() { f = () => 'o pate() } }"
+            ),
+            None
+        );
+        assert_eq!(semantic_error("x = { m() { piglie 'o pate.m() } }"), None);
+        assert_eq!(
+            semantic_error("na famiglie A figlio 'e B { x = 'o pate.y }"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_leva_needs_a_property() {
+        assert!(semantic_error("tien x = 1\nleva x").is_some());
+        assert_eq!(semantic_error("tien a = { b: 1 }\nleva a.b"), None);
+        assert_eq!(semantic_error("tien a = { b: 1 }\nleva a[\"b\"]"), None);
+    }
+
+    #[test]
+    fn test_exports_name_declared_things_at_the_top_level() {
+        let err = semantic_error("mann for { a }").unwrap();
+        assert!(err.contains("'a' nun esiste"), "{err}");
+        assert!(semantic_error("si (x) { mann for { x } }").is_some());
+        assert!(semantic_error("facc f() { chiamm { a } da \"m\" }").is_some());
+        assert_eq!(semantic_error("tien a = 1\nmann for { a comme b }"), None);
+        assert_eq!(semantic_error("mann for { b }\nfacc b() { }"), None);
+        assert_eq!(semantic_error("mann for { a } da \"m\""), None);
     }
 }

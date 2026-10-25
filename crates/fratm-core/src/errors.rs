@@ -239,12 +239,37 @@ pub fn napoletanize_error(message: &str) -> String {
             format!("'{jump}': nun ce sta nisciuna etichetta '{label}:' attuorno")
         };
     }
+    if let Some(rest) = message.strip_prefix('\'') {
+        if let Some(name) = rest.strip_suffix("' is not declared in the class") {
+            return format!(
+                "'{}' nun sta dichiarato dint'a sta famiglie: miettelo int'a classe, tipo {} = 0",
+                name, name
+            );
+        }
+        if let Some(name) = rest.strip_suffix("' is declared twice in the class") {
+            return format!(
+                "'{}' sta dichiarato doje vote dint'a stessa famiglie!",
+                name
+            );
+        }
+        if let Some(name) = rest.strip_suffix("' is exported but not declared") {
+            return format!(
+                "'{}' nun esiste: comme 'o manne for si nun l'hai dichiarato?",
+                name
+            );
+        }
+    }
     if let Some(keyword) = message.strip_suffix("' is not allowed here") {
         let hint = match keyword.trim_start_matches('\'') {
             "piglie" => "'piglie' se po' usà sulo dint'a na funzione: facc nomme() { piglie … }",
             "aspett" => "'aspett' se po' usà sulo dint'a na funzione 'mo vir' (async): mo vir facc nomme() { aspett … }",
             "pe aspett" => "'pe aspett' se po' usà sulo dint'a na funzione 'mo vir' (async)",
             "rompe" => "'rompe' se po' usà sulo dint'a nu ciclo (mentre, pe, primm fa) o dint'a nu vedimm",
+            "o pate" => "''o pate' se po' usà sulo dint'e metodi 'e na famiglie: 'o pate.metodo()",
+            "o pate()" => "''o pate(…)' se po' chiammà sulo dint'o costruttore 'e na famiglie figlia: na famiglie A figlio 'e B { facc costruttore() { 'o pate() } }",
+            "leva" => "'leva' leva na proprietà, nun na variabile: leva oggetto.campo",
+            "mann for" => "'mann for' se po' usà sulo fora 'e funzioni e blocchi, 'ncoppa 'o file",
+            "chiamm" => "'chiamm … da' se po' usà sulo fora 'e funzioni e blocchi, 'ncoppa 'o file",
             _ => "'salta' se po' usà sulo dint'a nu ciclo (mentre, pe, primm fa)",
         };
         return hint.to_string();
