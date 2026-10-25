@@ -398,6 +398,8 @@ just wasm
 
 The [playground](https://kkratterf.github.io/fratmscript/) is a web-based editor to try FratmScript in your browser. Press **Impara** (Learn, Scola) for *'A scola 'e FratmScript*, a tour of 12 short lessons with an exercise each, checked against the console output. Lessons live in `packages/playground/src/scola/` (starter, `.soluzione.fratm` and expected `.out`; CI runs every solution).
 
+Press **Guida** (Guide) for the [language guide](https://kkratterf.github.io/fratmscript/#guida): every construct explained in Italian, English or Neapolitan, with examples you edit and run on the spot and their generated JavaScript. Link a section with `#guida=<id>`, e.g. [`#guida=cicli`](https://kkratterf.github.io/fratmscript/#guida=cicli). The guide lives in `packages/playground/src/guida/` (`guida.json` plus one `.fratm`/`.out` pair per example; CI runs every example).
+
 Next to the generated JavaScript, the **Token** and **Tree** tabs show how the compiler reads your code; hover an item to highlight it in the editor.
 
 **Share** copies a link with the code in the URL. The `</>` button next to it copies an `<iframe>` that embeds the playground (`?embed=1`: editor, output and Run only, nothing is saved in the visitor's browser), for docs and blog posts.

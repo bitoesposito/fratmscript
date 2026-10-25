@@ -129,7 +129,7 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onErrorClick: OutputPanelProps['onErrorClick'] }) {
+export function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onErrorClick: OutputPanelProps['onErrorClick'] }) {
   const line = error.kind === 'compile' || error.kind === 'runtime' ? error.line : undefined
   const column = error.kind === 'compile' || error.kind === 'runtime' ? error.column : undefined
   const { t } = useI18n()
