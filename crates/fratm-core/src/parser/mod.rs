@@ -1778,10 +1778,14 @@ impl Parser {
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
     }
+    /// Consumes the current token and returns it. At the end of the input
+    /// nothing is consumed and the `Eof` token is returned, so callers never
+    /// see the token before it a second time.
     fn advance(&mut self) -> &Token {
-        if !self.is_at_end() {
-            self.current += 1;
+        if self.is_at_end() {
+            return self.peek();
         }
+        self.current += 1;
         self.previous()
     }
     fn check(&self, kind: &TokenKind) -> bool {
