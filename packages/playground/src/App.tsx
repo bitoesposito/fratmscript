@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils'
 import { buildShareUrl, buildEmbedSnippet, isEmbed, readSharedCode, loadSavedCode, saveCode } from '@/lib/share'
 import { lessons } from '@/lib/lessons'
 import { LessonPanel } from '@/components/LessonPanel'
+import { GuidePage } from '@/components/GuidePage'
+import { guide } from '@/lib/guide'
 import type { LogValue } from '@/lib/runner'
 import { useI18n, type MessageKey } from '@/lib/i18n'
 
@@ -37,6 +39,13 @@ function lessonFromHash(): number | null {
   if (value === null) return null
   const n = Number.parseInt(value, 10)
   return Number.isFinite(n) ? Math.min(Math.max(n, 1), lessons.length) - 1 : 0
+}
+
+/** Guide section from the URL hash (`#guida` or `#guida=cicli`), or null outside the guide. */
+function guideFromHash(): number | null {
+  const value = new URLSearchParams(window.location.hash.slice(1)).get('guida')
+  if (value === null) return null
+  return Math.max(guide.findIndex(section => section.id === value), 0)
 }
 
 function readStored(key: string): string | null {
@@ -85,17 +94,18 @@ function App() {
   // A share link wins over the autosaved code, which wins over the default
   const [initial] = useState(() => {
     // An embed shows only the code from its link
-    if (embed) return { code: readSharedCode() ?? defaultCode, example: '', lesson: null }
+    if (embed) return { code: readSharedCode() ?? defaultCode, example: '', lesson: null, guide: null }
     const lesson = lessonFromHash()
     if (lesson !== null) {
       const id = lessons[lesson].id
-      return { code: readStored(LESSON_CODE_KEY + id) ?? lessons[lesson].starter, example: '', lesson }
+      return { code: readStored(LESSON_CODE_KEY + id) ?? lessons[lesson].starter, example: '', lesson, guide: null }
     }
+    const section = guideFromHash()
     const code = readSharedCode() ?? loadSavedCode() ?? defaultCode
-    if (code === defaultCode) return { code, example: '', lesson: null }
+    if (code === defaultCode) return { code, example: '', lesson: null, guide: section }
     // Unedited example code restored from autosave keeps its name in the picker
     const match = Object.entries(examples).find(([, source]) => source === code)
-    return { code, example: match ? match[0] : 'custom', lesson: null }
+    return { code, example: match ? match[0] : 'custom', lesson: null, guide: section }
   })
   const [code, setCode] = useState(initial.code)
   const [selectedExample, setSelectedExample] = useState(initial.example)
@@ -113,6 +123,8 @@ function App() {
   // 'A scola: index of the open lesson, null outside the tour
   const [lessonIndex, setLessonIndex] = useState<number | null>(initial.lesson)
   const lesson = lessonIndex === null ? null : lessons[lessonIndex]
+  // 'A guida: index of the open guide section, null outside the guide
+  const [guideIndex, setGuideIndex] = useState<number | null>(initial.guide)
   const [completed, setCompleted] = useState<Set<string>>(() => {
     try {
       return new Set(JSON.parse(readStored(LESSONS_DONE_KEY) ?? '[]') as string[])
@@ -196,6 +208,7 @@ function App() {
 
   const openLesson = useCallback((index: number) => {
     const next = lessons[index]
+    setGuideIndex(null)
     setLessonIndex(index)
     setSelectedExample('')
     setCode(readStored(LESSON_CODE_KEY + next.id) ?? next.starter)
@@ -230,6 +243,30 @@ function App() {
       return next
     })
   }, [code, compiler.busy, compiler.consoleLogs, compiler.errors.length, compiler.status, completed, lastRunCode, lesson])
+
+  const openGuide = useCallback((index: number) => {
+    if (lessonIndex !== null) exitTour()
+    setGuideIndex(index)
+    history.replaceState(null, '', `#guida=${guide[index].id}`)
+  }, [exitTour, lessonIndex])
+
+  const exitGuide = useCallback(() => {
+    setGuideIndex(null)
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [])
+
+  const handleGuide = useCallback(() => {
+    if (guideIndex !== null) exitGuide()
+    else openGuide(0)
+  }, [exitGuide, guideIndex, openGuide])
+
+  // A snippet opened from the guide becomes the playground code
+  const handleOpenSnippet = useCallback((source: string) => {
+    exitGuide()
+    setCode(source)
+    setSelectedExample('custom')
+    setMobileTab('code')
+  }, [exitGuide])
 
   const copy = useCallback((text: string, title: MessageKey, description: MessageKey) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -277,12 +314,18 @@ function App() {
             onEmbed={handleEmbed}
             onTour={handleTour}
             tourActive={lesson !== null}
+            onGuide={handleGuide}
+            guideActive={guideIndex !== null}
             isRunning={isRunning}
             disabled={compiler.isLoading}
           />
         )}
 
-        {isMobile && (
+        {guideIndex !== null && (
+          <GuidePage index={guideIndex} onSelect={openGuide} ready={compiler.isWasmLoaded} onOpen={handleOpenSnippet} />
+        )}
+
+        {isMobile && guideIndex === null && (
           <MobileTabs
             value={mobileTab}
             onChange={setMobileTab}
@@ -293,7 +336,7 @@ function App() {
 
         {/* Main content area - fills remaining space. Side by side on
             desktop; on phones one full-height tab at a time. */}
-        <div className="flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-hidden">
+        <div className={cn('flex md:grid flex-col flex-1 md:grid-cols-2 min-h-0 overflow-hidden', guideIndex !== null && 'hidden md:hidden')}>
           {/* Editor Panel (kept mounted when hidden so the editor keeps its state) */}
           <div
             id="panel-code"
@@ -416,7 +459,7 @@ function App() {
         </div>
 
         {/* Sticky StatusBar */}
-        {!embed && <StatusBar
+        {!embed && guideIndex === null && <StatusBar
           status={isStale && !isRunning ? 'stale' : compiler.status}
           statusText={isStale && !isRunning
             ? t(autoRun ? 'status.staleAuto' : 'status.staleManual')
