@@ -194,7 +194,8 @@ chist è pizza = {
     descrivi() {                 // method ("facc" optional)
         piglie "Pizza " + stu cos.nome
     },
-    mo vir carica() { }          // async method
+    mo vir carica() { },         // async method
+    damme prezzo() { piglie 8 }, // getter (miette for a setter)
 }
 ```
 
@@ -273,7 +274,10 @@ na famiglie Conto {
         stu cos.#saldo = valore
     }
     #controlla() { }             // private method
+    fisso { }                    // static initialization block
 }
+
+chist è Animale = na famiglie { }            // class expression (also named, with figlio 'e)
 ```
 
 ### Try/Catch

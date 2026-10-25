@@ -108,6 +108,24 @@ impl Checker {
         });
     }
 
+    fn class_members(&mut self, members: &[ClassMember]) {
+        for member in members {
+            match member {
+                ClassMember::Method(m) => {
+                    self.property_key(&m.key);
+                    self.function(&m.params, &m.body);
+                }
+                ClassMember::Field { key, value, .. } => {
+                    self.property_key(key);
+                    if let Some(value) = value {
+                        self.expression(value);
+                    }
+                }
+                ClassMember::StaticBlock { body, .. } => self.function(&[], body),
+            }
+        }
+    }
+
     fn params(&mut self, params: &[Pattern]) {
         for p in params {
             self.pattern(p, Binding::Param);
@@ -197,20 +215,7 @@ impl Checker {
                 ..
             } => {
                 self.declare(name, Binding::Lexical, *span);
-                for member in members {
-                    match member {
-                        ClassMember::Method(m) => {
-                            self.property_key(&m.key);
-                            self.function(&m.params, &m.body);
-                        }
-                        ClassMember::Field { key, value, .. } => {
-                            self.property_key(key);
-                            if let Some(value) = value {
-                                self.expression(value);
-                            }
-                        }
-                    }
-                }
+                self.class_members(members);
             }
             Statement::Return { value, .. } => {
                 if let Some(value) = value {
@@ -469,6 +474,18 @@ impl Checker {
                 self.expression(object);
                 self.expression(property);
             }
+            // The name of a class expression is visible only inside it
+            Expression::Class {
+                name,
+                members,
+                span,
+                ..
+            } => self.scoped(|c| {
+                if let Some(name) = name {
+                    c.declare(name, Binding::Lexical, *span);
+                }
+                c.class_members(members);
+            }),
             // The name of a function expression is visible only inside it
             Expression::Function {
                 name,

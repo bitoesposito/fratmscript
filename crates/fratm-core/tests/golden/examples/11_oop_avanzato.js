@@ -50,3 +50,24 @@ class Forno {
 const forno = new Forno();
 forno.temperatura = 900;
 console.log(("Forno: " + forno.temperatura));
+class Menu {
+  static pizze = [];
+  static {
+    Menu.pizze.push("Margherita", "Marinara");
+  }
+}
+console.log(("Menu: " + Menu.pizze.join(", ")));
+const Ricetta = class {
+  constructor(nome) {
+    this.nome = nome;
+  }
+};
+let grammi = 250;
+const impasto = { get chili() {
+  return (grammi / 1000);
+}, set chili(kg) {
+  grammi = (kg * 1000);
+} };
+impasto.chili = 2;
+const ricetta = new Ricetta("Pizza fritta");
+console.log((((ricetta.nome + ": ") + impasto.chili) + " kg"));

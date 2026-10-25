@@ -1,0 +1,37 @@
+// Class expressions
+chist è Animale = na famiglie {
+    costruttore(nome) { stu cos.nome = nome }
+    parla() { piglie stu cos.nome + " fa versi" }
+}
+chist è Cane = na famiglie Bobi figlio 'e Animale {
+    parla() { piglie stu cos.nome + " abbaia (" + Bobi.name + ")" }
+}
+stamm a dì(nu bell Animale("Gatto").parla(), Animale.name)
+stamm a dì(nu bell Cane("Rex").parla(), Cane.name)
+stamm a dì((na famiglie { fisso ciao() { piglie "uè" } }).ciao())
+
+// Static blocks
+na famiglie Config {
+    fisso valori = {}
+    fisso {
+        Config.valori.lingua = "napoletano"
+        stamm a dì("Config pronta")
+    }
+}
+stamm a dì(Config.valori.lingua)
+
+// Getters and setters in object literals
+tien prezzoBase = 5
+chist è pizza = {
+    nome: "margherita",
+    damme prezzo() { piglie prezzoBase + 3 },
+    miette prezzo(v) { prezzoBase = v - 3 },
+    damme() { piglie "metodo chiamato damme" }
+}
+stamm a dì(pizza.prezzo)
+pizza.prezzo = 10
+stamm a dì(pizza.prezzo, prezzoBase, pizza.damme())
+// damme as a name still works
+chist è uno = 1
+chist è damme = 2
+stamm a dì(uno + damme)
