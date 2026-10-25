@@ -165,6 +165,10 @@ pub fn napoletanize_error(message: &str) -> String {
             message.trim_start_matches("Invalid regex flags: ")
         );
     }
+    if message.contains("nested too deeply") {
+        return "Troppa roba una dint'a n'ata! Spartisce 'o codice in variabili o funzioni cchiù piccirille."
+            .to_string();
+    }
     if message.contains("Unterminated template") {
         return "'O template nun è chiuso! Ce vo' 'nu backtick '`' 'a fine.".to_string();
     }

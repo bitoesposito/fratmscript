@@ -23,11 +23,19 @@ impl ParseError {
     }
 }
 
+/// How deep the parser may recurse (blocks, expressions, operators) before
+/// it reports an error instead of overflowing the stack. Each nested
+/// bracket costs about three levels, so this allows ~100 nested `( )`,
+/// which still fits the 1 MB stack of the WASM build.
+const MAX_DEPTH: usize = 300;
+
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
     /// Whether the innermost function is a generator, so `caccia` is allowed
     in_generator: bool,
+    /// Current recursion depth, bounded by `MAX_DEPTH`
+    depth: usize,
 }
 
 impl Parser {
@@ -36,6 +44,7 @@ impl Parser {
             tokens,
             current: 0,
             in_generator: false,
+            depth: 0,
         }
     }
 
@@ -1138,6 +1147,10 @@ impl Parser {
     }
 
     fn parse_block_body(&mut self) -> Result<Vec<Statement>, ParseError> {
+        self.nested(Self::parse_block_body_inner)
+    }
+
+    fn parse_block_body_inner(&mut self) -> Result<Vec<Statement>, ParseError> {
         self.expect(&TokenKind::LeftBrace)?;
         let mut statements = Vec::new();
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
@@ -1185,6 +1198,10 @@ impl Parser {
     }
 
     fn parse_assignment(&mut self) -> Result<Expression, ParseError> {
+        self.nested(Self::parse_assignment_inner)
+    }
+
+    fn parse_assignment_inner(&mut self) -> Result<Expression, ParseError> {
         if self.check(&TokenKind::Caccia) {
             return self.parse_yield();
         }
@@ -1259,7 +1276,7 @@ impl Parser {
         if self.match_token(&TokenKind::Question) {
             let consequent = self.parse_expression()?;
             self.expect(&TokenKind::Colon)?;
-            let alternate = self.parse_ternary()?;
+            let alternate = self.nested(Self::parse_ternary)?;
             let span = self.span_from(expr.span().start);
             expr = Expression::Ternary {
                 condition: Box::new(expr),
@@ -1485,7 +1502,7 @@ impl Parser {
     fn parse_power(&mut self) -> Result<Expression, ParseError> {
         let expr = self.parse_unary()?;
         if self.match_token(&TokenKind::StarStar) {
-            let right = self.parse_power()?;
+            let right = self.nested(Self::parse_power)?;
             let span = self.span_from(expr.span().start);
             return Ok(Expression::Binary {
                 left: Box::new(expr),
@@ -1498,6 +1515,10 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expression, ParseError> {
+        self.nested(Self::parse_unary_inner)
+    }
+
+    fn parse_unary_inner(&mut self) -> Result<Expression, ParseError> {
         // Numeric negation and conversion: -x, +x; bitwise not: ~x;
         // `void x` (`void` alone is a name)
         let operator = match &self.peek().kind {
@@ -1612,7 +1633,7 @@ impl Parser {
                     span,
                 };
             } else if self.match_token(&TokenKind::LeftBracket) {
-                let property = self.parse_expression()?;
+                let property = self.nested(Self::parse_expression)?;
                 self.expect(&TokenKind::RightBracket)?;
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Member {
@@ -1748,7 +1769,7 @@ impl Parser {
                     span,
                 };
             } else if self.match_token(&TokenKind::LeftBracket) {
-                let property = self.parse_expression()?;
+                let property = self.nested(Self::parse_expression)?;
                 self.expect(&TokenKind::RightBracket)?;
                 let span = self.span_from(expr.span().start);
                 expr = Expression::Member {
@@ -1765,6 +1786,10 @@ impl Parser {
     }
 
     fn parse_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
+        self.nested(Self::parse_arguments_inner)
+    }
+
+    fn parse_arguments_inner(&mut self) -> Result<Vec<Expression>, ParseError> {
         let mut args = Vec::new();
         loop {
             self.skip_newlines();
@@ -1884,6 +1909,10 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        self.nested(Self::parse_primary_inner)
+    }
+
+    fn parse_primary_inner(&mut self) -> Result<Expression, ParseError> {
         // Class expressions: `na famiglie { }`, `na famiglie A figlio 'e B { }`
         if self.check(&TokenKind::Na) && self.check_next(&TokenKind::Famiglie) {
             let start = self.current_span();
@@ -1974,7 +2003,7 @@ impl Parser {
                 let expressions = expressions
                     .clone()
                     .into_iter()
-                    .map(|tokens| parse_interpolation(tokens, span))
+                    .map(|tokens| parse_interpolation(tokens, span, self.depth))
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(Expression::Template {
                     quasis,
@@ -2141,6 +2170,23 @@ impl Parser {
     }
 
     // === Helpers ===
+
+    /// Runs `f` one level deeper, or fails once `MAX_DEPTH` is reached.
+    fn nested<T>(
+        &mut self,
+        f: impl FnOnce(&mut Self) -> Result<T, ParseError>,
+    ) -> Result<T, ParseError> {
+        if self.depth >= MAX_DEPTH {
+            return Err(ParseError::new(
+                "The code is nested too deeply",
+                self.peek().span,
+            ));
+        }
+        self.depth += 1;
+        let result = f(self);
+        self.depth -= 1;
+        result
+    }
 
     fn skip_newlines(&mut self) {
         while self.check(&TokenKind::Newline) {
@@ -2470,6 +2516,7 @@ fn update_op(kind: &TokenKind) -> UpdateOp {
 fn parse_interpolation(
     mut tokens: Vec<Token>,
     template_span: Span,
+    depth: usize,
 ) -> Result<Expression, ParseError> {
     let end = tokens.last().map(|t| t.span).unwrap_or(template_span);
     tokens.retain(|t| t.kind != TokenKind::Newline);
@@ -2478,6 +2525,7 @@ fn parse_interpolation(
     }
     tokens.push(Token::new(TokenKind::Eof, end, String::new()));
     let mut parser = Parser::new(tokens);
+    parser.depth = depth;
     let expr = parser.parse_expression()?;
     if !parser.is_at_end() {
         let token = parser.peek();
