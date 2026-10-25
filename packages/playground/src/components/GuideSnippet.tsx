@@ -157,7 +157,7 @@ export function GuideSnippet({ initialCode, ready, onOpen }: GuideSnippetProps) 
           <div className="px-3 pt-1.5 font-sans text-muted-foreground text-xs uppercase tracking-wider">{t('guide.console')}</div>
           {result.logs.length > 0 ? (
             result.logs.map((log, i) => (
-              <div key={i} className={cn('flex items-start gap-2 px-3 py-1', log.type === 'warn' && 'text-warning', log.type === 'error' && 'text-destructive')}>
+              <div key={i} className={cn('flex items-start gap-2 px-3 py-1', log.type === 'warn' && 'text-warning-foreground', log.type === 'error' && 'text-destructive-foreground')}>
                 <span className="mt-0.5 shrink-0">
                   {log.type === 'warn' && <TriangleAlert className="size-3.5" />}
                   {log.type === 'error' && <CircleAlert className="size-3.5" />}

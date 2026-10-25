@@ -8,7 +8,7 @@ interface StatusBarProps {
 
 export function StatusBar({ status, statusText, compileTime }: StatusBarProps) {
   return (
-    <div className="px-4 py-1.5 bg-card border-t border-border text-xs text-muted-foreground flex justify-between">
+    <footer className="px-4 py-1.5 bg-card border-t border-border text-xs text-muted-foreground flex justify-between">
       <div className="flex items-center gap-2">
         <div
           className={cn(
@@ -23,6 +23,6 @@ export function StatusBar({ status, statusText, compileTime }: StatusBarProps) {
         <span>{statusText}</span>
       </div>
       {compileTime && <span>{compileTime}</span>}
-    </div>
+    </footer>
   )
 }

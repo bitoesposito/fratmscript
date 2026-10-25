@@ -31,7 +31,7 @@ export function InspectView({ inspection, view, onHighlight }: InspectViewProps)
       ) : (
         <p className="bg-card/50 p-3 border border-border rounded-md text-muted-foreground text-sm">
           {t('output.treeError')}
-          {inspection.error && <span className="block mt-1 font-mono text-destructive text-xs">{inspection.error}</span>}
+          {inspection.error && <span className="block mt-1 font-mono text-destructive-foreground text-xs">{inspection.error}</span>}
         </p>
       )}
     </div>
@@ -41,7 +41,7 @@ export function InspectView({ inspection, view, onHighlight }: InspectViewProps)
 function TokenList({ tokens, onHighlight }: { tokens: InspectToken[]; onHighlight: InspectViewProps['onHighlight'] }) {
   const { t } = useI18n()
   if (tokens.length === 0) {
-    return <p className="bg-card/50 p-3 border border-border rounded-md text-muted-foreground/50 text-sm text-center">{t('output.noTokens')}</p>
+    return <p className="bg-card/50 p-3 border border-border rounded-md text-muted-foreground text-sm text-center">{t('output.noTokens')}</p>
   }
   return (
     <ol className="flex flex-wrap gap-1.5 bg-card/50 p-3 border border-border rounded-md font-mono text-xs">
@@ -66,7 +66,7 @@ const CATEGORY_COLORS: Record<InspectToken['category'], string> = {
   name: 'text-cyan-700 dark:text-cyan-400',
   literal: 'text-amber-700 dark:text-amber-400',
   punct: 'text-muted-foreground',
-  invalid: 'text-destructive',
+  invalid: 'text-destructive-foreground',
 }
 
 function TreeRow({ node, depth, onHighlight }: { node: InspectNode; depth: number; onHighlight: InspectViewProps['onHighlight'] }) {
