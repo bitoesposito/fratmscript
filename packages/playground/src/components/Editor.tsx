@@ -65,7 +65,7 @@ const darkHighlighting = HighlightStyle.define([
   { tag: tags.atom, color: '#60a5fa' }, // blue-400
   { tag: tags.number, color: '#fbbf24' }, // amber-400
   { tag: tags.string, color: '#34d399' }, // emerald-400
-  { tag: tags.comment, color: '#6b7280', fontStyle: 'italic' }, // neutral-500
+  { tag: tags.comment, color: '#9ca3af', fontStyle: 'italic' }, // neutral-400
   { tag: tags.variableName, color: '#e5e7eb' }, // neutral-200
   { tag: tags.definition(tags.variableName), color: '#60a5fa' }, // blue-400
   { tag: tags.operator, color: '#22d3ee' }, // cyan-400
@@ -82,17 +82,17 @@ const darkHighlighting = HighlightStyle.define([
 const lightHighlighting = HighlightStyle.define([
   { tag: tags.keyword, color: '#7c3aed' }, // purple-600
   { tag: tags.atom, color: '#2563eb' }, // blue-600
-  { tag: tags.number, color: '#d97706' }, // amber-600
-  { tag: tags.string, color: '#059669' }, // emerald-600
+  { tag: tags.number, color: '#b45309' }, // amber-700
+  { tag: tags.string, color: '#047857' }, // emerald-700
   { tag: tags.comment, color: '#6b7280', fontStyle: 'italic' }, // neutral-500
   { tag: tags.variableName, color: '#374151' }, // neutral-700
   { tag: tags.definition(tags.variableName), color: '#2563eb' }, // blue-600
-  { tag: tags.operator, color: '#0891b2' }, // cyan-600
+  { tag: tags.operator, color: '#0e7490' }, // cyan-700
   { tag: tags.punctuation, color: '#6b7280' }, // neutral-500
   { tag: tags.function(tags.variableName), color: '#2563eb' }, // blue-600
   { tag: tags.propertyName, color: '#dc2626' }, // red-600
-  { tag: tags.typeName, color: '#d97706' }, // amber-600
-  { tag: tags.className, color: '#d97706' }, // amber-600
+  { tag: tags.typeName, color: '#b45309' }, // amber-700
+  { tag: tags.className, color: '#b45309' }, // amber-700
   { tag: tags.meta, color: '#7c3aed' }, // purple-600
   { tag: tags.name, color: '#374151' }, // neutral-700
 ])
@@ -127,7 +127,7 @@ const darkTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
     borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-    color: '#6b7280', // neutral-500
+    color: '#9ca3af', // neutral-400
   },
   '.cm-lineNumbers .cm-gutterElement': {
     padding: '0 12px 0 8px',
@@ -210,7 +210,7 @@ const lightTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
     borderRight: '1px solid rgba(0, 0, 0, 0.08)',
-    color: '#9ca3af', // neutral-400
+    color: '#6b7280', // neutral-500
   },
   '.cm-lineNumbers .cm-gutterElement': {
     padding: '0 12px 0 8px',
@@ -297,6 +297,14 @@ interface EditorProps {
 // Compartments for dynamic theme switching
 const themeCompartment = new Compartment()
 const highlightCompartment = new Compartment()
+const labelCompartment = new Compartment()
+
+const KEYBOARD_HINT_ID = 'editor-keyboard-hint'
+
+/** Accessible name of the editor, plus a pointer to the hint on leaving it. */
+function contentLabel(label: string) {
+  return EditorView.contentAttributes.of({ 'aria-label': label, 'aria-describedby': KEYBOARD_HINT_ID })
+}
 
 // Line background for lines with an error
 const errorLineDecoration = Decoration.line({ class: 'cm-errorLine' })
@@ -367,8 +375,9 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const { resolvedTheme } = useTheme()
-  const { lang } = useI18n()
+  const { lang, t } = useI18n()
   setKeywordLanguage(lang)
+  const label = t('editor.label')
 
   // Determine if dark mode
   const isDark = resolvedTheme === 'dark'
@@ -458,6 +467,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         fratmScriptLanguage,
         highlightCompartment.of(syntaxHighlighting(isDark ? darkHighlighting : lightHighlighting)),
         themeCompartment.of(isDark ? darkTheme : lightTheme),
+        labelCompartment.of(contentLabel(label)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChange(update.state.doc.toString())
@@ -494,6 +504,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     }
   }, [isDark])
 
+  // Follow the UI language
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: labelCompartment.reconfigure(contentLabel(label)) })
+  }, [label])
+
   // Update editor content when value changes externally (e.g., loading examples)
   useEffect(() => {
     if (viewRef.current) {
@@ -520,9 +535,13 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   }, [diagnostics])
 
   return (
-    <div
-      ref={containerRef}
-      className={cn('w-full h-full', className)}
-    />
+    <>
+      <div
+        ref={containerRef}
+        className={cn('w-full h-full', className)}
+      />
+      {/* Tab indents inside the editor: tell keyboard users how to leave it */}
+      <span id={KEYBOARD_HINT_ID} className="sr-only">{t('editor.keyboardHint')}</span>
+    </>
   )
 })

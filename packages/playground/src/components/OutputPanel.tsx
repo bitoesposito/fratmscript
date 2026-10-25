@@ -147,10 +147,10 @@ export function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onE
       <div className="flex items-start gap-3 px-4 py-3">
         <Icon className="mt-0.5 w-5 h-5 text-destructive shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="mb-1 font-medium text-destructive/80 text-xs uppercase tracking-wider">
+          <div className="mb-1 font-medium text-destructive-foreground text-xs uppercase tracking-wider">
             {t(ERROR_TITLES[error.kind])}
           </div>
-          <div className="font-semibold text-destructive break-words">
+          <div className="font-semibold text-destructive-foreground break-words">
             {message}
           </div>
           {line !== undefined && (
@@ -168,7 +168,7 @@ export function ErrorCard({ error, onErrorClick }: { error: PlaygroundError; onE
         <div className="bg-warning/5 px-4 py-3 border-destructive/20 border-t">
           <div className="flex items-start gap-2 text-sm">
             <TriangleAlert className="mt-0.5 w-4 h-4 text-warning shrink-0" />
-            <span className="text-warning">{error.suggestion}</span>
+            <span className="text-warning-foreground">{error.suggestion}</span>
           </div>
         </div>
       )}
@@ -203,11 +203,11 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
       {showConsole && (
         <section className={cn('p-4 border-border', showJs && 'border-b')}>
           <div className="flex justify-between items-center mb-3">
-            <h3 className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider">
+            <h2 className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider">
               <span className={cn('bg-info rounded-full w-2 h-2', isRunning && 'animate-pulse')} />
               {t('output.console')}
               {isRunning && <span className="normal-case tracking-normal">{t('output.running')}</span>}
-            </h3>
+            </h2>
             <SectionAction
               onClick={onClearConsole}
               disabled={consoleLogs.length === 0 && !notice}
@@ -236,8 +236,8 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
                   {/* Log content */}
                   <span className={cn(
                     'flex-1 break-all whitespace-pre-wrap',
-                    log.type === 'warn' && 'text-warning',
-                    log.type === 'error' && 'text-destructive',
+                    log.type === 'warn' && 'text-warning-foreground',
+                    log.type === 'error' && 'text-destructive-foreground',
                     log.type === 'log' && 'text-foreground'
                   )}>
                     {log.args.map((arg, j) => (
@@ -251,7 +251,7 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
                 </div>
               ))
             ) : (
-              <div className="px-3 py-4 text-muted-foreground/50 text-center">
+              <div className="px-3 py-4 text-muted-foreground text-center">
                 {t(isRunning ? 'output.waiting' : 'output.empty')}
               </div>
             )}
@@ -304,13 +304,13 @@ export function OutputPanel({ jsOutput, consoleLogs, errors, notice, isRunning, 
             inspection ? (
               <InspectView inspection={inspection} view={codeView} onHighlight={onHighlight} />
             ) : (
-              <p className="text-muted-foreground/50 text-sm">{t('output.jsPlaceholder')}</p>
+              <p className="text-muted-foreground text-sm">{t('output.jsPlaceholder')}</p>
             )
           ) : mapLines && canMap ? (
             <MappedJs code={jsOutput} lineMap={jsLineMap} cursorLine={cursorLine} onLineClick={onErrorClick} />
           ) : (
             <pre className="bg-card/50 p-3 border border-border rounded-md font-mono text-foreground/90 text-sm break-words leading-relaxed whitespace-pre-wrap">
-              {jsOutput || <span className="text-muted-foreground/50">{t('output.jsPlaceholder')}</span>}
+              {jsOutput || <span className="text-muted-foreground">{t('output.jsPlaceholder')}</span>}
             </pre>
           )}
         </section>
