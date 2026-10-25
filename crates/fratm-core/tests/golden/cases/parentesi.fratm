@@ -1,0 +1,31 @@
+// The generated JavaScript keeps the meaning of the FratmScript source
+// where JS would read the same text differently
+
+na famiglie Pizza {
+    facc costruttore(nome) {
+        stu cos.nome = nome
+    }
+    descrivi() {
+        piglie "Pizza " + stu cos.nome
+    }
+}
+
+// The arguments of `nu bell` are the first ( ), what follows uses the object
+stamm a dì(nu bell Pizza("margherita").descrivi())
+stamm a dì(nu bell Pizza("marinara").nome)
+
+facc fabbrica() {
+    piglie Pizza
+}
+stamm a dì(nu bell (fabbrica())("diavola").nome)
+
+// A statement that starts with an object literal
+({ conto: 3 }).conto
+chist è doppio = () => ({ n: 2 }).n * 2
+stamm a dì(doppio())
+
+// Unary operators before **
+stamm a dì((-2) ** 2, 2 ** -1)
+
+// Methods of number literals
+stamm a dì(5.toString() + "!", 1.25.toFixed(1))
