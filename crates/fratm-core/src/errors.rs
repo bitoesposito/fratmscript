@@ -101,6 +101,10 @@ pub fn napoletanize_error(message: &str) -> String {
     if expects(message, "'cos'") {
         return "Doppo 'stu' ce vo' 'cos'! Scrivi 'stu cos' pe riferisce a this.".to_string();
     }
+    if expects(message, "'comme'") {
+        return "Ccà ce vo' 'comme' pe dà nu nomme: 'chiamm * comme fs da \"node:fs\"'."
+            .to_string();
+    }
     if expects(message, "'for'") {
         return "Doppo 'mann' ce vo' 'for'! Scrivi 'mann for' pe esportà.".to_string();
     }
@@ -184,6 +188,12 @@ pub fn napoletanize_error(message: &str) -> String {
                 available.trim_end_matches(')')
             );
         }
+    }
+    if let Some(names) = message.strip_prefix("The fratm library is imported by name: ") {
+        return format!(
+            "'A libreria \"fratm\" se chiamma pe nomme, cu 'e graffe: {}",
+            names
+        );
     }
     if message.contains("'caccia' works only inside") {
         return "'caccia' se po' usà sulo dint'a nu generatore: facc* nomme() { caccia … }"
