@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fratm": {
+      "command": "fratm",
+      "args": ["mcp"]
+    }
+  }
+}

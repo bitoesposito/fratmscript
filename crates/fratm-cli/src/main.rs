@@ -617,11 +617,14 @@ fn print_source_line(source: &str, line_num: usize, column: Option<usize>) {
 mod tests {
     use super::*;
 
-    /// Every ```fratm block of the agent reference, with its first line.
-    fn guida_blocks() -> Vec<(usize, String)> {
+    /// The FratmScript skill of the agent plugin.
+    const SKILL: &str = include_str!("../../../packages/agent-plugin/skills/fratmscript/SKILL.md");
+
+    /// Every ```fratm block of a Markdown text, with its first line.
+    fn fratm_blocks(text: &str) -> Vec<(usize, String)> {
         let mut blocks = Vec::new();
         let mut current: Option<(usize, String)> = None;
-        for (i, line) in GUIDA.lines().enumerate() {
+        for (i, line) in text.lines().enumerate() {
             match (&mut current, line.trim_end()) {
                 (None, "```fratm") => current = Some((i + 2, String::new())),
                 (Some(_), "```") => blocks.push(current.take().unwrap()),
@@ -637,11 +640,22 @@ mod tests {
 
     #[test]
     fn every_example_in_the_agent_reference_compiles() {
-        let blocks = guida_blocks();
+        let blocks = fratm_blocks(GUIDA);
         assert!(blocks.len() >= 10, "found {} blocks", blocks.len());
         for (line, code) in blocks {
             if let Err(e) = compile(&code, Default::default()) {
                 panic!("guida.md block at line {}: {}", line, e);
+            }
+        }
+    }
+
+    #[test]
+    fn every_example_in_the_agent_skill_compiles() {
+        let blocks = fratm_blocks(SKILL);
+        assert!(!blocks.is_empty());
+        for (line, code) in blocks {
+            if let Err(e) = compile(&code, Default::default()) {
+                panic!("SKILL.md block at line {}: {}", line, e);
             }
         }
     }
