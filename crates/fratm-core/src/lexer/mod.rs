@@ -346,7 +346,7 @@ impl<'a> Lexer<'a> {
                     self.make_token(TokenKind::Newline)
                 }
 
-                _ => self.make_token(TokenKind::Invalid(c.to_string())),
+                _ => self.make_token(TokenKind::Invalid(format!("Unknown character '{c}'"))),
             },
         }
     }

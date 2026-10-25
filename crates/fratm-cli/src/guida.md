@@ -351,10 +351,13 @@ Errors look like `Riga 3, colonna 7: <message>` (line 3, column 7). Common messa
 
 | Neapolitan message (start) | Meaning |
 | --- | --- |
-| `Ccà ce vo' 'na espressione` | expected an expression (often: expression split over two lines) |
+| `Ccà ce vo' 'na espressione, ma aggio truvato '*'` | expected an expression; the token found is quoted |
 | `Ccà ce sta 'x' ma l'istruzione era già fernuta` | unexpected token after a complete statement (often: a JavaScript keyword) |
-| `Manca 'a parentesi chiusa` / `parentesi graffa ... nun l'hai chiusa` | missing `)` / `}` |
-| `Ccà ce vo' '{', ma aggio truvato ...` | expected `{` (braces are required) |
+| `Ccà ce vo' 'na virgola ',' (o ')' pe chiudere)` | missing comma between arguments, array items or object properties |
+| `Manca 'a parentesi chiusa` / `parentesi graffa ... nun l'hai chiusa` | missing `)` / `}` at the end of the file |
+| `Ccà ce vo' 'x', ma aggio truvato 'y'` | expected `x` (for example `{`: braces are required) |
+| `... ma aggio truvato 'a fine d'a riga` / `'a fine d'o file` | the line or the file ended too early |
+| `Stu carattere '@' nun 'o canosco` | a character FratmScript does not use |
 | `Ccà ce vo' nu nome` | expected a name (often: a keyword used as a variable name) |
 | `'x' già esiste: l'hai dichiarato a riga N` | name declared twice |
 | `'x' nun esiste` | runtime: name not defined |

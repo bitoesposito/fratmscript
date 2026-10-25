@@ -57,7 +57,36 @@ impl CompileError {
 
 /// Get Napoletano message for error
 pub fn napoletanize_error(message: &str) -> String {
-    // Pattern matching for common errors
+    let found = found_token(message);
+    if let Some(c) = message.strip_prefix("Unknown character '") {
+        return format!(
+            "Stu carattere '{}' nun 'o canosco: FratmScript nun 'o usa!",
+            c.trim_end_matches('\'')
+        );
+    }
+    if message.contains("between the elements") {
+        let closing = message
+            .strip_prefix("Expected ',' or '")
+            .and_then(|rest| rest.split('\'').next())
+            .unwrap_or(")");
+        return format!(
+            "Ccà ce vo' 'na virgola ',' (o '{}' pe chiudere), ma aggio truvato {}!",
+            closing,
+            found.as_deref().unwrap_or("n'ata cosa")
+        );
+    }
+    // A closing bracket followed by the end of the file is really unclosed;
+    // anything else gets named, so the message does not blame the wrong bracket.
+    let unclosed = matches!(found.as_deref(), None | Some(END_OF_FILE));
+    for closing in ["'}'", "')'", "']'"] {
+        if expects(message, closing) && !unclosed {
+            return format!(
+                "Ccà ce vo' {}, ma aggio truvato {}!",
+                closing,
+                found.as_deref().unwrap_or("n'ata cosa")
+            );
+        }
+    }
     if expects(message, "'}'") {
         return "Uè, hai aperto 'na parentesi graffa ma nun l'hai chiusa! Mettece '}'!".to_string();
     }
@@ -234,22 +263,39 @@ pub fn napoletanize_error(message: &str) -> String {
         );
     }
     if message.contains("expression") || message.contains("espressione") {
-        return "Ma che staje scrivenn?! Ccà ce vo' 'na espressione!".to_string();
+        return match found {
+            Some(found) => {
+                format!(
+                    "Ma che staje scrivenn?! Ccà ce vo' 'na espressione, ma aggio truvato {found}!"
+                )
+            }
+            None => "Ma che staje scrivenn?! Ccà ce vo' 'na espressione!".to_string(),
+        };
     }
 
     // Any other "Expected 'x', but found 'y'" from the parser
     if let Some(rest) = message.strip_prefix("Expected '") {
-        if let Some((expected, found)) = rest.split_once("', but found '") {
-            return format!(
-                "Ccà ce vo' '{}', ma aggio truvato '{}'!",
-                expected,
-                found.trim_end_matches('\'')
-            );
+        if let (Some((expected, _)), Some(found)) = (rest.split_once("', but found '"), found) {
+            return format!("Ccà ce vo' '{}', ma aggio truvato {}!", expected, found);
         }
     }
 
     // Default: return with some Napoletano flair
     format!("Uè, c'è nu problema: {}", message)
+}
+
+const END_OF_FILE: &str = "'a fine d'o file";
+
+/// The token after `but found '…'`, quoted, or described when it is a line
+/// break or the end of the file.
+fn found_token(message: &str) -> Option<String> {
+    let (_, rest) = message.split_once("but found '")?;
+    let token = rest.strip_suffix('\'').unwrap_or(rest);
+    Some(match token {
+        "\\n" => "'a fine d'a riga".to_string(),
+        "EOF" => END_OF_FILE.to_string(),
+        other => format!("'{other}'"),
+    })
 }
 
 /// The parser reports `Expected 'x', but found …`; older messages used `Aspettavo`.
@@ -269,9 +315,11 @@ pub fn get_suggestion(error: &CompileError) -> Option<String> {
                 Some("💡 Scrive n'istruzione pe riga, o separale cu ';'".to_string())
             } else if message.contains("'primm fa'") {
                 Some("💡 Esempio: primm fa { i++ } mentre che (i < 3)".to_string())
-            } else if message.contains("'}'") {
+            } else if message.contains("between the elements") {
+                Some("💡 Separa 'e elemente cu ',': f(1, 2), [a, b], { a: 1, b: 2 }".to_string())
+            } else if expects(message, "'}'") {
                 Some("💡 Conta 'e parentesi graffe: ogni '{' adda avè 'o suo '}'".to_string())
-            } else if message.contains("')'") {
+            } else if expects(message, "')'") {
                 Some("💡 Conta 'e parentesi tonne: ogni '(' adda avè 'o suo ')'".to_string())
             } else if message.contains("chist") {
                 Some("💡 Esempio: chist è nome = \"Gennaro\"".to_string())
@@ -570,6 +618,60 @@ mod tests {
         let msg = format!("{}", error);
         assert!(msg.contains("parentesi graffa"));
         assert!(msg.contains("Riga 5"));
+    }
+
+    fn message(source: &str) -> String {
+        crate::compile(source, Default::default())
+            .unwrap_err()
+            .to_string()
+    }
+
+    #[test]
+    fn test_missing_comma_is_not_reported_as_an_unclosed_bracket() {
+        for (source, closing) in [
+            ("tien o = { a: 1 b: 2 }", "'}'"),
+            ("tien a = [1 2]", "']'"),
+            ("f(1 2)", "')'"),
+            ("facc f(a b) { }", "')'"),
+        ] {
+            let msg = message(source);
+            assert!(
+                msg.contains(&format!("'na virgola ',' (o {closing} pe chiudere)")),
+                "{source}: {msg}"
+            );
+            assert!(!msg.contains("nun l'hai chiusa"), "{source}: {msg}");
+        }
+        assert!(hint("f(1 2)")
+            .unwrap()
+            .contains("Separa 'e elemente cu ','"));
+    }
+
+    #[test]
+    fn test_closing_bracket_errors_name_the_token_found() {
+        assert!(message("si (x { }").contains("Ccà ce vo' ')', ma aggio truvato '{'!"));
+        // At the end of the file the bracket really is unclosed
+        assert!(message("si (x) {\n  y = 1\n").contains("nun l'hai chiusa! Mettece '}'"));
+        assert!(message("tien x = [1, 2").contains("Chiudela cu ']'"));
+    }
+
+    #[test]
+    fn test_expression_errors_name_the_token_found() {
+        assert!(message("chist è y = 3 +* 4").contains("'na espressione, ma aggio truvato '*'!"));
+        assert!(message("tien x = 1 +").contains("ma aggio truvato 'a fine d'o file!"));
+        // A stray ')' no longer gets the "count your parentheses" hint
+        assert_eq!(hint("tien x = (1 +\n)"), None);
+    }
+
+    #[test]
+    fn test_unknown_characters_are_named() {
+        assert!(message("tien x = 1 @ 2").contains("Stu carattere '@' nun 'o canosco"));
+    }
+
+    #[test]
+    fn test_line_breaks_are_described_not_escaped() {
+        let msg = message("facc f\n() { }");
+        assert!(msg.contains("'a fine d'a riga"), "{msg}");
+        assert!(!msg.contains("\\n"), "{msg}");
     }
 
     fn suggestion_for(source: &str) -> Option<String> {
