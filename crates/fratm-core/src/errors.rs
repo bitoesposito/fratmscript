@@ -195,6 +195,27 @@ pub fn napoletanize_error(message: &str) -> String {
             names
         );
     }
+    if let Some((jump, label)) = message
+        .strip_prefix('\'')
+        .and_then(|rest| rest.split_once("': no enclosing label '"))
+    {
+        let label = label.trim_end_matches('\'');
+        return if jump.starts_with("salta") {
+            format!("'{jump}': nun ce sta nisciuno ciclo cu l'etichetta '{label}:' attuorno")
+        } else {
+            format!("'{jump}': nun ce sta nisciuna etichetta '{label}:' attuorno")
+        };
+    }
+    if let Some(keyword) = message.strip_suffix("' is not allowed here") {
+        let hint = match keyword.trim_start_matches('\'') {
+            "piglie" => "'piglie' se po' usà sulo dint'a na funzione: facc nomme() { piglie … }",
+            "aspett" => "'aspett' se po' usà sulo dint'a na funzione 'mo vir' (async): mo vir facc nomme() { aspett … }",
+            "pe aspett" => "'pe aspett' se po' usà sulo dint'a na funzione 'mo vir' (async)",
+            "rompe" => "'rompe' se po' usà sulo dint'a nu ciclo (mentre, pe, primm fa) o dint'a nu vedimm",
+            _ => "'salta' se po' usà sulo dint'a nu ciclo (mentre, pe, primm fa)",
+        };
+        return hint.to_string();
+    }
     if message.contains("'caccia' works only inside") {
         return "'caccia' se po' usà sulo dint'a nu generatore: facc* nomme() { caccia … }"
             .to_string();

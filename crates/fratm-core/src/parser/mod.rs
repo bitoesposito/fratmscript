@@ -1728,6 +1728,41 @@ impl Parser {
     }
 
     /// Call arguments after `(`; they may span lines and use `...spread`.
+    /// The class after `nu bell`: a primary expression followed by `.name`
+    /// and `[key]` accesses, but no call.
+    fn parse_new_callee(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.parse_primary()?;
+        loop {
+            if self.match_token(&TokenKind::Dot) {
+                let name = self.expect_member_name()?;
+                let span = self.span_from(expr.span().start);
+                expr = Expression::Member {
+                    object: Box::new(expr),
+                    property: Box::new(Expression::Identifier {
+                        name,
+                        span: self.previous().span,
+                    }),
+                    computed: false,
+                    optional: false,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::LeftBracket) {
+                let property = self.parse_expression()?;
+                self.expect(&TokenKind::RightBracket)?;
+                let span = self.span_from(expr.span().start);
+                expr = Expression::Member {
+                    object: Box::new(expr),
+                    property: Box::new(property),
+                    computed: true,
+                    optional: false,
+                    span,
+                };
+            } else {
+                return Ok(expr);
+            }
+        }
+    }
+
     fn parse_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
         let mut args = Vec::new();
         loop {
@@ -1973,26 +2008,20 @@ impl Parser {
             }),
             TokenKind::Nu => {
                 self.expect(&TokenKind::Bell)?;
-                let callee = self.parse_call()?;
-                let span = self.span_from(span.start);
-                if let Expression::Call {
-                    callee: inner,
-                    arguments,
-                    ..
-                } = callee
-                {
-                    Ok(Expression::New {
-                        callee: inner,
-                        arguments,
-                        span,
-                    })
+                // As in JS, the arguments are the first `( )` after the class
+                // and anything after them applies to the new object:
+                // `nu bell Pizza("m").descrivi()` calls `descrivi` on it.
+                let callee = self.parse_new_callee()?;
+                let arguments = if self.match_token(&TokenKind::LeftParen) {
+                    self.parse_arguments()?
                 } else {
-                    Ok(Expression::New {
-                        callee: Box::new(callee),
-                        arguments: vec![],
-                        span,
-                    })
-                }
+                    vec![]
+                };
+                Ok(Expression::New {
+                    callee: Box::new(callee),
+                    arguments,
+                    span: self.span_from(span.start),
+                })
             }
             TokenKind::Stamm => {
                 self.expect_identifier_a()?;

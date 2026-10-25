@@ -341,6 +341,41 @@ mod tests {
     }
 
     #[test]
+    fn test_new_takes_the_first_arguments() {
+        // `.b` reads a property of the new object, it is not the class
+        assert_eq!(js("x = nu bell A().b"), "x = new A().b;\n");
+        assert_eq!(js("x = nu bell A(1).d()"), "x = new A(1).d();\n");
+        assert_eq!(js("x = nu bell a.B[\"C\"](2)"), "x = new a.B[\"C\"](2);\n");
+        assert_eq!(js("x = nu bell A"), "x = new A();\n");
+    }
+
+    #[test]
+    fn test_new_callee_with_a_call_keeps_its_parentheses() {
+        assert_eq!(js("x = nu bell (f())(1)"), "x = new (f())(1);\n");
+        assert_eq!(js("x = nu bell (a?.b)(1)"), "x = new (a?.b)(1);\n");
+    }
+
+    #[test]
+    fn test_statement_starting_with_an_object_is_not_a_block() {
+        assert_eq!(js("({ a: 1 }).a"), "({ a: 1 }.a);\n");
+        assert_eq!(js("({ a: 1 }).a = 2"), "({ a: 1 }.a = 2);\n");
+        assert_eq!(js("f = () => ({ a: 1 }).a"), "f = () => ({ a: 1 }.a);\n");
+    }
+
+    #[test]
+    fn test_unary_base_of_power_gets_parentheses() {
+        assert_eq!(js("x = (-2) ** 2"), "x = ((-2) ** 2);\n");
+        assert_eq!(js("x = (chè è a) ** 2"), "x = ((typeof a) ** 2);\n");
+        assert_eq!(js("x = 2 ** -1"), "x = (2 ** -1);\n");
+    }
+
+    #[test]
+    fn test_member_of_a_number_literal() {
+        assert_eq!(js("x = 5.toString()"), "x = (5).toString();\n");
+        assert_eq!(js("x = 1.5.toFixed(1)"), "x = (1.5).toFixed(1);\n");
+    }
+
+    #[test]
     fn test_simple_compile() {
         let result = compile("chist è x = 42", Default::default()).unwrap();
         assert!(result.code.contains("const x = 42"));
@@ -1347,5 +1382,22 @@ na famiglie Pizzaiolo figlio 'e Persona {
         assert!(code.contains("String.raw`a\\n${1}`"), "{code}");
         assert!(code.contains("html`<p>${x}</p>`"), "{code}");
         assert!(code.contains("f()`x`"), "{code}");
+    }
+
+    #[test]
+    fn test_jump_labels_must_exist() {
+        let error = |source: &str| compile(source, Default::default()).unwrap_err().to_string();
+        assert!(
+            error("pe (;;) { rompe fore }").contains("nun ce sta nisciuna etichetta 'fore:'"),
+            "{}",
+            error("pe (;;) { rompe fore }")
+        );
+        // `salta` needs a label on a loop, not on a block
+        assert!(error("blocco: { pe (;;) { salta blocco } }")
+            .contains("nisciuno ciclo cu l'etichetta 'blocco:'"));
+        // Labels do not reach into functions
+        assert!(error("fore: pe (;;) { facc f() { rompe fore } }").contains("'rompe fore'"));
+        // `rompe` with a label works outside loops, on a labelled block
+        assert!(compile("blocco: { rompe blocco }", Default::default()).is_ok());
     }
 }

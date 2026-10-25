@@ -490,11 +490,9 @@ impl CodeGen {
             Statement::Expression { expression, span } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
-                // A statement starting with `function` or `class` would be a declaration
-                if matches!(
-                    expression,
-                    Expression::Function { .. } | Expression::Class { .. }
-                ) {
+                // A statement starting with `{` would be read as a block, and
+                // one starting with `function` or `class` as a declaration
+                if starts_like_a_declaration(expression) {
                     self.emit("(");
                     self.gen_expression(expression);
                     self.emit(")");
@@ -722,7 +720,22 @@ impl CodeGen {
                 ..
             } => {
                 self.emit("(");
-                self.gen_operand(left);
+                // JS rejects a unary operator right before `**`: `(-a) ** 2`
+                let unary_base = *operator == BinaryOp::Power
+                    && matches!(
+                        **left,
+                        Expression::Unary { .. }
+                            | Expression::Await { .. }
+                            | Expression::TypeOf { .. }
+                            | Expression::Delete { .. }
+                    );
+                if unary_base {
+                    self.emit("(");
+                    self.gen_expression(left);
+                    self.emit(")");
+                } else {
+                    self.gen_operand(left);
+                }
                 self.emit(" ");
                 self.emit(operator.to_js());
                 self.emit(" ");
@@ -842,7 +855,14 @@ impl CodeGen {
                 callee, arguments, ..
             } => {
                 self.emit("new ");
-                self.gen_callee(callee);
+                // `new f()(1)` and `new a?.b()` mean something else, or nothing
+                if has_call_or_optional(callee) {
+                    self.emit("(");
+                    self.gen_expression(callee);
+                    self.emit(")");
+                } else {
+                    self.gen_callee(callee);
+                }
                 self.emit("(");
                 for (i, arg) in arguments.iter().enumerate() {
                     if i > 0 {
@@ -865,7 +885,7 @@ impl CodeGen {
                 self.emit(" => ");
                 match body {
                     // `() => ({ … })`: a bare `{` would start a block
-                    ArrowBody::Expression(e) if matches!(**e, Expression::Object { .. }) => {
+                    ArrowBody::Expression(e) if starts_like_a_declaration(e) => {
                         self.emit("(");
                         self.gen_expression(e);
                         self.emit(")");
@@ -1158,7 +1178,8 @@ impl CodeGen {
     }
 
     /// Callee or object of a member access: prefix operators need parentheses
-    /// too (`(await p).x`, `(() => 1)()`).
+    /// too (`(await p).x`, `(() => 1)()`), and so do numbers (`(5).toString()`,
+    /// since `5.` would be read as the number).
     fn gen_callee(&mut self, expr: &Expression) {
         let prefix = matches!(
             expr,
@@ -1168,6 +1189,7 @@ impl CodeGen {
                 | Expression::Delete { .. }
                 | Expression::Function { .. }
                 | Expression::Class { .. }
+                | Expression::Number { .. }
         );
         if prefix {
             self.emit("(");
@@ -1276,6 +1298,46 @@ fn alias(name: &str, alias: &str) -> String {
 /// A module path as a JS string literal.
 fn js_string(value: &str) -> String {
     serde_json::to_string(value).unwrap_or_else(|_| format!("\"{}\"", value))
+}
+
+/// Whether the generated code for `expr` begins with an object literal's `{`
+/// or with `function` or `class`, which at the start of a statement (or `{`
+/// at the start of an arrow body) would be read as a block or a declaration:
+/// `({ a: 1 }).a`, `(function () {})`. A function or class used as a callee
+/// or object already gets its own parentheses from `gen_callee`.
+fn starts_like_a_declaration(expr: &Expression) -> bool {
+    matches!(expr, Expression::Function { .. } | Expression::Class { .. })
+        || starts_with_object(expr)
+}
+
+fn starts_with_object(expr: &Expression) -> bool {
+    match expr {
+        Expression::Object { .. } => true,
+        Expression::Member { object, .. } => starts_with_object(object),
+        Expression::Call { callee, .. } => starts_with_object(callee),
+        Expression::Assignment { target, .. } => starts_with_object(target),
+        Expression::Update {
+            prefix: false,
+            argument,
+            ..
+        } => starts_with_object(argument),
+        Expression::Sequence { expressions, .. } => {
+            expressions.first().is_some_and(starts_like_a_declaration)
+        }
+        _ => false,
+    }
+}
+
+/// Whether a `new` callee holds a call or `?.` in its member chain, so it
+/// needs parentheses: `new (f())(1)`, `new (a?.b)()`.
+fn has_call_or_optional(expr: &Expression) -> bool {
+    match expr {
+        Expression::Call { .. } => true,
+        Expression::Member {
+            object, optional, ..
+        } => *optional || has_call_or_optional(object),
+        _ => false,
+    }
 }
 
 impl Default for CodeGen {
