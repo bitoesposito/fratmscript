@@ -1252,4 +1252,44 @@ na famiglie Pizzaiolo figlio 'e Persona {
         // `caccia` needs a generator, as in declarations
         assert!(compile("chist è f = facc () { caccia 1 }", Default::default()).is_err());
     }
+
+    #[test]
+    fn test_class_expressions() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(js("chist è A = na famiglie { }"), "const A = class {\n};\n");
+        assert_eq!(
+            js("chist è B = na famiglie C figlio 'e A { }"),
+            "const B = class C extends A {\n};\n"
+        );
+        assert_eq!(
+            js("chist è B = na famiglie figlio 'e A { }"),
+            "const B = class extends A {\n};\n"
+        );
+        // Used as a callee: parenthesized
+        assert_eq!(js("(na famiglie { }).name"), "(class {\n}).name;\n");
+        // The class name is local to the expression
+        assert!(compile("chist è C = na famiglie C { }", Default::default()).is_ok());
+    }
+
+    #[test]
+    fn test_static_blocks() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        assert_eq!(
+            js("na famiglie A {\nfisso {\nstamm a dì(1)\n}\n}"),
+            "class A {\n  static {\n    console.log(1);\n  }\n}\n"
+        );
+        // `fisso` before a member is still static
+        assert!(js("na famiglie A { fisso x = 1 }").contains("static x = 1;"));
+    }
+
+    #[test]
+    fn test_object_getters_and_setters() {
+        let js = |s: &str| compile(s, Default::default()).unwrap().code;
+        let out = js("chist è o = { damme a() { piglie 1 }, miette a(v) { }, damme() { } }");
+        assert!(out.contains("get a() {"), "{}", out);
+        assert!(out.contains("set a(v) {"), "{}", out);
+        assert!(out.contains("damme() {"), "{}", out);
+        assert!(compile("chist è o = { damme a(x) { } }", Default::default()).is_err());
+        assert!(compile("chist è o = { miette a() { } }", Default::default()).is_err());
+    }
 }

@@ -24,8 +24,7 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
 4. **Braces are required** after `si`, `sinnò`, `pe`, `mentre che`: `si (x) { ... }`.
 5. `chist è` (const) cannot be reassigned; declaring the same name twice in a scope is a compile
    error. Use `tien` (let) for values that change.
-6. Not supported yet: labels, tagged templates, class expressions, getters/setters in object
-   literals.
+6. Not supported yet: labels, tagged templates.
 7. Compiler and runtime error messages are in Neapolitan, with line and column. See "Reading
    errors" below; most errors also carry a hint that starts with 💡.
 
@@ -172,7 +171,8 @@ chist è pizza = {
     ingredienti: ["pummarola", "muzzarella"],
     descrivi() {
         piglie `${stu cos.nome}: ${stu cos.ingredienti.join(", ")}`
-    }
+    },
+    damme quanti() { piglie stu cos.ingredienti.length },  // getter (miette = setter)
 }
 chist è { prezzo, forno = "a legna", ...altro } = pizza
 chist è [primo, ...ato] = pizza.ingredienti
@@ -221,6 +221,16 @@ na famiglie Pizzaiolo figlio 'e Persona {
 chist è ciro = nu bell Pizzaiolo("Ciro")
 ciro.forno = "elettrico"
 stamm a dì(ciro.saluta(), ciro.forno, Persona.specie(), ciro è uno Persona)
+
+// static block, and a class used as a value
+na famiglie Menu {
+    fisso pizze = []
+    fisso {
+        Menu.pizze.push("Margherita")
+    }
+}
+chist è Anonima = na famiglie figlio 'e Persona { }
+stamm a dì(Menu.pizze, nu bell Anonima("Totò").saluta())
 ```
 
 ## Errors

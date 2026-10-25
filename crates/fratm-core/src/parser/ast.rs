@@ -158,6 +158,11 @@ pub enum ClassMember {
         is_static: bool,
         span: Span,
     },
+    /// `fisso { … }`: static initialization block
+    StaticBlock {
+        body: Vec<Statement>,
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -338,6 +343,13 @@ pub enum Expression {
         operand: Box<Expression>,
         span: Span,
     },
+    /// `na famiglie { }`, `na famiglie Nomme figlio 'e Base { }` as a value
+    Class {
+        name: Option<String>,
+        super_class: Option<String>,
+        members: Vec<ClassMember>,
+        span: Span,
+    },
     /// `facc (a) { }`, `facc nomme() { }`, `mo vir facc () { }`, `facc* () { }`
     Function {
         name: Option<String>,
@@ -375,6 +387,7 @@ impl Expression {
             Expression::MetaProperty { span, .. } => *span,
             Expression::Import { span, .. } => *span,
             Expression::Function { span, .. } => *span,
+            Expression::Class { span, .. } => *span,
             Expression::Array { span, .. } => *span,
             Expression::Regex { span, .. } => *span,
             Expression::Sequence { span, .. } => *span,
@@ -473,9 +486,10 @@ pub enum Property {
     KeyValue { key: PropertyKey, value: Expression },
     /// `{ nome }`
     Shorthand { name: String, span: Span },
-    /// `saluta() { }`, `mo vir carica() { }`
+    /// `saluta() { }`, `mo vir carica() { }`, `damme prezzo() { }`
     Method {
         key: PropertyKey,
+        kind: MethodKind,
         params: Vec<Pattern>,
         body: Vec<Statement>,
         is_async: bool,

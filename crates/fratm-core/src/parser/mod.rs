@@ -5,6 +5,9 @@ mod ast;
 use crate::lexer::{Span, Token, TokenKind};
 pub use ast::*;
 
+/// Name, parent and members of a class declaration or expression.
+type ClassParts = (Option<String>, Option<String>, Vec<ClassMember>);
+
 #[derive(Debug, Clone)]
 pub struct ParseError {
     pub message: String,
@@ -752,9 +755,27 @@ impl Parser {
 
     fn parse_class(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_span();
+        let (name, super_class, members) = self.parse_class_parts(true)?;
+        Ok(Statement::ClassDecl {
+            name: name.unwrap_or_default(),
+            super_class,
+            members,
+            span: self.span_from(start.start),
+        })
+    }
+
+    /// `na famiglie [Nomme] [figlio 'e Base] { … }`; the name is optional
+    /// in a class expression.
+    fn parse_class_parts(&mut self, name_required: bool) -> Result<ClassParts, ParseError> {
         self.expect(&TokenKind::Na)?;
         self.expect(&TokenKind::Famiglie)?;
-        let name = self.expect_identifier()?;
+        let name = if name_required
+            || !(self.check(&TokenKind::LeftBrace) || self.check(&TokenKind::Figlio))
+        {
+            Some(self.expect_identifier()?)
+        } else {
+            None
+        };
 
         // Optional inheritance:
         // - "figlio 'e Base"
@@ -777,16 +798,58 @@ impl Parser {
             members.push(self.parse_class_member()?);
         }
         self.expect(&TokenKind::RightBrace)?;
-        Ok(Statement::ClassDecl {
-            name,
-            super_class,
-            members,
-            span: self.span_from(start.start),
-        })
+        Ok((name, super_class, members))
+    }
+
+    /// `damme`/`miette` before a member name (`damme x()`, `damme [k]()`);
+    /// `damme()` alone is a method called damme.
+    fn accessor_kind(&self) -> MethodKind {
+        if !(self.check_at(2, &TokenKind::LeftParen) || self.check_at(1, &TokenKind::LeftBracket)) {
+            MethodKind::Method
+        } else if self.check_identifier_at(0, "damme") {
+            MethodKind::Getter
+        } else if self.check_identifier_at(0, "miette") {
+            MethodKind::Setter
+        } else {
+            MethodKind::Method
+        }
+    }
+
+    fn check_accessor_params(
+        &self,
+        kind: MethodKind,
+        params: &[Pattern],
+        start: Span,
+    ) -> Result<(), ParseError> {
+        let expected = match kind {
+            MethodKind::Getter => 0,
+            MethodKind::Setter => 1,
+            MethodKind::Method => return Ok(()),
+        };
+        if params.len() == expected {
+            return Ok(());
+        }
+        Err(ParseError::new(
+            if kind == MethodKind::Getter {
+                "A 'damme' getter takes no parameters"
+            } else {
+                "A 'miette' setter takes exactly one parameter"
+            },
+            self.span_from(start.start),
+        ))
     }
 
     fn parse_class_member(&mut self) -> Result<ClassMember, ParseError> {
         let start = self.current_span();
+        // `fisso { … }`: static initialization block
+        if self.check(&TokenKind::Fisso) && self.check_next(&TokenKind::LeftBrace) {
+            self.advance();
+            let body = self.parse_function_body(false)?;
+            return Ok(ClassMember::StaticBlock {
+                body,
+                span: self.span_from(start.start),
+            });
+        }
         // `fisso` and `mo vir` are modifiers only when a member follows them
         let is_static = !self.check_next(&TokenKind::LeftParen)
             && !self.check_next(&TokenKind::Equal)
@@ -804,20 +867,10 @@ impl Parser {
         // `facc* nomme()` / `*nomme()`
         let is_generator = self.match_token(&TokenKind::Star);
 
-        // `damme x()` / `miette x(v)`; `damme()` alone is a method called damme
+        // `damme x()` / `miette x(v)`
         let mut kind = MethodKind::Method;
-        // (`damme [chiave]()` has a computed name)
-        if !is_async
-            && !has_facc
-            && !is_generator
-            && (self.check_at(2, &TokenKind::LeftParen)
-                || self.check_at(1, &TokenKind::LeftBracket))
-        {
-            if self.check_identifier_at(0, "damme") {
-                kind = MethodKind::Getter;
-            } else if self.check_identifier_at(0, "miette") {
-                kind = MethodKind::Setter;
-            }
+        if !is_async && !has_facc && !is_generator {
+            kind = self.accessor_kind();
             if kind != MethodKind::Method {
                 self.advance();
             }
@@ -846,21 +899,7 @@ impl Parser {
         }
 
         let params = self.parse_parameters()?;
-        let expected = match kind {
-            MethodKind::Getter => Some(0),
-            MethodKind::Setter => Some(1),
-            MethodKind::Method => None,
-        };
-        if expected.is_some_and(|n| n != params.len()) {
-            return Err(ParseError::new(
-                if kind == MethodKind::Getter {
-                    "A 'damme' getter takes no parameters"
-                } else {
-                    "A 'miette' setter takes exactly one parameter"
-                },
-                self.span_from(start.start),
-            ));
-        }
+        self.check_accessor_params(kind, &params, start)?;
         let body = self.parse_function_body(is_generator)?;
 
         Ok(ClassMember::Method(ClassMethod {
@@ -1681,13 +1720,25 @@ impl Parser {
             self.advance();
         }
         let is_generator = self.match_token(&TokenKind::Star);
+        // `damme prezzo() { }` / `miette prezzo(v) { }`
+        let start = self.current_span();
+        let kind = if is_async || is_generator {
+            MethodKind::Method
+        } else {
+            self.accessor_kind()
+        };
+        if kind != MethodKind::Method {
+            self.advance();
+        }
         let key_token = self.peek().clone();
         let key = self.parse_property_key()?;
         if self.check(&TokenKind::LeftParen) {
             let params = self.parse_parameters()?;
+            self.check_accessor_params(kind, &params, start)?;
             let body = self.parse_function_body(is_generator)?;
             return Ok(Property::Method {
                 key,
+                kind,
                 params,
                 body,
                 is_async,
@@ -1753,6 +1804,17 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        // Class expressions: `na famiglie { }`, `na famiglie A figlio 'e B { }`
+        if self.check(&TokenKind::Na) && self.check_next(&TokenKind::Famiglie) {
+            let start = self.current_span();
+            let (name, super_class, members) = self.parse_class_parts(false)?;
+            return Ok(Expression::Class {
+                name,
+                super_class,
+                members,
+                span: self.span_from(start.start),
+            });
+        }
         // Function expressions: `facc (a) { }`, `mo vir facc nomme() { }`
         let is_async = self.check(&TokenKind::Mo)
             && self.check_next(&TokenKind::Vir)

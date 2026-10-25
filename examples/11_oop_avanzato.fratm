@@ -69,3 +69,25 @@ na famiglie Forno {
 chist è forno = nu bell Forno()
 forno.temperatura = 900
 stamm a dì("Forno: " + forno.temperatura)
+
+// Static block: runs once, when the class is defined
+na famiglie Menu {
+    fisso pizze = []
+    fisso {
+        Menu.pizze.push("Margherita", "Marinara")
+    }
+}
+stamm a dì("Menu: " + Menu.pizze.join(", "))
+
+// A class as a value, and getters/setters in an object literal
+chist è Ricetta = na famiglie {
+    costruttore(nome) { stu cos.nome = nome }
+}
+tien grammi = 250
+chist è impasto = {
+    damme chili() { piglie grammi / 1000 },
+    miette chili(kg) { grammi = kg * 1000 }
+}
+impasto.chili = 2
+chist è ricetta = nu bell Ricetta("Pizza fritta")
+stamm a dì(ricetta.nome + ": " + impasto.chili + " kg")

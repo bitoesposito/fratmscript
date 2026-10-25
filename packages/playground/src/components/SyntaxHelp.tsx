@@ -72,8 +72,10 @@ const syntaxReference: { category: Localized; items: SyntaxItem[] }[] = [
     { fratm: 'nu bell', js: 'new', desc: { it: 'Nuova istanza', en: 'New instance', nap: 'Oggetto nuovo' } },
     { fratm: 'stu cos', js: 'this', desc: { it: "L'istanza corrente", en: 'This reference', nap: "L'oggetto stesso" } },
     { fratm: 'costruttore', js: 'constructor', desc: { it: 'Costruttore', en: 'Constructor method', nap: "Prepara l'oggetto" } },
-    { fratm: 'damme x() { }', js: 'get x() { }', desc: { it: 'Getter', en: 'Getter', nap: 'Getter' } },
-    { fratm: 'miette x(v) { }', js: 'set x(v) { }', desc: { it: 'Setter', en: 'Setter', nap: 'Setter' } },
+    { fratm: 'damme x() { }', js: 'get x() { }', desc: { it: 'Getter (anche negli oggetti)', en: 'Getter (also in objects)', nap: "Getter (pure int'all'oggetti)" } },
+    { fratm: 'miette x(v) { }', js: 'set x(v) { }', desc: { it: 'Setter (anche negli oggetti)', en: 'Setter (also in objects)', nap: "Setter (pure int'all'oggetti)" } },
+    { fratm: 'fisso { }', js: 'static { }', desc: { it: 'Blocco statico, gira una volta', en: 'Static block, runs once', nap: 'Blocco fisso, gira na vota sola' }, insert: 'fisso {\n    \n}' },
+    { fratm: 'na famiglie { }', js: 'class { }', desc: { it: 'Classe come valore', en: 'Class expression', nap: 'Classe comme valore' }, insert: 'na famiglie {  }' },
     { fratm: 'conteggio = 0  #segreto', js: 'conteggio = 0  #segreto', desc: { it: 'Campi e membri privati', en: 'Fields and private members', nap: 'Campi e membri privati' } },
   ]},
   { category: { it: 'Valori', en: 'Values', nap: 'Valori' }, items: [

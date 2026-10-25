@@ -357,66 +357,7 @@ impl CodeGen {
             } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
-                self.emit("class ");
-                self.emit(&js_name(name));
-                if let Some(parent) = super_class {
-                    self.emit(" extends ");
-                    self.emit(&js_name(parent));
-                }
-                self.emit(" {\n");
-                self.indent += 1;
-                for member in members {
-                    self.write_indent();
-                    match member {
-                        ClassMember::Field {
-                            key,
-                            value,
-                            is_static,
-                            ..
-                        } => {
-                            if *is_static {
-                                self.emit("static ");
-                            }
-                            self.gen_property_key(key);
-                            if let Some(value) = value {
-                                self.emit(" = ");
-                                self.gen_expression(value);
-                            }
-                            self.emit(";\n");
-                        }
-                        ClassMember::Method(method) => {
-                            if method.is_static {
-                                self.emit("static ");
-                            }
-                            if method.is_async {
-                                self.emit("async ");
-                            }
-                            if method.is_generator {
-                                self.emit("*");
-                            }
-                            match method.kind {
-                                MethodKind::Getter => self.emit("get "),
-                                MethodKind::Setter => self.emit("set "),
-                                MethodKind::Method => {}
-                            }
-                            // Translate "costruttore" to JavaScript "constructor"
-                            match &method.key {
-                                PropertyKey::Name(name) if name == "costruttore" => {
-                                    self.emit("constructor")
-                                }
-                                key => self.gen_property_key(key),
-                            }
-                            self.gen_params(&method.params);
-                            self.emit(" {\n");
-                            self.gen_block_statements(&method.body);
-                            self.write_indent();
-                            self.emit("}\n");
-                        }
-                    }
-                }
-                self.indent -= 1;
-                self.write_indent();
-                self.emit("}");
+                self.gen_class(Some(name), super_class.as_deref(), members);
             }
 
             // The fratm library is inlined: one definition per imported helper
@@ -533,8 +474,11 @@ impl CodeGen {
             Statement::Expression { expression, span } => {
                 self.write_indent();
                 self.add_mapping(span.line, span.column);
-                // A statement starting with `function` would be a declaration
-                if matches!(expression, Expression::Function { .. }) {
+                // A statement starting with `function` or `class` would be a declaration
+                if matches!(
+                    expression,
+                    Expression::Function { .. } | Expression::Class { .. }
+                ) {
                     self.emit("(");
                     self.gen_expression(expression);
                     self.emit(")");
@@ -628,6 +572,12 @@ impl CodeGen {
             Expression::Undefined { .. } => self.emit("undefined"),
             Expression::This { .. } => self.emit("this"),
             Expression::Super { .. } => self.emit("super"),
+            Expression::Class {
+                name,
+                super_class,
+                members,
+                ..
+            } => self.gen_class(name.as_deref(), super_class.as_deref(), members),
             Expression::Function {
                 name,
                 params,
@@ -704,6 +654,7 @@ impl CodeGen {
                         }
                         Property::Method {
                             key,
+                            kind,
                             params,
                             body,
                             is_async,
@@ -714,6 +665,11 @@ impl CodeGen {
                             }
                             if *is_generator {
                                 self.emit("*");
+                            }
+                            match kind {
+                                MethodKind::Getter => self.emit("get "),
+                                MethodKind::Setter => self.emit("set "),
+                                MethodKind::Method => {}
                             }
                             self.gen_property_key(key);
                             self.gen_params(params);
@@ -1086,6 +1042,84 @@ impl CodeGen {
         }
     }
 
+    /// `class [Name] [extends Parent] { … }`, as a declaration or a value.
+    fn gen_class(
+        &mut self,
+        name: Option<&str>,
+        super_class: Option<&str>,
+        members: &[ClassMember],
+    ) {
+        self.emit("class");
+        if let Some(name) = name {
+            self.emit(" ");
+            self.emit(&js_name(name));
+        }
+        if let Some(parent) = super_class {
+            self.emit(" extends ");
+            self.emit(&js_name(parent));
+        }
+        self.emit(" {\n");
+        self.indent += 1;
+        for member in members {
+            self.write_indent();
+            match member {
+                ClassMember::Field {
+                    key,
+                    value,
+                    is_static,
+                    ..
+                } => {
+                    if *is_static {
+                        self.emit("static ");
+                    }
+                    self.gen_property_key(key);
+                    if let Some(value) = value {
+                        self.emit(" = ");
+                        self.gen_expression(value);
+                    }
+                    self.emit(";\n");
+                }
+                ClassMember::Method(method) => {
+                    if method.is_static {
+                        self.emit("static ");
+                    }
+                    if method.is_async {
+                        self.emit("async ");
+                    }
+                    if method.is_generator {
+                        self.emit("*");
+                    }
+                    match method.kind {
+                        MethodKind::Getter => self.emit("get "),
+                        MethodKind::Setter => self.emit("set "),
+                        MethodKind::Method => {}
+                    }
+                    // Translate "costruttore" to JavaScript "constructor"
+                    match &method.key {
+                        PropertyKey::Name(name) if name == "costruttore" => {
+                            self.emit("constructor")
+                        }
+                        key => self.gen_property_key(key),
+                    }
+                    self.gen_params(&method.params);
+                    self.emit(" {\n");
+                    self.gen_block_statements(&method.body);
+                    self.write_indent();
+                    self.emit("}\n");
+                }
+                ClassMember::StaticBlock { body, .. } => {
+                    self.emit("static {\n");
+                    self.gen_block_statements(body);
+                    self.write_indent();
+                    self.emit("}\n");
+                }
+            }
+        }
+        self.indent -= 1;
+        self.write_indent();
+        self.emit("}");
+    }
+
     /// Operand of an operator: arrows and assignments bind looser than any
     /// operator, so they need parentheses (`(x => x) || f`).
     fn gen_operand(&mut self, expr: &Expression) {
@@ -1113,6 +1147,7 @@ impl CodeGen {
                 | Expression::TypeOf { .. }
                 | Expression::Delete { .. }
                 | Expression::Function { .. }
+                | Expression::Class { .. }
         );
         if prefix {
             self.emit("(");
