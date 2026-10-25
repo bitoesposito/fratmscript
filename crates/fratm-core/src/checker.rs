@@ -367,6 +367,7 @@ impl Checker {
             | Expression::Undefined { .. }
             | Expression::This { .. }
             | Expression::Super { .. }
+            | Expression::MetaProperty { .. }
             | Expression::Regex { .. } => {}
             Expression::Array { elements: list, .. }
             | Expression::Sequence {
