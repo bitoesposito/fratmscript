@@ -1,6 +1,6 @@
 //! `stile`: CSS written in Neapolitan, translated at compile time.
 //!
-//! `` stile`buttone:passanno { culore: russo; spazio: 8px }` `` becomes
+//! `` stile`citofono:passanno { culore: russo; spazio: 8px }` `` becomes
 //! `button:hover { color: red; padding: 8px }`. Property names, value
 //! keywords, pseudo-classes, `@quanno` (`@media`) and the Neapolitan tag
 //! names of [`crate::html`] in selectors are translated; every other word
@@ -603,7 +603,7 @@ impl Translator<'_> {
                     continue;
                 }
                 '(' if brackets == 0 => {
-                    // `:not(scatola)`, `:is(…)`: a selector list inside
+                    // `:not(cascett)`, `:is(…)`: a selector list inside
                     self.out.push('(');
                     let close = matching(part, i);
                     self.selector(&part[i + 1..close.min(part.len())]);
@@ -625,7 +625,8 @@ impl Translator<'_> {
                 } else if prev == ':' {
                     lookup(PSEUDO, &word)
                 } else {
-                    Some(crate::html::tag(&word)).filter(|tag| *tag != word)
+                    // Tag names from v0.11 and v0.12 keep working here too
+                    Some(crate::html::jsx_tag(&word).0).filter(|tag| *tag != word)
                 };
                 self.out.push_str(translated.unwrap_or(&word));
                 i = end;
@@ -794,13 +795,19 @@ mod tests {
     }
 
     #[test]
+    fn old_tag_names_still_select_their_tag() {
+        assert_eq!(css("buttone { culore: russo }"), "button { color: red }");
+        assert_eq!(css("citofono { culore: russo }"), "button { color: red }");
+    }
+
+    #[test]
     fn properties_values_and_selectors() {
         assert_eq!(
             css(".pizza { culore: russo; sfunno-culore: janco; spazio: 8px 4px }"),
             ".pizza { color: red; background-color: white; padding: 8px 4px }"
         );
         assert_eq!(
-            css("buttone:passanno, scatola > scritta::primma { mostra: flessibile; giustifica: spartuto }"),
+            css("citofono:passanno, cascett > chiacchier::primma { mostra: flessibile; giustifica: spartuto }"),
             "button:hover, div > p::before { display: flex; justify-content: space-between }"
         );
         // Declarations without a selector, for one element
@@ -826,12 +833,12 @@ mod tests {
         // Class names, ids, units and numbers are never translated
         assert_eq!(css(".sotto { ncoppa: 10px }"), ".sotto { top: 10px }");
         assert_eq!(
-            css("scatola { sfunno: url(russo.png) /* russo */ russo }"),
+            css("cascett { sfunno: url(russo.png) /* russo */ russo }"),
             "div { background: url(russo.png) /* russo */ red }"
         );
         // Attribute selectors and :not() lists
         assert_eq!(
-            css("casella[type=\"buttone\"]:not(.a, buttone) { culore: verde }"),
+            css("miett[type=\"buttone\"]:not(.a, citofono) { culore: verde }"),
             "input[type=\"buttone\"]:not(.a, button) { color: green }"
         );
     }
@@ -872,7 +879,7 @@ mod tests {
             "@supports not (display: grid) { main { display: flex } }"
         );
         assert_eq!(
-            css("@container (larghezza-minima: 400px) { scritta { spazio: 0 } }"),
+            css("@container (larghezza-minima: 400px) { chiacchier { spazio: 0 } }"),
             "@container (min-width: 400px) { p { padding: 0 } }"
         );
         assert_eq!(
@@ -927,17 +934,17 @@ mod tests {
         );
         // A list of selectors over several lines is not a declaration
         assert_eq!(
-            css("buttone:passanno,\nscritta::primma {\n  culore: russo\n}"),
+            css("citofono:passanno,\nchiacchier::primma {\n  culore: russo\n}"),
             "button:hover,\np::before {\n  color: red\n}"
         );
         // A `{` on its own line still belongs to the selector above it
         assert_eq!(
-            css("buttone:passanno\n{ culore: russo }"),
+            css("citofono:passanno\n{ culore: russo }"),
             "button:hover\n{ color: red }"
         );
         // A nested rule after a declaration ends it
         assert_eq!(
-            css("core {\n  culore: russo\n  scatola { culore: blu }\n}"),
+            css("core {\n  culore: russo\n  cascett { culore: blu }\n}"),
             "main {\n  color: red;\n  div { color: blue }\n}"
         );
         assert_eq!(
@@ -968,7 +975,7 @@ mod tests {
             .collect();
         assert_eq!(translate(&chunks).unwrap(), ["background: russo", "", ""]);
         // A whole block of rules from code
-        let chunks: Vec<String> = ["", "\nscatola { culore: russo }"]
+        let chunks: Vec<String> = ["", "\ncascett { culore: russo }"]
             .iter()
             .map(|s| s.to_string())
             .collect();

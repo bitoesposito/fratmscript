@@ -198,7 +198,7 @@ fn tools() -> Value {
                 "properties": {
                     "css": {
                         "type": "string",
-                        "description": "CSS in Neapolitan, e.g. buttone:passanno { culore: russo }",
+                        "description": "CSS in Neapolitan, e.g. citofono:passanno { culore: russo }",
                     },
                 },
                 "required": ["css"],
@@ -522,7 +522,7 @@ mod tests {
     fn stile_translates_or_explains_the_css() {
         let result = call(
             "fratm_stile",
-            json!({ "css": "buttone:passanno {\n  culore: russo\n  spazio: 8px\n}" }),
+            json!({ "css": "citofono:passanno {\n  culore: russo\n  spazio: 8px\n}" }),
         );
         assert_eq!(result["isError"], false);
         assert_eq!(

@@ -62,7 +62,7 @@ const ATOM = keywords('overo', 'sfòls', 'sfols', 'nisciun', 'boh')
 const WORD_OPERATOR = keywords('e', 'o', 'no', 'manco', 'pure')
 
 const CSS_NAME = /^-{0,2}[\p{L}_][\p{L}\p{N}_-]*/u
-// A property is a name followed by `:` and a space (`buttone:passanno` is a selector)
+// A property is a name followed by `:` and a space (`citofono:passanno` is a selector)
 const CSS_PROPERTY = new RegExp(`${CSS_NAME.source}(?=\\s*:(?:\\s|$))`, 'u')
 
 const JSX_NAME = /^[\p{L}_$][\p{L}\p{N}_$.:-]*/u

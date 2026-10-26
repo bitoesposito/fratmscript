@@ -7,7 +7,7 @@ chist è css = stile`
     spazio: 16px
     mostra: flessibile
   }
-  buttone:passanno {
+  citofono:passanno {
     culore: russo
     cursore: manella
   }
@@ -19,4 +19,4 @@ stamm a dì(css)
 
 // 'E valori ponno arrivà d'o codice
 tien culore = "#1d4ed8"
-stamm a dì(stile`titolo { culore: ${culore} }`)
+stamm a dì(stile`luccolone { culore: ${culore} }`)

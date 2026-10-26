@@ -2,30 +2,30 @@
 facc Modulo({ invia }) {
     piglie (
         <modulo onSubmit={invia}>
-            <capa><titolo>'A pizzeria</titolo></capa>
+            <cappiell><luccolone>'A pizzeria</luccolone></cappiell>
             <core>
-                <sezione>
-                    <titolo2>Menù</titolo2>
-                    <lista>
-                        <voce><forte>Margherita</forte> <corsivo>5 €</corsivo></voce>
-                    </lista>
+                <piezz>
+                    <luccolo>Menù</luccolo>
+                    <list>
+                        <voce><fort>Margherita</fort> <corsivo>5 €</corsivo></voce>
+                    </list>
                     <elenco><voce>Primma</voce></elenco>
-                </sezione>
+                </piezz>
                 <etichetta for="nomme">Nomme</etichetta>
-                <casella id="nomme" />
-                <quaderno />
+                <miett id="nomme" />
+                <ragionamento />
                 <scegli><opzione>Pizza</opzione></scegli>
-                <scritta>Scrive <piezzo>ccà</piezzo><acapo /><codice>x</codice></scritta>
-                <immagine src="pizza.png" alt="pizza" />
-                <collegamento href="/">Torna</collegamento>
-                <linea />
-                <tabella><riga><capocella>A</capocella><cella>1</cella></riga></tabella>
+                <chiacchier>Scrive <scatulell>ccà</scatulell><acap /><codice>x</codice></chiacchier>
+                <cartulin src="pizza.png" alt="pizza" />
+                <vattenn href="/">Torna</vattenn>
+                <stacc />
+                <tavulat><fila><capocasella>A</capocasella><casella>1</casella></fila></tavulat>
                 <tela />
-                <scatola class="tasti"><buttone>Manna</buttone></scatola>
+                <cascett class="tasti"><citofono>Manna</citofono></cascett>
             </core>
-            <navigazione />
-            <articolo />
-            <pede>Fatto a Napule</pede>
+            <tomtom />
+            <fattariello />
+            <pere>Fatto a Napule</pere>
             <div>I tag HTML vanno ancora</div>
         </modulo>
     )

@@ -267,7 +267,7 @@ pub fn compile(source: &str, options: CompileOptions) -> Result<CompileResult, C
     Ok(CompileResult {
         code,
         source_map,
-        warnings: vec![],
+        warnings: codegen.warnings().to_vec(),
     })
 }
 
@@ -443,31 +443,68 @@ mod tests {
     #[test]
     fn test_jsx_neapolitan_tags_compile_to_html() {
         assert_eq!(
-            jsx_js("x = <scatola class=\"pizza\"><titolo>Uè</titolo><buttone>Sforna</buttone></scatola>"),
+            jsx_js("x = <cascett class=\"pizza\"><luccolone>Uè</luccolone><citofono>Sforna</citofono></cascett>"),
             "x = _jsxs(\"div\", { className: \"pizza\", children: [_jsx(\"h1\", { children: \"Uè\" }), _jsx(\"button\", { children: \"Sforna\" })] });\n"
         );
         // `for` on a Neapolitan label is an HTML attribute too
         assert_eq!(
-            jsx_js("x = <etichetta for=\"n\">Nomme<casella id=\"n\" /></etichetta>"),
+            jsx_js("x = <etichetta for=\"n\">Nomme<miett id=\"n\" /></etichetta>"),
             "x = _jsxs(\"label\", { htmlFor: \"n\", children: [\"Nomme\", _jsx(\"input\", { id: \"n\" })] });\n"
         );
         // Components keep their names, even when they read like a tag
-        assert_eq!(jsx_js("x = <Scatola />"), "x = _jsx(Scatola, {});\n");
+        assert_eq!(jsx_js("x = <Cascett />"), "x = _jsx(Cascett, {});\n");
+    }
+
+    #[test]
+    fn test_jsx_words_from_older_versions_compile_with_warnings() {
+        let result = compile(
+            "x = <scatola><buttone quanno-se-clicca={f} stile={{ color: \"red\" }}>A</buttone><buttone>B</buttone></scatola>",
+            Default::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            result.code.strip_prefix(JSX_IMPORT).unwrap(),
+            "x = _jsxs(\"div\", { children: [_jsx(\"button\", { onClick: f, style: { color: \"red\" }, children: \"A\" }), _jsx(\"button\", { children: \"B\" })] });\n"
+        );
+        assert_eq!(
+            result.warnings,
+            [
+                "<scatola> è vecchio, mo se dice <cascett>",
+                "<buttone> è vecchio, mo se dice <citofono>",
+                "'quanno-se-clicca' è vecchio, mo se dice 'quanno-tuocche'",
+                "'stile' è vecchio, mo se dice 'cess'",
+            ]
+        );
+        // A word that changed meaning compiles to its new tag and says so
+        let result = compile("x = <casella valore={v} />", Default::default()).unwrap();
+        assert!(result.code.contains("_jsx(\"td\""), "{}", result.code);
+        assert_eq!(
+            result.warnings,
+            ["<casella> mo è <td>: si vulive <input>, scrive <miett>"]
+        );
+        // Current words and components have no warnings
+        let result = compile("x = <cascett><Scatola /></cascett>", Default::default()).unwrap();
+        assert!(result.warnings.is_empty(), "{:?}", result.warnings);
     }
 
     #[test]
     fn test_jsx_neapolitan_attributes_and_events_compile_to_react_props() {
         assert_eq!(
-            jsx_js("x = <casella tipo=\"text\" segnaposto=\"Pizza\" valore={v} quanno-se-scrive={(e) => f(e.target.value)} disattivato />"),
-            "x = _jsx(\"input\", { type: \"text\", placeholder: \"Pizza\", value: v, onChange: (e) => f(e.target.value), disabled: true });\n"
+            jsx_js("x = <miett tipo=\"text\" esempio=\"Pizza\" valore={v} quanno-scrive={(e) => f(e.target.value)} stutato />"),
+            "x = _jsx(\"input\", { type: \"text\", placeholder: \"Pizza\", value: v, onInput: (e) => f(e.target.value), disabled: true });\n"
         );
         assert_eq!(
-            jsx_js("x = <buttone classe=\"forte\" quanno-se-clicca={sforna} stile={{ color: \"red\" }}>Sforna</buttone>"),
+            jsx_js("x = <citofono classe=\"forte\" quanno-tuocche={sforna} cess={{ color: \"red\" }}>Sforna</citofono>"),
             "x = _jsx(\"button\", { className: \"forte\", onClick: sforna, style: { color: \"red\" }, children: \"Sforna\" });\n"
         );
         assert_eq!(
-            jsx_js("x = <etichetta pe=\"n\"><immagine fonte=\"/a.png\" testo-alternativo=\"Pizza\" /></etichetta>"),
+            jsx_js("x = <etichetta pe=\"n\"><cartulin da=\"/a.png\" spiegazione=\"Pizza\" /></etichetta>"),
             "x = _jsx(\"label\", { htmlFor: \"n\", children: _jsx(\"img\", { src: \"/a.png\", alt: \"Pizza\" }) });\n"
+        );
+        // `addo` is `action` on a form and `href` elsewhere; `quanno-cagne` is `onChange`
+        assert_eq!(
+            jsx_js("x = <modulo addo=\"/ordina\" quanno-cagne={g}><vattenn addo=\"/\">Casa</vattenn></modulo>"),
+            "x = _jsx(\"form\", { action: \"/ordina\", onChange: g, children: _jsx(\"a\", { href: \"/\", children: \"Casa\" }) });\n"
         );
         // `chiave` is the key of an HTML element
         assert_eq!(
@@ -476,8 +513,8 @@ mod tests {
         );
         // React names keep working, and a component gets its props as written
         assert_eq!(
-            jsx_js("x = <modulo onSubmit={manna}><Campo tipo=\"a\" quanno-se-clicca={f} /></modulo>"),
-            "x = _jsx(\"form\", { onSubmit: manna, children: _jsx(Campo, { tipo: \"a\", \"quanno-se-clicca\": f }) });\n"
+            jsx_js("x = <modulo onSubmit={manna}><Campo tipo=\"a\" quanno-tuocche={f} /></modulo>"),
+            "x = _jsx(\"form\", { onSubmit: manna, children: _jsx(Campo, { tipo: \"a\", \"quanno-tuocche\": f }) });\n"
         );
     }
 
@@ -1506,7 +1543,7 @@ na famiglie Pizzaiolo figlio 'e Persona {
     #[test]
     fn test_stile_is_translated_to_css_at_compile_time() {
         let code = js(
-            "chiamm { stile } da \"fratm\"\nstile`buttone:passanno { culore: ${c}; spazio: 8px }`",
+            "chiamm { stile } da \"fratm\"\nstile`citofono:passanno { culore: ${c}; spazio: 8px }`",
         );
         assert!(code.starts_with("const stile = (() => {"), "{}", code);
         assert!(
