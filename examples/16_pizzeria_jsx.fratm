@@ -1,7 +1,7 @@
 // ============================================
 // Example 16: 'A pizzeria cu JSX
 // A React component written in FratmScript: JSX with Neapolitan tags
-// (voce = li, buttone = button, core = main, ...), props, state and lists
+// (voce = li, citofono = button, core = main, ...), props, state and lists
 // ============================================
 
 chiamm { useState } da "react"
@@ -16,9 +16,9 @@ chist è MENU = [
 facc Pizza({ nomme, prezzo, piccante, ordina }) {
     piglie (
         <voce class="pizza">
-            <forte>{nomme}</forte> &middot; {prezzo} €
-            {piccante ? <piezzo title="Piccante">🌶️</piezzo> : nisciun}
-            <buttone onClick={() => ordina(nomme)}>Ordina</buttone>
+            <fort>{nomme}</fort> &middot; {prezzo} €
+            {piccante ? <scatulell title="Piccante">🌶️</scatulell> : nisciun}
+            <citofono onClick={() => ordina(nomme)}>Ordina</citofono>
         </voce>
     )
 }
@@ -31,15 +31,15 @@ mann for predefinit facc Pizzeria() {
 
     piglie (
         <core>
-            <titolo>Uè, benvenuto 'a pizzeria!</titolo>
-            <lista>
+            <luccolone>Uè, benvenuto 'a pizzeria!</luccolone>
+            <list>
                 {MENU.map((pizza) => (
                     <Pizza key={pizza.nomme} {...pizza} ordina={(n) => setOrdine([...ordine, n])} />
                 ))}
-            </lista>
+            </list>
             {ordine.length === 0
-                ? <scritta>Ancora nisciuna pizza. Che te magne?</scritta>
-                : <scritta>Hai ordinato {ordine.length} pizze: {totale} €</scritta>}
+                ? <chiacchier>Ancora nisciuna pizza. Che te magne?</chiacchier>
+                : <chiacchier>Hai ordinato {ordine.length} pizze: {totale} €</chiacchier>}
         </core>
     )
 }

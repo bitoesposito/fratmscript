@@ -31,9 +31,9 @@ keywords change.
    `npm create fratm@latest app --tailwind`; `--completa` adds a Hono API on SQLite). Without a
    shell, the `fratm_nuovo` tool returns the files to write.
 2. `npm install`, then `npm run dev` in `app`. Components are `src/*.fratm`.
-3. Write tags with their Neapolitan names (`<core>`, `<scatola>`, `<buttone>`, `<immagine>`; the
+3. Write tags with their Neapolitan names (`<core>`, `<cascett>`, `<citofono>`, `<cartulin>`; the
    full table is in `fratm guida`, do not invent one), and their attributes and events too
-   (`classe`, `segnaposto`, `quanno-se-clicca`; React names such as `className` and `onClick`
+   (`classe`, `esempio`, `quanno-tuocche`; React names such as `className` and `onClick`
    also work). Props of a component, class names and Tailwind classes are never translated.
 4. Check each `stile` block with the `fratm_stile` tool and each `gomorra` query with
    `fratm_gomorra` before using it, and each file with `fratm check --json`.
@@ -48,18 +48,18 @@ keywords change.
   `&&`/`||`, and anywhere inside `( )` and `[ ]`.
 - Braces are required: `si (x) { ... }`.
 - `chist è` cannot be reassigned, and a name cannot be declared twice in the same scope.
-- JSX works in `.fratm` files for React or Preact: `piglie <buttone quanno-se-clicca={f}>Uè</buttone>`.
-  HTML tags have Neapolitan names compiled to HTML (`scatola` div, `scritta` p, `buttone` button,
-  `casella` input, `lista`/`voce` ul/li; full table in `fratm guida`); HTML names work too.
+- JSX works in `.fratm` files for React or Preact: `piglie <citofono quanno-tuocche={f}>Uè</citofono>`.
+  HTML tags have Neapolitan names compiled to HTML (`cascett` div, `chiacchier` p, `citofono` button,
+  `miett` input, `list`/`voce` ul/li; full table in `fratm guida`); HTML names work too.
   Attributes and events of HTML tags have Neapolitan names (`classe` className, `chiave` key,
-  `tipo` type, `valore` value, `quanno-se-scrive` onChange, `quanno-se-manna` onSubmit; table in
+  `tipo` type, `valore` value, `quanno-cagne` onChange, `quanno-manne` onSubmit; table in
   `fratm guida`). Hooks keep their React names (`useState`). The
   output imports `react/jsx-runtime`; `// @jsxImportSource preact` switches library.
 - A whole app: `fratm nuovo <dir>` (or `npm create fratm@latest <dir>` without the CLI).
 - Tailwind: `fratm nuovo --tailwind`, or `chiamm "tailwindcss/index.css"` (also in the playground
   preview); classes go in `classe="…"`.
 - CSS in Neapolitan: `chiamm { stile } da "fratm"` then
-  ``stile`buttone:passanno { culore: russo; spazio: 8px }` `` (adds `button:hover { color: red;
+  ``stile`citofono:passanno { culore: russo; spazio: 8px }` `` (adds `button:hover { color: red;
   padding: 8px }` to the page). The `;` is optional: a new line ends a declaration. Plain CSS
   words pass through; tables in `fratm guida`.
 - Every modern JavaScript construct is supported; `fratm guida` lists the exact syntax.

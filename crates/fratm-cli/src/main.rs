@@ -842,10 +842,16 @@ mod tests {
             let row = format!("| `{nap}` | `{html}` |");
             assert!(GUIDA.contains(&row), "missing {row}");
         }
-        for (nap, react) in fratm_core::html::ATTRIBUTES {
-            if matches!(*nap, "class" | "for") {
-                continue;
-            }
+        let props = fratm_core::html::ATTRIBUTES
+            .iter()
+            .map(|a| (a.nap, a.react))
+            .chain(fratm_core::html::JSX_ONLY.iter().copied())
+            .chain(
+                fratm_core::html::EVENTS
+                    .iter()
+                    .map(|(nap, _, react)| (*nap, *react)),
+            );
+        for (nap, react) in props {
             let row = format!("| `{nap}` | `{react}` |");
             assert!(GUIDA.contains(&row), "missing {row}");
         }

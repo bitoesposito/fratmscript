@@ -29,10 +29,10 @@ Playground: https://kkratterf.github.io/fratmscript/ · Repo: https://github.com
    `` String.raw`a\nb` ``.
 7. Compiler and runtime error messages are in Neapolitan, with line and column. See "Reading
    errors" below; most errors also carry a hint that starts with 💡.
-8. **Web pages:** write JSX tags with their Neapolitan names (`<scatola>`, `<buttone>`, table in
+8. **Web pages:** write JSX tags with their Neapolitan names (`<cascett>`, `<citofono>`, table in
    "JSX" below; never invent one: an unknown lowercase name stays as it is in the DOM). Attributes
-   and events of HTML tags have Neapolitan names too (`classe`, `segnaposto`,
-   `quanno-se-clicca`; the React names `className`, `onClick` work as well); props of a
+   and events of HTML tags have Neapolitan names too (`classe`, `esempio`,
+   `quanno-tuocche`; the React names `className`, `onClick` work as well); props of a
    component are never translated. Class names, ids and Tailwind classes are never translated:
    `classe="mt-4"` and `.pizza` stay as they are.
    In `` stile`…` `` only the words of the CSS tables change; check a block with `fratm_stile`.
@@ -333,7 +333,8 @@ plugin.
 ## JSX: components and web pages
 
 `.fratm` files can contain JSX, so React (or Preact) components are written in FratmScript.
-HTML tags have Neapolitan names (`<scatola>` is `div`), translated at compile time; HTML names
+HTML tags have Neapolitan names (`<cascett>` is `div`), the same as in htmlemmurt pages, translated
+at compile time; HTML names
 (`div`, `button`) work too. A capitalised or dotted tag is a component.
 Inside `{ }` goes any FratmScript expression.
 
@@ -348,14 +349,14 @@ facc Pizza({ nomme, prezzo }) {
 mann for predefinit facc Menu({ pizze }) {
     tien [scelte, setScelte] = useState(0)
     piglie (
-        <sezione>
-            <titolo>Pizze scelte: {scelte}</titolo>
-            <lista>
+        <piezz>
+            <luccolone>Pizze scelte: {scelte}</luccolone>
+            <list>
                 {pizze.map((p) => <Pizza key={p.nomme} {...p} />)}
-            </lista>
-            {scelte > 0 ? <scritta>Bravo!</scritta> : nisciun}
-            <buttone quanno-se-clicca={() => setScelte(scelte + 1)}>Scegli</buttone>
-        </sezione>
+            </list>
+            {scelte > 0 ? <chiacchier>Bravo!</chiacchier> : nisciun}
+            <citofono quanno-tuocche={() => setScelte(scelte + 1)}>Scegli</citofono>
+        </piezz>
     )
 }
 ```
@@ -366,43 +367,100 @@ mann for predefinit facc Menu({ pizze }) {
 
   | FratmScript | HTML |
   | --- | --- |
-  | `scatola` | `div` |
-  | `piezzo` | `span` |
-  | `scritta` | `p` |
-  | `titolo` | `h1` |
-  | `titolo2` | `h2` |
-  | `titolo3` | `h3` |
-  | `titolo4` | `h4` |
-  | `titolo5` | `h5` |
-  | `titolo6` | `h6` |
-  | `buttone` | `button` |
-  | `casella` | `input` |
-  | `quaderno` | `textarea` |
-  | `scegli` | `select` |
-  | `opzione` | `option` |
-  | `etichetta` | `label` |
-  | `modulo` | `form` |
-  | `lista` | `ul` |
+  | `cristian` | `html` |
+  | `capa` | `head` |
+  | `panz` | `body` |
+  | `titolo` | `title` |
+  | `inciucc` | `meta` |
+  | `attacca` | `link` |
+  | `basa` | `base` |
+  | `cess` | `style` |
+  | `fratm` | `script` |
+  | `senzafratm` | `noscript` |
+  | `cappiell` | `header` |
+  | `pere` | `footer` |
+  | `tomtom` | `nav` |
+  | `core` | `main` |
+  | `piezz` | `section` |
+  | `fattariello` | `article` |
+  | `allato` | `aside` |
+  | `indirizzo` | `address` |
+  | `luccolone` | `h1` |
+  | `luccolo` | `h2` |
+  | `luccoliello` | `h3` |
+  | `luccolillo` | `h4` |
+  | `luccolino` | `h5` |
+  | `luccolicchio` | `h6` |
+  | `cascett` | `div` |
+  | `chiacchier` | `p` |
+  | `stacc` | `hr` |
+  | `accussì` | `pre` |
+  | `accussi` | `pre` |
+  | `citazione` | `blockquote` |
+  | `list` | `ul` |
   | `elenco` | `ol` |
   | `voce` | `li` |
-  | `collegamento` | `a` |
-  | `immagine` | `img` |
-  | `capa` | `header` |
-  | `pede` | `footer` |
-  | `core` | `main` |
-  | `sezione` | `section` |
-  | `articolo` | `article` |
-  | `navigazione` | `nav` |
-  | `acapo` | `br` |
-  | `linea` | `hr` |
-  | `forte` | `strong` |
+  | `vocabolario` | `dl` |
+  | `parola` | `dt` |
+  | `significato` | `dd` |
+  | `quadro` | `figure` |
+  | `didascalia` | `figcaption` |
+  | `vattenn` | `a` |
+  | `scatulell` | `span` |
+  | `acap` | `br` |
+  | `fort` | `strong` |
   | `corsivo` | `em` |
+  | `guapp` | `b` |
+  | `stuorto` | `i` |
+  | `sottolineato` | `u` |
+  | `cancellato` | `s` |
+  | `piccirill` | `small` |
+  | `evidenziato` | `mark` |
   | `codice` | `code` |
-  | `tabella` | `table` |
-  | `riga` | `tr` |
-  | `cella` | `td` |
-  | `capocella` | `th` |
+  | `fonte` | `cite` |
+  | `virgulette` | `q` |
+  | `abbreviazione` | `abbr` |
+  | `tiempo` | `time` |
+  | `sotto` | `sub` |
+  | `ncoppa` | `sup` |
+  | `tastiera` | `kbd` |
+  | `levato` | `del` |
+  | `aggiunto` | `ins` |
+  | `cartulin` | `img` |
+  | `cornice` | `picture` |
+  | `funtana` | `source` |
+  | `filmato` | `video` |
+  | `suono` | `audio` |
+  | `fenestella` | `iframe` |
   | `tela` | `canvas` |
+  | `disegno` | `svg` |
+  | `tavulat` | `table` |
+  | `cartello` | `caption` |
+  | `capotavula` | `thead` |
+  | `cuorpotavula` | `tbody` |
+  | `peretavula` | `tfoot` |
+  | `fila` | `tr` |
+  | `casella` | `td` |
+  | `capocasella` | `th` |
+  | `modulo` | `form` |
+  | `miett` | `input` |
+  | `citofono` | `button` |
+  | `etichetta` | `label` |
+  | `scegli` | `select` |
+  | `opzione` | `option` |
+  | `gruppo` | `optgroup` |
+  | `ragionamento` | `textarea` |
+  | `recinto` | `fieldset` |
+  | `leggenda` | `legend` |
+  | `suggerimenti` | `datalist` |
+  | `risultato` | `output` |
+  | `avanzamento` | `progress` |
+  | `misura` | `meter` |
+  | `spoiler` | `details` |
+  | `anteprim` | `summary` |
+  | `dialogo` | `dialog` |
+  | `stampo` | `template` |
+  | `fessura` | `slot` |
 
 - Attributes and events of HTML tags have Neapolitan names (the output always has the React
   name; React names, `class`, `for`, `data-*` and `aria-*` work as written). On a component
@@ -410,62 +468,94 @@ mann for predefinit facc Menu({ pizze }) {
 
   | FratmScript | React |
   | --- | --- |
-  | `chiave` | `key` |
-  | `classe` | `className` |
-  | `pe` | `htmlFor` |
+  | `addo` | `action` |
   | `tipo` | `type` |
-  | `valore` | `value` |
-  | `valore-iniziale` | `defaultValue` |
-  | `segnaposto` | `placeholder` |
-  | `fonte` | `src` |
-  | `indirizzo` | `href` |
-  | `testo-alternativo` | `alt` |
-  | `disattivato` | `disabled` |
-  | `nomme` | `name` |
+  | `classe` | `className` |
+  | `chi` | `id` |
+  | `cess` | `style` |
   | `titolo` | `title` |
-  | `stile` | `style` |
-  | `controllato` | `checked` |
-  | `scelto` | `selected` |
-  | `obbligatorio` | `required` |
-  | `sulo-lettura` | `readOnly` |
-  | `multiplo` | `multiple` |
-  | `nascosto` | `hidden` |
-  | `auto-fuoco` | `autoFocus` |
+  | `lingua` | `lang` |
+  | `annascuso` | `hidden` |
+  | `turno` | `tabIndex` |
+  | `ruolo` | `role` |
+  | `scrivibile` | `contentEditable` |
+  | `trascinabile` | `draggable` |
+  | `correggi` | `spellCheck` |
+  | `addo` | `href` |
+  | `da` | `src` |
+  | `spiegazione` | `alt` |
   | `larghezza` | `width` |
   | `altezza` | `height` |
-  | `righe` | `rows` |
-  | `colonne` | `cols` |
+  | `arape` | `target` |
+  | `rapporto` | `rel` |
+  | `scarica` | `download` |
+  | `codifica` | `charSet` |
+  | `nomme` | `name` |
+  | `cuntenuto` | `content` |
+  | `rrobba` | `property` |
+  | `carica` | `loading` |
+  | `aropp` | `defer` |
+  | `ampressa` | `async` |
+  | `furastiero` | `crossOrigin` |
+  | `verace` | `integrity` |
+  | `valore` | `value` |
+  | `esempio` | `placeholder` |
+  | `stutato` | `disabled` |
+  | `spuntato` | `checked` |
+  | `scigliuto` | `selected` |
+  | `obbligatorio` | `required` |
+  | `nunsetocca` | `readOnly` |
+  | `assaje` | `multiple` |
+  | `subbeto` | `autoFocus` |
   | `minimo` | `min` |
   | `massimo` | `max` |
   | `passo` | `step` |
-  | `azione` | `action` |
+  | `lunghezzaminima` | `minLength` |
+  | `lunghezzamassima` | `maxLength` |
+  | `modello` | `pattern` |
+  | `pe` | `htmlFor` |
+  | `suggerimenti` | `list` |
+  | `accetta` | `accept` |
+  | `etichetta` | `label` |
+  | `righe` | `rows` |
+  | `colonne` | `cols` |
   | `metodo` | `method` |
-  | `destinazione` | `target` |
-  | `lingua` | `lang` |
-  | `ruolo` | `role` |
-  | `quanno-se-clicca` | `onClick` |
-  | `quanno-se-doppio-clicca` | `onDoubleClick` |
-  | `quanno-se-scrive` | `onChange` |
-  | `quanno-se-cagna` | `onChange` |
-  | `quanno-se-manna` | `onSubmit` |
-  | `quanno-se-preme` | `onKeyDown` |
-  | `quanno-se-lassa` | `onKeyUp` |
-  | `quanno-se-passa` | `onMouseEnter` |
-  | `quanno-se-leva` | `onMouseLeave` |
-  | `quanno-se-trase` | `onFocus` |
-  | `quanno-se-jesce` | `onBlur` |
-  | `quanno-se-carica` | `onLoad` |
-  | `quanno-se-scorre` | `onScroll` |
+  | `ricorda` | `autoComplete` |
+  | `allarga` | `colSpan` |
+  | `allonga` | `rowSpan` |
+  | `partesubbeto` | `autoPlay` |
+  | `comandi` | `controls` |
+  | `ripete` | `loop` |
+  | `muto` | `muted` |
+  | `copertina` | `poster` |
+  | `quanno` | `dateTime` |
+  | `araputo` | `open` |
+  | `chiave` | `key` |
+  | `valore-iniziale` | `defaultValue` |
+  | `quanno-tuocche` | `onClick` |
+  | `quanno-tuocche-doje-vote` | `onDoubleClick` |
+  | `quanno-scrive` | `onInput` |
+  | `quanno-cagne` | `onChange` |
+  | `quanno-manne` | `onSubmit` |
+  | `quanno-carica` | `onLoad` |
+  | `quanno-premi` | `onKeyDown` |
+  | `quanno-aize` | `onKeyUp` |
+  | `quanno-trase` | `onMouseEnter` |
+  | `quanno-esce` | `onMouseLeave` |
+  | `quanno-piglie` | `onFocus` |
+  | `quanno-perde` | `onBlur` |
+  | `quanno-scorre` | `onScroll` |
 
-  `stile={{ color: "red" }}` takes a React style object (camelCase keys, plain CSS values);
-  rules in Neapolitan CSS go in `` stile`…` ``.
+  `addo` is `action` on `<modulo>` and `href` everywhere else. `cess={{ color: "red" }}` takes a
+  React style object (camelCase keys, plain CSS values); rules in Neapolitan CSS go in
+  `` stile`…` ``.
 - The output uses the automatic JSX runtime: `import { jsx as _jsx, ... } from
   "react/jsx-runtime"` is added at the top. Write `// @jsxImportSource preact` at the top of the
   file to use Preact; the npm package's `compile` takes `jsxImportSource` too.
 - Hooks and React APIs keep their names: `useState`, `useEffect`, `createRoot`.
 - Styles: import plain CSS (`chiamm "./stile.css"`) or CSS modules
   (`chiamm stile da "./App.module.css"`, then `classe={stile.titolo}`) through Vite; inline
-  styles are objects: `stile={{ color: "red" }}`.
+  styles are objects: `cess={{ color: "red" }}`.
 - Tailwind CSS: `fratm nuovo --tailwind` sets it up (Vite plugin, `@import "tailwindcss"` in
   `src/stile.css`); it finds classes in `.fratm` files. `chiamm "tailwindcss/index.css"` in a
   `.fratm` file turns it on too, and is what switches Tailwind on in the playground preview.
@@ -519,10 +609,10 @@ chist è accento = "#c8321e"
 
 stile`
   core.pizzeria { sfunno-culore: janco; spazio: 16px; mostra: flessibile }
-  buttone { culore: ${accento}; bordo-tunno: 6px; cursore: manella }
-  buttone:passanno { culore: russo !importante }
+  citofono { culore: ${accento}; bordo-tunno: 6px; cursore: manella }
+  citofono:passanno { culore: russo !importante }
   @quanno schermo e (larghezza-massima: 600px) {
-    scatola {
+    cascett {
       larghezza: 100%
       spazio: 8px
     }

@@ -25,7 +25,7 @@ Evidenziazione completa per tutte le keywords napoletane:
 - `pruvamm` → Try-catch
 - `componente` → Componente React cu JSX
 - `usestate` → `tien [valore, setValore] = useState(…)`
-- `buttone`, `casella` → tag cu attributi ed eventi in napoletano
+- `citofono`, `miett` → tag cu attributi ed eventi in napoletano
 
 ### Language Server
 - **Autocompletamento** intelligente per tutte le keywords

@@ -1,7 +1,7 @@
 // ============================================
 // Example 19: 'A pizzeria cu stile
 // A React page written all in Neapolitan: tags, attributes and events
-// in JSX (scatola, classe, quanno-se-clicca) and CSS with stile`…`,
+// in JSX (cascett, classe, quanno-tuocche) and CSS with stile`…`,
 // all translated at compile time
 // ============================================
 
@@ -23,7 +23,7 @@ stile`
     spazio: 8px 0
     bordo-sotto: 1px continuo #e2e0da
   }
-  buttone {
+  citofono {
     sfunno-culore: #c8321e
     culore: janco
     bordo: nisciuno
@@ -31,8 +31,8 @@ stile`
     spazio: 6px 12px
     cursore: manella
   }
-  buttone:passanno { opacità: 0.85 }
-  scritta.totale { scrittura-peso: grassetto }
+  citofono:passanno { opacità: 0.85 }
+  chiacchier.totale { scrittura-peso: grassetto }
   @quanno (larghezza-massima: 480px) {
     core.pizzeria { spazio: 8px }
   }
@@ -48,16 +48,16 @@ mann for predefinit facc Pizzeria() {
     tien [conto, setConto] = useState(0)
     piglie (
         <core classe="pizzeria">
-            <titolo>'A pizzeria cu stile</titolo>
-            <lista>
+            <luccolone>'A pizzeria cu stile</luccolone>
+            <list>
                 {MENU.map((p) => (
                     <voce chiave={p.nomme}>
-                        <piezzo>{p.nomme} · {p.prezzo} €</piezzo>
-                        <buttone quanno-se-clicca={() => setConto(conto + p.prezzo)}>Pigliala</buttone>
+                        <scatulell>{p.nomme} · {p.prezzo} €</scatulell>
+                        <citofono quanno-tuocche={() => setConto(conto + p.prezzo)}>Pigliala</citofono>
                     </voce>
                 ))}
-            </lista>
-            <scritta classe="totale">Totale: {conto} €</scritta>
+            </list>
+            <chiacchier classe="totale">Totale: {conto} €</chiacchier>
         </core>
     )
 }

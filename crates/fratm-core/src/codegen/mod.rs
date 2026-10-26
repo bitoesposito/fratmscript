@@ -1046,10 +1046,9 @@ impl CodeGen {
                 }
                 JsxAttribute::Named { name, value, .. } => {
                     separator(self);
-                    let name = if intrinsic {
-                        crate::html::attribute(name)
-                    } else {
-                        name
+                    let name = match (intrinsic, element.name.as_deref()) {
+                        (true, Some(tag)) => crate::html::attribute(name, crate::html::tag(tag)),
+                        _ => name,
                     };
                     if is_plain_name(name) {
                         self.emit(name);
@@ -1330,7 +1329,7 @@ impl CodeGen {
         true
     }
 
-    /// `` stile`buttone { culore: russo }` `` becomes
+    /// `` stile`citofono { culore: russo }` `` becomes
     /// `` stile(`button { color: red }`) ``, with every `${ … }` kept.
     /// Returns false when `tag` is not the stile of the fratm library.
     fn gen_stile(&mut self, tag: &Expression, quasi: &Expression) -> bool {

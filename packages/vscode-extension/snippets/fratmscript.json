@@ -273,20 +273,20 @@
     "body": [
       "mann for predefinit facc ${1:Componente}(${2:{ props \\}}) {",
       "\tpiglie (",
-      "\t\t<${3:scatola}>$0</${3:scatola}>",
+      "\t\t<${3:cascett}>$0</${3:cascett}>",
       "\t)",
       "}"
     ],
     "description": "Componente React con JSX (export default function)"
   },
-  "Buttone": {
-    "prefix": ["buttone", "button"],
-    "body": ["<buttone quanno-se-clicca={() => ${1:fai()}}>${2:Uè}</buttone>"],
-    "description": "Buttone cu n'evento (button onClick)"
+  "Citofono": {
+    "prefix": ["citofono", "button"],
+    "body": ["<citofono quanno-tuocche={() => ${1:fai()}}>${2:Uè}</citofono>"],
+    "description": "Citofono cu n'evento (button onClick)"
   },
-  "Casella": {
-    "prefix": ["casella", "input"],
-    "body": ["<casella tipo=\"${1:text}\" segnaposto=\"${2}\" valore={${3:valore}} quanno-se-scrive={(e) => ${4:setValore}(e.target.value)} />"],
+  "Miett": {
+    "prefix": ["miett", "input"],
+    "body": ["<miett tipo=\"${1:text}\" esempio=\"${2}\" valore={${3:valore}} quanno-cagne={(e) => ${4:setValore}(e.target.value)} />"],
     "description": "Casella pe scrivere (input type, placeholder, value, onChange)"
   },
   "useState": {

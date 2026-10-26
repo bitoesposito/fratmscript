@@ -57,7 +57,7 @@ pub const HELPERS: &[(&str, &str, &str)] = &[
     (
         "stile",
         "(() => { const fatti = new Set(); return (css) => { if (typeof document !== \"undefined\" && css.includes(\"{\") && !fatti.has(css)) { fatti.add(css); const s = document.createElement(\"style\"); s.textContent = css; document.head.append(s); } return css; }; })()",
-        "CSS in napoletano: stile`buttone:passanno { culore: russo }` → mette 'e regole int'a pagina e torna 'o CSS",
+        "CSS in napoletano: stile`citofono:passanno { culore: russo }` → mette 'e regole int'a pagina e torna 'o CSS",
     ),
     // The compiler translates each gomorra`…` and passes the SQL here
     (

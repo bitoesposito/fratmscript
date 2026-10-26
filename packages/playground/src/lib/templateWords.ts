@@ -18,13 +18,27 @@ export const STILE_VALUES = [
 
 /** Tags in selectors, Neapolitan and HTML (`html::TAGS`) */
 export const STILE_TAGS = [
-  'scatola', 'div', 'piezzo', 'span', 'scritta', 'p', 'titolo', 'h1', 'titolo2', 'h2', 'titolo3',
-  'h3', 'titolo4', 'h4', 'titolo5', 'h5', 'titolo6', 'h6', 'buttone', 'button', 'casella', 'input',
-  'quaderno', 'textarea', 'scegli', 'select', 'opzione', 'option', 'etichetta', 'label', 'modulo',
-  'form', 'lista', 'ul', 'elenco', 'ol', 'voce', 'li', 'collegamento', 'a', 'immagine', 'img',
-  'capa', 'header', 'pede', 'footer', 'core', 'main', 'sezione', 'section', 'articolo', 'article',
-  'navigazione', 'nav', 'acapo', 'br', 'linea', 'hr', 'forte', 'strong', 'corsivo', 'em', 'codice',
-  'code', 'tabella', 'table', 'riga', 'tr', 'cella', 'td', 'capocella', 'th', 'tela', 'canvas',
+  'cristian', 'html', 'capa', 'head', 'panz', 'body', 'titolo', 'title', 'inciucc', 'meta',
+  'attacca', 'link', 'basa', 'base', 'cess', 'style', 'fratm', 'script', 'senzafratm', 'noscript',
+  'cappiell', 'header', 'pere', 'footer', 'tomtom', 'nav', 'core', 'main', 'piezz', 'section',
+  'fattariello', 'article', 'allato', 'aside', 'indirizzo', 'address', 'luccolone', 'h1',
+  'luccolo', 'h2', 'luccoliello', 'h3', 'luccolillo', 'h4', 'luccolino', 'h5', 'luccolicchio',
+  'h6', 'cascett', 'div', 'chiacchier', 'p', 'stacc', 'hr', 'accussì', 'pre', 'accussi',
+  'citazione', 'blockquote', 'list', 'ul', 'elenco', 'ol', 'voce', 'li', 'vocabolario', 'dl',
+  'parola', 'dt', 'significato', 'dd', 'quadro', 'figure', 'didascalia', 'figcaption', 'vattenn',
+  'a', 'scatulell', 'span', 'acap', 'br', 'fort', 'strong', 'corsivo', 'em', 'guapp', 'b',
+  'stuorto', 'i', 'sottolineato', 'u', 'cancellato', 's', 'piccirill', 'small', 'evidenziato',
+  'mark', 'codice', 'code', 'fonte', 'cite', 'virgulette', 'q', 'abbreviazione', 'abbr', 'tiempo',
+  'time', 'sotto', 'sub', 'ncoppa', 'sup', 'tastiera', 'kbd', 'levato', 'del', 'aggiunto', 'ins',
+  'cartulin', 'img', 'cornice', 'picture', 'funtana', 'source', 'filmato', 'video', 'suono',
+  'audio', 'fenestella', 'iframe', 'tela', 'canvas', 'disegno', 'svg', 'tavulat', 'table',
+  'cartello', 'caption', 'capotavula', 'thead', 'cuorpotavula', 'tbody', 'peretavula', 'tfoot',
+  'fila', 'tr', 'casella', 'td', 'capocasella', 'th', 'modulo', 'form', 'miett', 'input',
+  'citofono', 'button', 'etichetta', 'label', 'scegli', 'select', 'opzione', 'option', 'gruppo',
+  'optgroup', 'ragionamento', 'textarea', 'recinto', 'fieldset', 'leggenda', 'legend',
+  'suggerimenti', 'datalist', 'risultato', 'output', 'avanzamento', 'progress', 'misura', 'meter',
+  'spoiler', 'details', 'anteprim', 'summary', 'dialogo', 'dialog', 'stampo', 'template',
+  'fessura', 'slot',
 ]
 
 /** GomorraSQL phrases of kind Statement (`gomorra::PHRASES`) */

@@ -103,20 +103,20 @@ mann for predefinit facc App() {
 
     piglie (
         <core classe="pizzeria">
-            <capa>
-                <titolo>{{name}} 🍕</titolo>
-                <scritta>Scritto tutto in FratmScript: cagna <codice>src/App.fratm</codice> e salva.</scritta>
-            </capa>
-            <lista classe="menu">
+            <cappiell>
+                <luccolone>{{name}} 🍕</luccolone>
+                <chiacchier>Scritto tutto in FratmScript: cagna <codice>src/App.fratm</codice> e salva.</chiacchier>
+            </cappiell>
+            <list classe="menu">
                 {MENU.map((pizza) => (
                     <Pizza key={pizza.nomme} pizza={pizza} onOrdina={() => ordina(pizza)} />
                 ))}
-            </lista>
-            <pede>
+            </list>
+            <pere>
                 {ordine.length === 0
                     ? "Ancora nisciuna pizza. Che te magne?"
                     : `Pizze ordinate: ${ordine.length} · Totale: ${totale} €`}
-            </pede>
+            </pere>
         </core>
     )
 }
@@ -131,13 +131,13 @@ chiamm stile da "./Pizza.module.css"
 mann for predefinit facc Pizza({ pizza, onOrdina }) {
     piglie (
         <voce classe={stile.carta}>
-            <scatola>
-                <titolo2 classe={stile.nomme}>{pizza.nomme}</titolo2>
-                <scritta classe={stile.ingredienti}>{pizza.ingredienti}</scritta>
-            </scatola>
-            <buttone classe={stile.bottone} quanno-se-clicca={onOrdina}>
+            <cascett>
+                <luccolo classe={stile.nomme}>{pizza.nomme}</luccolo>
+                <chiacchier classe={stile.ingredienti}>{pizza.ingredienti}</chiacchier>
+            </cascett>
+            <citofono classe={stile.bottone} quanno-tuocche={onOrdina}>
                 {pizza.prezzo} € · Ordina
-            </buttone>
+            </citofono>
         </voce>
     )
 }
@@ -237,8 +237,8 @@ npm run build   # production build in dist/
 
 - `src/main.fratm` starts the app, `src/App.fratm` is the main component and
   `src/components/Pizza.fratm` a child component with props.
-- Components return JSX with Neapolitan tags, attributes and events (`<scatola>` is
-  `div`, `classe` is `className`, `quanno-se-clicca` is `onClick`; HTML and React
+- Components return JSX with Neapolitan tags, attributes and events (`<cascett>` is
+  `div`, `classe` is `className`, `quanno-tuocche` is `onClick`; HTML and React
   names work too), FratmScript inside `{ }`. Hooks keep their React names
   (`useState`, `useEffect`).
 - Styles are plain CSS (`src/stile.css`, imported with `chiamm "./stile.css"`) and
@@ -440,23 +440,23 @@ mann for predefinit facc App() {
 
     piglie (
         <core classe="pizzeria">
-            <capa>
-                <titolo>{{name}} 🍕</titolo>
-                <scritta>
+            <cappiell>
+                <luccolone>{{name}} 🍕</luccolone>
+                <chiacchier>
                     Front end in <codice>src/</codice>, API e database in <codice>server/</codice>: tutto FratmScript.
-                </scritta>
-            </capa>
-            {errore && <scritta stile={{ color: "#a82816" }}>{errore}</scritta>}
-            <lista classe="menu">
+                </chiacchier>
+            </cappiell>
+            {errore && <chiacchier cess={{ color: "#a82816" }}>{errore}</chiacchier>}
+            <list classe="menu">
                 {menu.map((pizza) => (
                     <Pizza key={pizza.id} pizza={pizza} onOrdina={() => ordina(pizza)} />
                 ))}
-            </lista>
-            <pede>
+            </list>
+            <pere>
                 {conto.pizze === 0
                     ? "Ancora nisciuna pizza. Che te magne?"
                     : `Pizze ordinate: ${conto.pizze} · Totale: ${conto.totale} €`}
-            </pede>
+            </pere>
         </core>
     )
 }
@@ -654,8 +654,8 @@ fn add_tailwind(path: &str, contents: String) -> String {
             "@import \"tailwindcss\";\n@source \"./**/*.fratm\";\n\n{contents}"
         ),
         "src/App.fratm" => contents.replacen(
-            "<pede>",
-            "<pede classe=\"mt-8 rounded-xl bg-red-700 px-4 py-3 text-white shadow-lg\">",
+            "<pere>",
+            "<pere classe=\"mt-8 rounded-xl bg-red-700 px-4 py-3 text-white shadow-lg\">",
             1,
         ),
         _ => contents,
