@@ -597,13 +597,10 @@ pub enum Template {
     Simple,
 }
 
-/// The `fratmscript` npm dependency for `version`. The package is not on the
-/// npm registry yet, so projects install it from the GitHub release, which
-/// carries the `npm pack` tarball (#167).
+/// The `fratmscript` npm dependency for `version`: the release of this CLI
+/// from the npm registry, and later compatible ones with `npm update`.
 pub fn fratmscript_dependency(version: &str) -> String {
-    format!(
-        "https://github.com/kkratterf/fratmscript/releases/download/v{version}/fratmscript-{version}.tgz"
-    )
+    format!("^{version}")
 }
 
 /// Writes a new project in `dir` and returns the files it created.
@@ -707,10 +704,7 @@ mod tests {
         let package = fs::read_to_string(dir.join("package.json")).unwrap();
         let json: serde_json::Value = serde_json::from_str(&package).unwrap();
         assert_eq!(json["name"], "vite-app");
-        assert_eq!(
-            json["devDependencies"]["fratmscript"],
-            "https://github.com/kkratterf/fratmscript/releases/download/v1.2.3/fratmscript-1.2.3.tgz"
-        );
+        assert_eq!(json["devDependencies"]["fratmscript"], "^1.2.3");
         assert!(!package.contains("{{"));
 
         let main = compile(
