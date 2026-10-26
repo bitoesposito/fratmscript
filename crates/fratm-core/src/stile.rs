@@ -188,12 +188,25 @@ pub const PSEUDO: &[(&str, &str)] = &[
     ("segnaposto", "placeholder"),
 ];
 
-/// (Neapolitan word, CSS word) inside an `@quanno` (`@media`) prelude
+/// (Neapolitan word, CSS word) inside the prelude of a [`CONDITION_RULES`]
+/// at-rule, where property names and value keywords are translated too
 const MEDIA: &[(&str, &str)] = &[
     ("schermo", "screen"),
     ("stampa", "print"),
     ("tutto", "all"),
     ("e", "and"),
+    ("o", "or"),
+    ("nun", "not"),
+];
+
+/// (at-rule as written, CSS at-rule) for the at-rules whose prelude holds
+/// conditions: `@quanno` is the Neapolitan `@media`, and the English names
+/// are translated as well so that English CSS keeps working.
+const CONDITION_RULES: &[(&str, &str)] = &[
+    ("@quanno", "@media"),
+    ("@media", "@media"),
+    ("@supports", "@supports"),
+    ("@container", "@container"),
 ];
 
 #[derive(Debug, Clone, PartialEq)]
@@ -302,6 +315,13 @@ impl Translator<'_> {
                     self.out.push(';');
                     start = i + 1;
                 }
+                // As in the language, a new line ends a declaration: the `;`
+                // is optional. The new line itself opens the next segment.
+                '\n' if self.declaration_ends_here(start, i) => {
+                    self.segment(start, i, Segment::Declaration, !open.is_empty())?;
+                    self.out.push(';');
+                    start = i;
+                }
                 _ => {}
             }
             i += 1;
@@ -387,6 +407,52 @@ impl Translator<'_> {
         self.text.len()
     }
 
+    /// Whether the new line at `at` ends the declaration that started at
+    /// `start`, so that a `;` can be written in its place. It does when
+    /// `text[start..at]` is a whole `property: value` and the next line
+    /// starts something new, and it does not when the next line continues
+    /// a value or a list of selectors.
+    fn declaration_ends_here(&self, start: usize, at: usize) -> bool {
+        let pending = &self.text[start..at];
+        let trimmed: String = pending.iter().collect::<String>().trim().to_string();
+        if trimmed.is_empty() || trimmed.starts_with('@') || top_level_colon(pending).is_none() {
+            return false;
+        }
+        // `… ,` and the combinators continue a selector list or a value
+        if trimmed.ends_with([',', '>', '+', '~', '(', ':', '/', '*']) {
+            return false;
+        }
+        let mut j = at + 1;
+        while j < self.text.len() && self.text[j].is_whitespace() {
+            j += 1;
+        }
+        // A `{` of its own opens the block of the selector just read
+        if self.text.get(j).is_none_or(|&c| c == '{') {
+            return false;
+        }
+        let mut depth = 0;
+        while j < self.text.len() {
+            match self.text[j] {
+                '(' => depth += 1,
+                ')' => depth -= 1,
+                '"' | '\'' => {
+                    j = opaque_end(self.text, j);
+                    continue;
+                }
+                '/' if self.text.get(j + 1) == Some(&'*') => {
+                    j = opaque_end(self.text, j);
+                    continue;
+                }
+                // A new property, or a nested rule: the declaration is over
+                ':' | '{' if depth == 0 => return true,
+                ';' | '}' | '\n' if depth == 0 => return false,
+                _ => {}
+            }
+            j += 1;
+        }
+        false
+    }
+
     /// Writes `text[start..end]` translated as `kind`.
     fn segment(
         &mut self,
@@ -407,13 +473,15 @@ impl Translator<'_> {
             return Ok(());
         }
         if kind == Segment::Prelude {
-            let media = trimmed.starts_with("@quanno")
-                && !is_word_char(part_char(part, first.unwrap_or(0) + "@quanno".len()));
-            if media {
+            let condition = CONDITION_RULES.iter().find(|(rule, _)| {
+                trimmed.starts_with(rule)
+                    && !is_word_char(part_char(part, first.unwrap_or(0) + rule.len()))
+            });
+            if let Some((rule, css)) = condition {
                 let at = first.unwrap_or(0);
                 self.copy(&part[..at]);
-                self.out.push_str("@media");
-                let rest = &part[at + "@quanno".len()..];
+                self.out.push_str(css);
+                let rest = &part[at + rule.len()..];
                 self.words(rest, |w, _, _| {
                     lookup(MEDIA, w)
                         .or_else(|| lookup(PROPERTIES, w))
@@ -444,9 +512,15 @@ impl Translator<'_> {
             return Err(self.error(&message, at));
         };
         let (property, value) = part.split_at(colon);
+        let name = property.iter().collect::<String>().trim().to_string();
+        // `transition` and `will-change` take property names as values
+        let takes_properties = matches!(
+            lookup(PROPERTIES, &name).unwrap_or(&name),
+            "transition" | "transition-property" | "will-change"
+        );
         self.words(property, |w, _, _| lookup(PROPERTIES, w));
         self.out.push(':');
-        self.value(&value[1..]);
+        self.value(&value[1..], takes_properties);
         Ok(())
     }
 
@@ -455,7 +529,9 @@ impl Translator<'_> {
     }
 
     /// A value: keywords translated, `url(…)`, strings and comments kept.
-    fn value(&mut self, part: &[char]) {
+    /// With `properties`, property names are translated as well, for the
+    /// values that name a property.
+    fn value(&mut self, part: &[char], properties: bool) {
         let mut i = 0;
         while i < part.len() {
             let c = part[i];
@@ -490,7 +566,10 @@ impl Translator<'_> {
                 let translated = (!word.starts_with(|c: char| c.is_ascii_digit())
                     && !matches!(prev, '#' | '.' | HOLE | '@' | '$')
                     && next != HOLE)
-                    .then(|| lookup(VALUES, &word))
+                    .then(|| {
+                        lookup(VALUES, &word)
+                            .or_else(|| properties.then(|| lookup(PROPERTIES, &word)).flatten())
+                    })
                     .flatten();
                 self.out.push_str(translated.unwrap_or(&word));
                 i = end;
@@ -747,6 +826,98 @@ mod tests {
         );
         // Outside @keyframes, `a` is still the link tag
         assert_eq!(css("a { culore: blu }"), "a { color: blue }");
+        // `@media` is translated too, so English CSS keeps working
+        assert_eq!(
+            css("@media (larghezza-minima: 600px) { core { spazio: 0 } }"),
+            "@media (min-width: 600px) { main { padding: 0 } }"
+        );
+        // `@supports` and `@container` hold conditions as well
+        assert_eq!(
+            css("@supports (mostra: griglia) { core { mostra: griglia } }"),
+            "@supports (display: grid) { main { display: grid } }"
+        );
+        assert_eq!(
+            css("@supports nun (mostra: griglia) { core { mostra: flessibile } }"),
+            "@supports not (display: grid) { main { display: flex } }"
+        );
+        assert_eq!(
+            css("@container (larghezza-minima: 400px) { scritta { spazio: 0 } }"),
+            "@container (min-width: 400px) { p { padding: 0 } }"
+        );
+        assert_eq!(
+            css("@quanno stampa o schermo { core { spazio: 0 } }"),
+            "@media print or screen { main { padding: 0 } }"
+        );
+        // Other at-rules still pass through
+        assert_eq!(
+            css("@layer base { core { spazio: 0 } }"),
+            "@layer base { main { padding: 0 } }"
+        );
+    }
+
+    #[test]
+    fn values_that_name_a_property() {
+        assert_eq!(
+            css("core { transizione: culore 1s facile, sfunno-culore .2s }"),
+            "main { transition: color 1s ease, background-color .2s }"
+        );
+        assert_eq!(
+            css("core { will-change: trasforma, opacità }"),
+            "main { will-change: transform, opacity }"
+        );
+        // Everywhere else a property name is not a value
+        assert_eq!(
+            css("core { sfunno: culore }"),
+            "main { background: culore }"
+        );
+    }
+
+    #[test]
+    fn a_new_line_ends_a_declaration() {
+        assert_eq!(
+            css("core.pizzeria {\n  sfunno-culore: janco\n  spazio: 16px\n  cursore: manella\n}"),
+            "main.pizzeria {\n  background-color: white;\n  padding: 16px;\n  cursor: pointer\n}"
+        );
+        // Without a selector too, and with a blank line between
+        assert_eq!(
+            css("culore: niro\n\nmargine: 0 automatico"),
+            "color: black;\n\nmargin: 0 auto"
+        );
+        // A `;` already there is not doubled
+        assert_eq!(css("core {\n  spazio: 0;\n}"), "main {\n  padding: 0;\n}");
+        // A value over several lines keeps going: no `;` inside it
+        assert_eq!(
+            css("core {\n  bordo: 1px continuo\n    russo\n  spazio: 0\n}"),
+            "main {\n  border: 1px solid\n    red;\n  padding: 0\n}"
+        );
+        assert_eq!(
+            css("core {\n  ombra: 0 1px 2px russo,\n    0 2px 4px niro\n}"),
+            "main {\n  box-shadow: 0 1px 2px red,\n    0 2px 4px black\n}"
+        );
+        // A list of selectors over several lines is not a declaration
+        assert_eq!(
+            css("buttone:passanno,\nscritta::primma {\n  culore: russo\n}"),
+            "button:hover,\np::before {\n  color: red\n}"
+        );
+        // A `{` on its own line still belongs to the selector above it
+        assert_eq!(
+            css("buttone:passanno\n{ culore: russo }"),
+            "button:hover\n{ color: red }"
+        );
+        // A nested rule after a declaration ends it
+        assert_eq!(
+            css("core {\n  culore: russo\n  scatola { culore: blu }\n}"),
+            "main {\n  color: red;\n  div { color: blue }\n}"
+        );
+        assert_eq!(
+            css("core {\n  culore: russo\n  @quanno (larghezza-massima: 600px) { spazio: 0 }\n}"),
+            "main {\n  color: red;\n  @media (max-width: 600px) { padding: 0 }\n}"
+        );
+        // Inside @keyframes as well
+        assert_eq!(
+            css("@keyframes trase {\n  da { opacità: 0 }\n  a { opacità: 1 }\n}"),
+            "@keyframes trase {\n  from { opacity: 0 }\n  to { opacity: 1 }\n}"
+        );
     }
 
     #[test]
